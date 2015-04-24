@@ -1,8 +1,8 @@
-package com.liaison.hbase;
+package com.liaison.hbase.api.opspec;
 
 import java.util.function.BiPredicate;
 
-public class LongValueSpec<P extends CRUDOperationSpec> extends CriteriaSpec<P> {
+public class LongValueSpec<P extends CRUDOperationSpec<P>> extends CriteriaSpec<P> {
     
     public static final String SETNOT_LOWER_INC = "[";
     public static final String SETNOT_LOWER_EXC = "(";

@@ -1,4 +1,9 @@
-package com.liaison.hbase;
+package com.liaison.hbase.api;
+
+import com.liaison.hbase.api.opspec.CreateOpSpec;
+import com.liaison.hbase.api.opspec.DeleteOpSpec;
+import com.liaison.hbase.api.opspec.ReadOpSpec;
+import com.liaison.hbase.api.opspec.UpdateOpSpec;
 
 public class HBaseControl {
     

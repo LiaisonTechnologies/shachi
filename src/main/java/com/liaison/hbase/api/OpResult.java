@@ -1,4 +1,4 @@
-package com.liaison.hbase;
+package com.liaison.hbase.api;
 
 public abstract class OpResult {
 

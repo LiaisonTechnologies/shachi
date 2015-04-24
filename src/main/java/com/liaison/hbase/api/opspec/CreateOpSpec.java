@@ -1,4 +1,6 @@
-package com.liaison.hbase;
+package com.liaison.hbase.api.opspec;
+
+import com.liaison.hbase.api.OpResult;
 
 public class CreateOpSpec extends WriteOpSpec {
 

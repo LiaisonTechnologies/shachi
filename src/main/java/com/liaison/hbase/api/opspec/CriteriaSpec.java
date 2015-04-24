@@ -1,4 +1,4 @@
-package com.liaison.hbase;
+package com.liaison.hbase.api.opspec;
 
 import com.liaison.hbase.util.Util;
 
@@ -6,7 +6,7 @@ public class CriteriaSpec<P> {
     
     private P parent;
     
-    public P done() {
+    public P up() {
         return this.parent;
     }
     
