@@ -1,0 +1,58 @@
+apply plugin: 'java'
+apply plugin: 'eclipse'
+
+allprojects {
+    repositories {
+        mavenLocal()
+        mavenCentral() // maven { url: 'http://jcenter.bintray.com' }
+    }
+}
+
+group = 'com.liaison'
+version = '0.0.1-SNAPSHOT'
+
+ext.verTestNG = '6.8.21'
+ext.verMockito = '1.10.19'
+
+if (project.hasProperty('env') && project.getProperty('env') == 'mapr') {
+    repositories {
+        mavenCentral()
+        maven {
+            url "http://repository.mapr.com/maven/"
+        }
+    }
+    ext.verHBase = '0.98.7-mapr-1501'
+    ext.verZookeeper = '3.4.5-mapr-1406'
+} else {
+    ext.verHBase = '0.98.7-hadoop2'
+    ext.verZookeeper = '3.4.5'
+}
+
+jar {
+    manifest {
+        attributes 'Implementation-Title': 'Gradle Quickstart', 'Implementation-Version': version
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compile "org.apache.hbase:hbase-client:${verHBase}"
+    compile "org.apache.hbase:hbase-common:${verHBase}"
+    testCompile "org.testng:testng:${verTestNG}"
+    testCompile "org.mockito:mockito-all:${verMockito}"
+}
+
+test {
+    useTestNG()
+}
+
+uploadArchives {
+    repositories {
+       flatDir {
+           dirs 'repos'
+       }
+    }
+}
