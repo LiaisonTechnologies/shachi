@@ -18,6 +18,17 @@ public class LongValueSpec<P extends CRUDOperationSpec<P>> extends CriteriaSpec<
     private Long lowerBoundInclusive;
     private Long upperBoundExclusive;
 
+    /**
+     * Ensure that the lower and upper bounds meet the conditions of the given predicate function. 
+     * Typically, said predicate will ensure either that the lower bound is lesser-than-or-equal to
+     * the upper bound, or that it is lesser-than the upper bound.
+     * @param compare
+     * @param lower
+     * @param upper
+     * @param setNotationLower
+     * @param setNotationUpper
+     * @throws ArithmeticException
+     */
     private static void validateBounds(final BiPredicate<Long, Long> compare, final Long lower, final Long upper, final String setNotationLower, final String setNotationUpper) throws ArithmeticException {
         if ((lower != null) && (upper != null)) {
             if (!compare.test(lower, upper)) {
@@ -30,6 +41,12 @@ public class LongValueSpec<P extends CRUDOperationSpec<P>> extends CriteriaSpec<
             }
         }
     }
+    /**
+     * Ensure that the given lower bound is lesser-than the upper bound.
+     * @param lower
+     * @param upper
+     * @throws ArithmeticException
+     */
     private static void validateBoundsIncExc(final Long lower, final Long upper) throws ArithmeticException {
         /*
          * If the lower value is inclusive and the upper bound is exclusive, then the upper bound
@@ -39,6 +56,12 @@ public class LongValueSpec<P extends CRUDOperationSpec<P>> extends CriteriaSpec<
         validateBounds((low, high) -> low.longValue() < high.longValue(),
                        lower, upper, SETNOT_LOWER_INC, SETNOT_UPPER_EXC);
     }
+    /**
+     * Ensure that the given lower bound is lesser-than-or-equal to the upper bound.
+     * @param lower
+     * @param upper
+     * @throws ArithmeticException
+     */
     private static void validateBoundsIncInc(final Long lower, final Long upper) throws ArithmeticException {
         /*
          * If both bounds are inclusive, then the lower bound must be SMALLER THAN OR EQUAL TO the

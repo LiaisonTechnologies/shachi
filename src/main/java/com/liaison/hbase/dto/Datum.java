@@ -12,38 +12,36 @@ import java.io.Serializable;
 
 import com.liaison.hbase.util.Util;
 
-public final class Datum implements Serializable {
+public final class Datum extends Value implements Serializable {
     
     private static final long serialVersionUID = 8100342808865479731L;
 
-    public static final class Builder {
-        private byte[] value;
+    public static final class Builder extends AbstractValueBuilder<Datum, Builder> {
         private Long tsObj;
-        
-        public Builder value(final byte[] value) {
-            this.value = value;
-            return this;
-        }
         public Builder ts(final long ts) {
             this.tsObj = Long.valueOf(ts);
             return this;
         }
+        @Override
+        public Builder self() {
+            return this;
+        }
+        @Override
         public Datum build() {
             return new Datum(this);
         }
         private Builder() {}
     }
     
-    public static Builder getBuilder() {
+    public static Builder getDatumBuilder() {
         return new Builder();
     }
+    public static final Datum of(byte[] value, long timestamp) {
+        return getDatumBuilder().value(value).ts(timestamp).build();
+    }
     
-    private final byte[] value;
     private final long tS;
     
-    public byte[] getValue() {
-        return value;
-    }
     public long getTS() {
         return tS;
     }
@@ -51,9 +49,9 @@ public final class Datum implements Serializable {
     // TODO equals, toString, hashCode, etc.
     
     private Datum(final Builder build) throws IllegalArgumentException {
+        super(build);
         Util.ensureNotNull(build.value, this, "value", byte[].class);
         Util.ensureNotNull(build.tsObj, this, "tsObj", Long.class);
-        this.value = build.value;
         this.tS = build.tsObj.longValue();
     }
 }
