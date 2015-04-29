@@ -1,6 +1,6 @@
 package com.liaison.hbase.api.opspec;
 
-import com.liaison.hbase.cnxn.HBaseContext;
+import com.liaison.hbase.context.HBaseContext;
 
 public class CreateOpSpec extends WriteOpSpec {
 
@@ -9,7 +9,7 @@ public class CreateOpSpec extends WriteOpSpec {
         return this;
     }
     
-    public CreateOpSpec(final HBaseContext context) throws IllegalStateException {
-        super(context);
+    public CreateOpSpec(final HBaseContext context, final OperationController parent) {
+        super(context, parent);
     }
 }

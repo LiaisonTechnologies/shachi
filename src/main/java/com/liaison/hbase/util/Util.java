@@ -3,7 +3,11 @@ package com.liaison.hbase.util;
 import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.EnumSet;
 import java.util.function.BiPredicate;
+
+import com.liaison.hbase.context.DefensiveCopyStrategy;
+import com.liaison.hbase.context.HBaseContext;
 
 public final class Util extends Uninstantiable {
 
@@ -124,14 +128,69 @@ public final class Util extends Uninstantiable {
             return Arrays.copyOf(inBytes, inBytes.length);
         }
     }
+    private static byte[] byteActionWithContext(final byte[] bytes, final HBaseContext context, final EnumSet<DefensiveCopyStrategy> copyIfTheseStrategies) throws IllegalArgumentException {
+        Util.ensureNotNull(context,
+                           "Util#byteActionWithContext",
+                           "copyIfTheseStrategies",
+                           EnumSet.class);
+        Util.ensureNotNull(context,
+                           "Util#byteActionWithContext",
+                           "context",
+                           HBaseContext.class);
+        if (copyIfTheseStrategies.contains(context.getDefensiveCopyStrategy())) {
+            return copyOf(bytes);
+        } else {
+            return bytes;
+        }
+    }
+    /**
+     * Prepares the given <b>input</b> byte array to be <b>SET</b> in a framework object. Depending
+     * on the specification of the provided context, optionally makes a defensive copy rather than
+     * setting the framework object to use the exact reference provided. Specifically, if the
+     * defensive copy strategy specified by the context is one of the strategies specified in
+     * {@link DefensiveCopyStrategy#COPY_ON_SET}, then make the copy; otherwise, set using the
+     * original reference. 
+     * @param inBytes original byte[] reference to which a framework object's internal byte array
+     * reference is being set; a defensive copy may be made, depending on the context
+     * @param context HBaseContext whose {@link DefensiveCopyStrategy} specifies whether a
+     * defensive copy of the input byte array will be made prior to setting
+     * @return the value to use when setting the framework object; either the original reference or
+     * a defensive copy, depending on the logic specified above
+     * @throws IllegalArgumentException if context is null
+     */
+    public static byte[] setWithContext(final byte[] inBytes, final HBaseContext context) throws IllegalArgumentException {
+        return byteActionWithContext(inBytes, context, DefensiveCopyStrategy.COPY_ON_SET);
+    }
+    /**
+     * Prepares the given <b>existing/internal</b> byte array to be <b>RETURNED</b> from a
+     * framework object. Depending on the specification of the provided context, optionally makes a
+     * defensive copy rather than returning the internal byte array maintained within the framework
+     * object. Specifically, if the defensive copy strategy specified by the context is one of the
+     * strategies specified in {@link DefensiveCopyStrategy#COPY_ON_GET}, then make the copy;
+     * otherwise, return the original reference. 
+     * @param inBytes a framework object's internal byte array; a defensive copy may be made,
+     * depending on the context
+     * @param context HBaseContext whose {@link DefensiveCopyStrategy} specifies whether a
+     * defensive copy of the internal byte array will be made prior to the get return
+     * @return the value which the get operation should return to the client; either the given
+     * reference to the internal byte array or a defensive copy, depending on the logic specified
+     * above
+     * @throws IllegalArgumentException if context is null
+     */
+    public static byte[] getWithContext(final byte[] storedBytes, final HBaseContext context) throws IllegalArgumentException {
+        return byteActionWithContext(storedBytes, context, DefensiveCopyStrategy.COPY_ON_GET);
+    }
     
-    public static void ensureNotNull(final Object ref, final Class<?> enclosingType, final String varName, final Class<?> varType) throws IllegalArgumentException {
+    public static void ensureNotNull(final Object ref, final String closureName, final String varName, final Class<?> varType) throws IllegalArgumentException {
         if (ref == null) {
-            throw new IllegalArgumentException(enclosingType.getSimpleName()
+            throw new IllegalArgumentException(closureName
                                                + " requires non-null "
                                                + ((varType != null)?(varType.getSimpleName() + " "):"")
                                                + varName);
         }
+    }
+    public static void ensureNotNull(final Object ref, final Class<?> enclosingType, final String varName, final Class<?> varType) throws IllegalArgumentException {
+        ensureNotNull(ref, enclosingType.getSimpleName(), varName, varType);
     }
     public static void ensureNotNull(final Object ref, final Class<?> enclosingType, final String varName) throws IllegalArgumentException {
         ensureNotNull(ref, enclosingType, varName, null);

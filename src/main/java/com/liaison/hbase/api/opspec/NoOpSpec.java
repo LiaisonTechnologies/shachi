@@ -1,7 +1,7 @@
 package com.liaison.hbase.api.opspec;
 
 import com.liaison.hbase.api.OpResult;
-import com.liaison.hbase.cnxn.HBaseContext;
+import com.liaison.hbase.context.HBaseContext;
 import com.liaison.hbase.exception.HBaseException;
 import com.liaison.hbase.exception.HBaseQueryInputValidationException;
 
@@ -22,7 +22,7 @@ public class NoOpSpec extends CRUDOperationSpec<NoOpSpec> {
         return null;
     }
 
-    public NoOpSpec(final HBaseContext context) throws IllegalStateException {
-        super(context);
+    public NoOpSpec(final HBaseContext context, final OperationController parent) {
+        super(context, parent);
     }
 }

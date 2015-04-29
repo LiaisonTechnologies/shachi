@@ -10,6 +10,7 @@ package com.liaison.hbase.dto;
 
 import java.io.Serializable;
 
+import com.liaison.hbase.context.HBaseContext;
 import com.liaison.hbase.util.AbstractSelfRefBuilder;
 import com.liaison.hbase.util.Util;
 
@@ -18,10 +19,16 @@ public class Value implements Serializable {
     private static final long serialVersionUID = 8100342808865479731L;
 
     protected abstract static class AbstractValueBuilder<T, B extends AbstractSelfRefBuilder<T, B>> extends AbstractSelfRefBuilder<T, B> {
+        protected final HBaseContext context;
         protected byte[] value;
         public B value(final byte[] value) {
-            this.value = value;
+            this.value = Util.setWithContext(value, this.context);
             return self();
+        }
+        protected AbstractValueBuilder(final HBaseContext context) throws IllegalArgumentException {
+            Util.ensureNotNull(context, this, "context", HBaseContext.class);
+            this.context = context;
+            this.value = null;
         }
     }
     public static class Builder extends AbstractValueBuilder<Value, Builder> {
@@ -33,26 +40,31 @@ public class Value implements Serializable {
         public Value build() {
             return new Value(self());
         }
-        private Builder() {}
+        private Builder(final HBaseContext context) throws IllegalArgumentException {
+            super(context);
+        }
     }
     
-    public static Builder getValueBuilder() {
-        return new Builder();
+    public static Builder getValueBuilder(final HBaseContext context) {
+        return new Builder(context);
     }
-    public static final Value of(byte[] value) {
-        return getValueBuilder().value(value).build();
+    public static Value of(final byte[] value, final HBaseContext context) {
+        return getValueBuilder(context).value(value).build();
     }
     
+    private final HBaseContext context;
     private final byte[] value;
     
     public byte[] getValue() {
-        return value;
+        return Util.getWithContext(this.value, this.context);
     }
 
     // TODO equals, toString, hashCode, etc.
     
     protected Value(final AbstractValueBuilder<?,?> build) throws IllegalArgumentException {
+        Util.ensureNotNull(build.context, this, "context", HBaseContext.class);
         Util.ensureNotNull(build.value, this, "value", byte[].class);
+        this.context = build.context;
         this.value = build.value;
     }
     

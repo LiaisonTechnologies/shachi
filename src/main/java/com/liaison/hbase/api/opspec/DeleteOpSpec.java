@@ -1,6 +1,6 @@
 package com.liaison.hbase.api.opspec;
 
-import com.liaison.hbase.cnxn.HBaseContext;
+import com.liaison.hbase.context.HBaseContext;
 
 public class DeleteOpSpec extends WriteOpSpec {
 
@@ -9,8 +9,8 @@ public class DeleteOpSpec extends WriteOpSpec {
         return this;
     }
     
-    public DeleteOpSpec(final HBaseContext context) throws IllegalStateException {
-        super(context);
+    public DeleteOpSpec(final HBaseContext context, final OperationController parent) {
+        super(context, parent);
     }
 
 }

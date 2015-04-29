@@ -2,24 +2,29 @@ package com.liaison.hbase.model;
 
 import java.io.Serializable;
 import java.nio.charset.Charset;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
+import com.liaison.hbase.context.HBaseContext;
+import com.liaison.hbase.dto.Value;
 import com.liaison.hbase.util.Util;
 
-public class Name implements Serializable {
+public class Name extends Value implements Serializable {
     
     private static final long serialVersionUID = -290504940089138756L;
 
-    public static final class Builder {
-        private byte[] name;
+    public static final class Builder extends AbstractValueBuilder<Name, Builder> {
         private String str;
         private Set<String> alias;
         
+        @Override
+        public Builder self() {
+            return this;
+        }
+
         public Builder name(final byte[] name, Charset decoding) {
-            this.name = Util.copyOf(name);
+            value(name);
             if (decoding == null) {
                 this.str = Util.toString(name);
             } else {
@@ -32,77 +37,63 @@ public class Name implements Serializable {
         }
         
         public Builder name(final String str, Charset encoding) {
+            final byte[] strAsBytes;
             this.str = str;
             if (encoding == null) {
-                this.name = Util.toBytes(str);
+                strAsBytes = Util.toBytes(str);
             } else {
-                this.name = Util.toBytes(str, encoding);
+                strAsBytes = Util.toBytes(str, encoding);
             }
+            value(strAsBytes);
             return this;
         }
         public Builder name(final String nameStr) {
             return name(nameStr, null);
         }
         
-        public Builder alias(final String alias) throws IllegalArgumentException {
-            Util.ensureNotNull(alias, this, "alias", String.class);
-            this.alias.add(alias);
-            return this;
-        }
-        
+        @Override
         public Name build() {
             return new Name(this);
         }
-        
-        private Builder() {
-            this.name = null;
+        private Builder(final HBaseContext context) throws IllegalArgumentException {
+            super(context);
             this.str = null;
             this.alias = new HashSet<String>();
         }
     }
     
-    public static final Builder with(final byte[] name, Charset decoding) {
-        return new Builder().name(name, decoding);
+    public static final Builder with(final byte[] name, final Charset decoding, final HBaseContext context) {
+        return new Builder(context).name(name, decoding);
     }
-    public static final Builder with(final String nameStr, Charset encoding) {
-        return new Builder().name(nameStr, encoding);
+    public static final Builder with(final String nameStr, final Charset encoding, final HBaseContext context) {
+        return new Builder(context).name(nameStr, encoding);
     }
-    public static final Builder with(final byte[] name) {
-        return new Builder().name(name);
+    public static final Builder with(final byte[] name, final HBaseContext context) {
+        return new Builder(context).name(name);
     }
-    public static final Builder with(final String nameStr) {
-        return new Builder().name(nameStr);
-    }
-    
-    public static final Name of(final byte[] name, Charset decoding) {
-        return with(name, decoding).build();
-    }
-    public static final Name of(final String nameStr, Charset encoding) {
-        return with(nameStr, encoding).build();
-    }
-    public static final Name of(final byte[] name) {
-        return with(name).build();
-    }
-    public static final Name of(final String nameStr) {
-        return with(nameStr).build();
+    public static final Builder with(final String nameStr, final HBaseContext context) {
+        return new Builder(context).name(nameStr);
     }
     
-    private final byte[] name;
+    public static final Name of(final byte[] name, final Charset decoding, final HBaseContext context) {
+        return with(name, decoding, context).build();
+    }
+    public static final Name of(final String nameStr, final Charset encoding, final HBaseContext context) {
+        return with(nameStr, encoding, context).build();
+    }
+    public static final Name of(final byte[] name, final HBaseContext context) {
+        return with(name, context).build();
+    }
+    public static final Name of(final String nameStr, final HBaseContext context) {
+        return with(nameStr, context).build();
+    }
+    
     private final String str;
     private final Set<String> alias;
     
     private Integer hc;
     private String strRep;
     
-    /**
-     * WARNING: This method returns the name as a MUTABLE byte-array, which means that any code
-     * which has access can alter the name of this element! Do not pass the resulting array to any
-     * untrusted components.
-     * @return
-     */
-    public byte[] getName() {
-        return name;
-    }
     public String getStr() {
         return str;
     }
@@ -112,10 +103,8 @@ public class Name implements Serializable {
     
     @Override
     public boolean equals(final Object otherObj) {
-        final Name otherName;
         if (otherObj instanceof Name) {
-            otherName = (Name) otherObj;
-            return Util.refEquals(this.name, otherName.name);
+            return super.equals(otherObj);
         }
         return false;
     }
@@ -123,7 +112,7 @@ public class Name implements Serializable {
     @Override
     public int hashCode() {
         if (this.hc == null) {
-            this.hc = Arrays.hashCode(this.name);
+            this.hc = Integer.valueOf(super.hashCode());
         }
         return this.hc.intValue();
     }
@@ -146,10 +135,10 @@ public class Name implements Serializable {
     }
     
     private Name(final Builder build) throws IllegalArgumentException {
-        if ((build.name == null) || (build.name.length <= 0)) {
+        super(build);
+        if ((getValue() == null) || (getValue().length <= 0)) {
             throw new IllegalArgumentException("Null/empty name not permitted");
         }
-        this.name = build.name;
         this.str = build.str;
         this.alias = Collections.unmodifiableSet(build.alias);
         this.strRep = null;

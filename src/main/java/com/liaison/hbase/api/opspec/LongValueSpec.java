@@ -2,7 +2,7 @@ package com.liaison.hbase.api.opspec;
 
 import java.util.function.BiPredicate;
 
-public class LongValueSpec<P extends CRUDOperationSpec<P>> extends CriteriaSpec<P> {
+public class LongValueSpec<P extends HBaseOperation<P>> extends CriteriaSpec<P> {
     
     public static final String SETNOT_LOWER_INC = "[";
     public static final String SETNOT_LOWER_EXC = "(";
@@ -103,6 +103,16 @@ public class LongValueSpec<P extends CRUDOperationSpec<P>> extends CriteriaSpec<
     }
     public Long getUpperBoundExclusive() {
         return this.upperBoundExclusive;
+    }
+    
+    public boolean isLowerBounded() {
+        return (this.lowerBoundInclusive != null);
+    }
+    public boolean isUpperBounded() {
+        return (this.upperBoundExclusive != null);
+    }
+    public boolean isBounded() {
+        return (isLowerBounded() || isUpperBounded());
     }
 
     /**
