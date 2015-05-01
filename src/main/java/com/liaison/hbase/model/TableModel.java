@@ -48,6 +48,8 @@ public class TableModel {
         return this.families;
     }
     
+    // TODO equals, hashCode, toString
+    
     private TableModel(final Builder build) throws IllegalArgumentException {
         Util.ensureNotNull(build.name, this, "name", Name.class);
         this.name = build.name;

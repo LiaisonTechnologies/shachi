@@ -11,8 +11,11 @@ allprojects {
 group = 'com.liaison'
 version = '0.0.1-SNAPSHOT'
 
-ext.verTestNG = '6.8.21'
 ext.verMockito = '1.10.19'
+ext.verQuasar  = '0.6.2'
+ext.verTestNG  = '6.8.21'
+
+ext.classifier = ':jdk8'
 
 if (project.hasProperty('env') && project.getProperty('env') == 'mapr') {
     repositories {
@@ -39,6 +42,7 @@ repositories {
 }
 
 dependencies {
+    compile "co.paralleluniverse:quasar-core:${verQuasar}${classifier}@jar"
     compile "org.apache.hbase:hbase-client:${verHBase}"
     compile "org.apache.hbase:hbase-common:${verHBase}"
     testCompile "org.testng:testng:${verTestNG}"

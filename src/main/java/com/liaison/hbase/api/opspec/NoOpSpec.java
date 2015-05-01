@@ -3,7 +3,7 @@ package com.liaison.hbase.api.opspec;
 import com.liaison.hbase.api.OpResult;
 import com.liaison.hbase.context.HBaseContext;
 import com.liaison.hbase.exception.HBaseException;
-import com.liaison.hbase.exception.HBaseQueryInputValidationException;
+import com.liaison.hbase.exception.HBaseOpInputValidationException;
 
 public class NoOpSpec extends CRUDOperationSpec<NoOpSpec> {
 
@@ -13,7 +13,7 @@ public class NoOpSpec extends CRUDOperationSpec<NoOpSpec> {
     }
 
     @Override
-    protected final void validateInputs() throws HBaseQueryInputValidationException {
+    protected final void validateInputs() throws HBaseOpInputValidationException {
         // TODO Auto-generated method stub
     }
     @Override

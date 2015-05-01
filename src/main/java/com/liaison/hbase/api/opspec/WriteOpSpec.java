@@ -1,25 +1,23 @@
 package com.liaison.hbase.api.opspec;
 
-import com.liaison.hbase.api.OpResult;
+import org.apache.hadoop.hbase.client.Put;
+
 import com.liaison.hbase.context.HBaseContext;
-import com.liaison.hbase.exception.HBaseException;
-import com.liaison.hbase.exception.HBaseQueryInputValidationException;
+import com.liaison.hbase.exception.HBaseOpInputValidationException;
 
-public class WriteOpSpec extends CRUDOperationSpec<WriteOpSpec> {
-
+public class WriteOpSpec extends CRUDOperationSpec<Put, WriteOpSpec> {
+    
     @Override
     public WriteOpSpec self() {
         return this;
     }
 
     @Override
-    protected final void validateInputs() throws HBaseQueryInputValidationException {
-        // TODO Auto-generated method stub
-    }
-    @Override
-    protected final OpResult executeOperation() throws HBaseException {
-        // TODO Auto-generated method stub
-        return null;
+    public Put buildHBaseOp() throws HBaseOpInputValidationException {
+        final Put put;
+        
+        put = new Put(row().getValue());
+        
     }
 
     public WriteOpSpec(final HBaseContext context, final OperationController parent) {

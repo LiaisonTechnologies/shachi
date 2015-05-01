@@ -1,12 +1,13 @@
 package com.liaison.hbase.api.opspec;
 
+import com.liaison.hbase.util.AbstractSelfRef;
 import com.liaison.hbase.util.Util;
 
-public class CriteriaSpec<P> {
+public abstract class CriteriaSpec<C extends CriteriaSpec<C, P>, P> extends AbstractSelfRef<C> {
     
     private P parent;
     
-    public P up() {
+    public P and() {
         return this.parent;
     }
     

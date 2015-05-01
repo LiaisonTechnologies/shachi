@@ -2,7 +2,7 @@ package com.liaison.hbase.api.opspec;
 
 import java.util.function.BiPredicate;
 
-public class LongValueSpec<P extends HBaseOperation<P>> extends CriteriaSpec<P> {
+public class LongValueSpec<P extends OperationSpec<P>> extends CriteriaSpec<LongValueSpec<P>, P> {
     
     public static final String SETNOT_LOWER_INC = "[";
     public static final String SETNOT_LOWER_EXC = "(";
@@ -70,6 +70,9 @@ public class LongValueSpec<P extends HBaseOperation<P>> extends CriteriaSpec<P> 
         validateBounds((low, high) -> low.longValue() <= high.longValue(),
                        lower, upper, SETNOT_LOWER_INC, SETNOT_UPPER_INC);
     }
+    
+    @Override
+    protected LongValueSpec<P> self() { return this; }
     
     private void setLowerBoundInclusive(Long lower) throws ArithmeticException {
         // an inclusive lower bound equal to the smallest possible long equates to the absence of a

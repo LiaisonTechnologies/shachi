@@ -1,38 +1,25 @@
 package com.liaison.hbase.api.opspec;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.LinkedList;
+import java.util.List;
 
-import com.liaison.hbase.api.OpResult;
+import org.apache.hadoop.hbase.client.Operation;
+
 import com.liaison.hbase.context.HBaseContext;
 import com.liaison.hbase.dto.RowKey;
-import com.liaison.hbase.exception.HBaseException;
-import com.liaison.hbase.exception.HBaseQueryInputValidationException;
-import com.liaison.hbase.model.FamilyModel;
-import com.liaison.hbase.model.QualModel;
+import com.liaison.hbase.exception.HBaseOpInputValidationException;
 import com.liaison.hbase.model.TableModel;
 import com.liaison.hbase.util.Util;
 
-public abstract class CRUDOperationSpec<O extends CRUDOperationSpec<O>> extends OperationSpec<O> implements HBaseOperation<O> {
+public abstract class CRUDOperationSpec<H extends Operation, O extends CRUDOperationSpec<H, O>> extends OperationSpec<O> implements HBaseOperation<O> {
     
     private final HBaseContext context;
     private TableModel table;
     private RowKey rowKey;
-    private Set<FamilyModel> families;
-    private Set<QualModel> columns;
+    private final List<ColumnSpec<O>> columns;
     private final LongValueSpec<O> tsSpec;
     
-    protected abstract void validateInputs() throws HBaseQueryInputValidationException;
-    protected abstract OpResult executeOperation() throws HBaseException;
-    
-    protected OpResult refineOutputs(OpResult initialResult) throws HBaseException {
-        return initialResult;
-    }
-    
-    public final OpResult exec() throws HBaseException {
-        validateInputs();
-        return refineOutputs(executeOperation());
-    }
+    public abstract H buildHBaseOp() throws HBaseOpInputValidationException;
     
     public O row(final RowKey rowKey) {
         this.rowKey = rowKey;
@@ -42,11 +29,11 @@ public abstract class CRUDOperationSpec<O extends CRUDOperationSpec<O>> extends 
         this.table = table;
         return self();
     }
-    public O fam(final FamilyModel family) {
-        return self();
-    }
-    public O col(final FamilyModel family, final QualModel qual) {
-        return self();
+    public ColumnSpec<O> with() {
+        final ColumnSpec<O> colSpec;
+        colSpec = new ColumnSpec<O>(self());
+        this.columns.add(colSpec);
+        return colSpec;
     }
     
     protected HBaseContext context() {
@@ -57,12 +44,6 @@ public abstract class CRUDOperationSpec<O extends CRUDOperationSpec<O>> extends 
     }
     public RowKey row() {
         return this.rowKey;
-    }
-    public Set<FamilyModel> fam() {
-        return this.families;
-    }
-    public Set<QualModel> col() {
-        return this.columns;
     }
     
     public LongValueSpec<O> ts() {
@@ -76,7 +57,6 @@ public abstract class CRUDOperationSpec<O extends CRUDOperationSpec<O>> extends 
         this.context = context;
         this.table = null;
         this.rowKey = null;
-        this.families = new HashSet<>();
-        this.columns = new HashSet<>();
+        this.columns = new LinkedList<>();
     }
 }

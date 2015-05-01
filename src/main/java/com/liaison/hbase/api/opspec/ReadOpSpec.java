@@ -1,36 +1,39 @@
 package com.liaison.hbase.api.opspec;
 
-import org.apache.hadoop.hbase.client.Get;
-import org.apache.hadoop.hbase.client.Put;
+import java.util.LinkedList;
+import java.util.List;
 
-import com.liaison.hbase.api.OpResult;
-import com.liaison.hbase.context.HBaseContext;
-import com.liaison.hbase.exception.HBaseException;
-import com.liaison.hbase.exception.HBaseQueryInputValidationException;
+import com.liaison.hbase.util.Util;
 
-public class ReadOpSpec extends CRUDOperationSpec<ReadOpSpec> {
 
+public final class ReadOpSpec extends OperationSpec<ReadOpSpec> {
+
+    private LongValueSpec<ReadOpSpec> atTime;
+    private RowSpec<ReadOpSpec> fromTableRow;
+    private List<ColSpecRead<ReadOpSpec>> withColumn;
+    
     @Override
-    public ReadOpSpec self() {
-        return this;
+    protected ReadOpSpec self() { return this; }
+
+    public LongValueSpec<ReadOpSpec> atTime() throws IllegalStateException {
+        Util.validateExactlyOnce("atTime", LongValueSpec.class, this.atTime);
+        this.atTime = new LongValueSpec<>(this);
+        return this.atTime;
+    }
+    public RowSpec<ReadOpSpec> from() throws IllegalStateException {
+        Util.validateExactlyOnce("fromTableRow", RowSpec.class, this.fromTableRow);
+        this.fromTableRow = new RowSpec<>(this);
+        return this.fromTableRow;
+    }
+    public ColSpecRead<ReadOpSpec> with() {
+        final ColSpecRead<ReadOpSpec> withCol;
+        withCol = new ColSpecRead<>(this);
+        this.withColumn.add(withCol);
+        return withCol;
     }
 
-    @Override
-    protected final void validateInputs() throws HBaseQueryInputValidationException {
-        // TODO Auto-generated method stub
-    }
-    @Override
-    protected final OpResult executeOperation() throws HBaseException {
-        // TODO Auto-generated method stub
-        final Get get;
-        
-        get = new Get(row().getValue());
-        Put p = new Put(new byte[0]);
-        //p.a
-        return null;
-    }
-
-    public ReadOpSpec(final HBaseContext context, final OperationController parent) {
-        super(context, parent);
+    public ReadOpSpec(final OperationController parent) {
+        super(parent);
+        this.withColumn = new LinkedList<>();
     }
 }

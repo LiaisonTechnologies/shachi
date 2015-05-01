@@ -1,5 +1,7 @@
 package com.liaison.hbase.context;
 
+import org.apache.hadoop.conf.Configuration;
+
 public class DefaultHBaseContext implements HBaseContext {
 
     public static final class Builder {
@@ -28,6 +30,12 @@ public class DefaultHBaseContext implements HBaseContext {
     @Override
     public DefensiveCopyStrategy getDefensiveCopyStrategy() {
         return this.defensiveCopyStrategy;
+    }
+
+    @Override
+    public Configuration getHBaseConfiguration() {
+        // TODO figure out how to implement this
+        return null;
     }
     
     private DefaultHBaseContext(final Builder build) {

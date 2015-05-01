@@ -6,6 +6,8 @@ import java.util.Base64;
 import java.util.EnumSet;
 import java.util.function.BiPredicate;
 
+import org.slf4j.Logger;
+
 import com.liaison.hbase.context.DefensiveCopyStrategy;
 import com.liaison.hbase.context.HBaseContext;
 
@@ -200,6 +202,55 @@ public final class Util extends Uninstantiable {
     }
     public static void ensureNotNull(final Object ref, final Object enclosingInstance, final String varName) throws IllegalArgumentException {
         ensureNotNull(ref, enclosingInstance.getClass(), varName);
+    }
+    
+    public static <E extends Enum<E>> void verifyState(final E expectedState, final E currentState, final Object stateLock) throws IllegalStateException {
+        synchronized(stateLock) {
+            verifyState(expectedState, currentState);
+        }
+    }
+    public static <E extends Enum<E>> void verifyState(final E expectedState, final E currentState) throws IllegalStateException {
+        if (expectedState != currentState) {
+            throw new IllegalStateException("Expected state: " + expectedState
+                                            + "; current state: " + currentState);
+        }
+    }
+    
+    public static void traceLog(final Logger log, final String logMethodName, String logMsg, final Throwable exc) {
+        // >>>>> LOG >>>>>
+        if (log.isTraceEnabled()) {
+            logMsg = "[" + logMethodName + "] " + logMsg;
+            if (exc != null) {
+                log.trace(logMsg, exc);
+            } else {
+                log.trace(logMsg);
+            }
+        } else if (log.isDebugEnabled()) {
+            if (exc != null) {
+                log.debug(logMsg, exc);
+            } else {
+                log.debug(logMsg);
+            }
+        }
+        // <<<<< log <<<<<
+    }
+    public static void traceLog(final Logger log, final String logMethodName, String logMsg) {
+        traceLog(log, logMethodName, logMsg, null);
+    }
+    
+    public static <X> X validateExactlyOnceParam(final X param, final Object enclosingInstance, final String paramName, final Class<X> paramClass, final Object valueSetTarget) throws IllegalArgumentException, IllegalStateException {
+        ensureNotNull(param, enclosingInstance, paramName, paramClass);
+        validateExactlyOnce(paramName, paramClass, valueSetTarget);
+        return param;
+    }
+    public static void validateExactlyOnce(final String entityName, final Class<?> entityClass, final Object valueSetTarget) throws IllegalStateException {
+        if (valueSetTarget != null) {
+            throw new IllegalStateException(entityClass.getSimpleName()
+                                            + " reference for "
+                                            + entityName
+                                            + " may only be set once, and is already initialized: "
+                                            + valueSetTarget);
+        }
     }
     
     static {
