@@ -17,12 +17,12 @@ public class OperationController {
     private final State state;
     private final HBaseControl control;
     private final HBaseContext context;
-    private final LinkedHashMap<Object, OperationSpec<?>> ops;
+    private final LinkedHashMap<Object, OperationSpec<?, ?>> ops;
     
     private final void verifyStateForAddingOps() throws IllegalStateException {
         Util.verifyState(State.ACCEPTING, this.state, this.stateLock);
     }
-    private final void putOpWithNewHandle(final Object handle, final OperationSpec<?> op) throws IllegalArgumentException {
+    private final void putOpWithNewHandle(final Object handle, final OperationSpec<?, ?> op) throws IllegalArgumentException {
         if (handle == null) {
             throw new IllegalArgumentException("Operation must be specified with non-null handle");
         }
@@ -40,29 +40,17 @@ public class OperationController {
         putOpWithNewHandle(handle, nextReadOp);
         return nextReadOp;
     }
-    public CreateOpSpec create(final Object handle) throws IllegalStateException, IllegalArgumentException {
-        final CreateOpSpec nextCreateOp;
+    public WriteOpSpec write(final Object handle) throws IllegalStateException, IllegalArgumentException {
+        final WriteOpSpec nextCreateOp;
         verifyStateForAddingOps();
-        nextCreateOp = new CreateOpSpec(this.context, this);
+        nextCreateOp = new WriteOpSpec(this.context, this);
         putOpWithNewHandle(handle, nextCreateOp);
         return nextCreateOp;
     }
-    public UpdateOpSpec update(final Object handle) throws IllegalStateException, IllegalArgumentException {
-        final UpdateOpSpec nextUpdateOp;
-        verifyStateForAddingOps();
-        nextUpdateOp = new UpdateOpSpec(this.context, this);
-        putOpWithNewHandle(handle, nextUpdateOp);
-        return nextUpdateOp;
-    }
-    public DeleteOpSpec delete(final Object handle) throws IllegalStateException, IllegalArgumentException {
-        final DeleteOpSpec nextDeleteOp;
-        verifyStateForAddingOps();
-        nextDeleteOp = new DeleteOpSpec(this.context, this);
-        putOpWithNewHandle(handle, nextDeleteOp);
-        return nextDeleteOp;
-    }
     
     public OpResult exec() {
+        // TODO
+        System.out.println(this.ops);
         return null;
     }
     

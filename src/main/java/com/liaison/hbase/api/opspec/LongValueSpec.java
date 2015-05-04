@@ -1,8 +1,11 @@
 package com.liaison.hbase.api.opspec;
 
+import java.io.Serializable;
 import java.util.function.BiPredicate;
 
-public class LongValueSpec<P extends OperationSpec<P>> extends CriteriaSpec<LongValueSpec<P>, P> {
+public class LongValueSpec<P extends OperationSpec<P, ?>> extends CriteriaSpec<LongValueSpec<P>, P> implements Serializable {
+    
+    private static final long serialVersionUID = 7413385960948152177L;
     
     public static final String SETNOT_LOWER_INC = "[";
     public static final String SETNOT_LOWER_EXC = "(";
@@ -123,6 +126,7 @@ public class LongValueSpec<P extends OperationSpec<P>> extends CriteriaSpec<Long
      * @param value
      */
     public LongValueSpec<P> gt(long value) throws ArithmeticException {
+        prepMutation();
         /*
          * Translate the greater-than value to an inclusive minimum bound:
          *     (1) add 1 (since the value as provided should be EXcluded)
@@ -147,6 +151,7 @@ public class LongValueSpec<P extends OperationSpec<P>> extends CriteriaSpec<Long
      * @param value
      */
     public LongValueSpec<P> ge(long value) throws ArithmeticException {
+        prepMutation();
         setLowerBoundInclusive(Long.valueOf(value));
         return this;
     }
@@ -156,6 +161,7 @@ public class LongValueSpec<P extends OperationSpec<P>> extends CriteriaSpec<Long
      * @param value
      */
     public LongValueSpec<P> eq(long value) throws ArithmeticException {
+        prepMutation();
         /*
          * equal-to equates to:
          *     less-than-or-equal-to
@@ -173,6 +179,7 @@ public class LongValueSpec<P extends OperationSpec<P>> extends CriteriaSpec<Long
      * @param value
      */
     public LongValueSpec<P> lt(long value) throws ArithmeticException {
+        prepMutation();
         setUpperBoundExclusive(Long.valueOf(value));
         return this;
     }
@@ -182,6 +189,7 @@ public class LongValueSpec<P extends OperationSpec<P>> extends CriteriaSpec<Long
      * @param value
      */
     public LongValueSpec<P> le(long value) {
+        prepMutation();
         /*
          * Translate the less-than-or-equal value to an exclusive maximum bound:
          *     (1) add 1 (the "-or-equal" means that the given value should be INcluded)
@@ -195,6 +203,11 @@ public class LongValueSpec<P extends OperationSpec<P>> extends CriteriaSpec<Long
             setUpperBoundExclusive(Long.valueOf(value + 1));
         }
         return this;
+    }
+    
+    @Override
+    protected void prepareStrRep(final StringBuilder strGen) {
+        
     }
     
     public LongValueSpec(final P parent, final Long typeMin, final Long typeMax) throws IllegalArgumentException, ArithmeticException {

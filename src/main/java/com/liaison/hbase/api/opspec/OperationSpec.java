@@ -1,17 +1,31 @@
 package com.liaison.hbase.api.opspec;
 
-import com.liaison.hbase.util.AbstractSelfRef;
+import java.io.Serializable;
+
+import org.apache.hadoop.hbase.client.Operation;
+
+import com.liaison.hbase.context.HBaseContext;
 import com.liaison.hbase.util.Util;
 
-public abstract class OperationSpec<O extends OperationSpec<O>> extends AbstractSelfRef<O> {
-    private final OperationController parent;
+public abstract class OperationSpec<O extends OperationSpec<O, H>, H extends Operation> extends StatefulSpec<O, OperationController> implements Serializable {
     
-    public final OperationController then() {
-        return this.parent;
+    private static final long serialVersionUID = 5533663131351737507L;
+    
+    private final HBaseContext context;
+    
+    protected abstract H buildHBaseOp();
+    
+    protected HBaseContext getContext() {
+        return this.context;
     }
     
-    public OperationSpec(final OperationController parent) {
-        Util.ensureNotNull(parent, this, "parent", OperationController.class);
-        this.parent = parent;
+    public final OperationController then() {
+        return getParent();
+    }
+    
+    public OperationSpec(final HBaseContext context, final OperationController parent) {
+        super(parent);
+        Util.ensureNotNull(context, this, "context", HBaseContext.class);
+        this.context = context;
     }
 }

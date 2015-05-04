@@ -157,10 +157,15 @@ public class HBaseControl extends ThreadLocalResourceAwareHBaseController {
                             familyNameStr = familyName.getStr();
                             
                             colFamDesc = new HColumnDescriptor(familyNameBytes);
-                            tableDesc.addFamily(colFamDesc);
+                            
+                            // TODO fix this -- do we need to revert back to a normal loop rather than a stream?
+                            //tableDesc.addFamily(colFamDesc);
+                            
+                            
+                            
                             // >>>>> LOG >>>>>
                             if (LOG.isTraceEnabled()) {
-                                LOG.trace("[" + logMethodName + "] added family: " + familyNameStr);
+                                //LOG.trace("[" + logMethodName + "] added family: " + familyNameStr);
                             }
                             // <<<<< log <<<<<
                         });
@@ -230,7 +235,19 @@ public class HBaseControl extends ThreadLocalResourceAwareHBaseController {
         return tbl;
     }
     
+    public HBaseContext getContext() {
+        return this.context;
+    }
+    
     public OperationController now() {
-        return new OperationController(DefaultHBaseContext.getBuilder().build());
+        return new OperationController(this, this.context);
+    }
+    
+    public HBaseControl() {
+        // TODO initialization to reasonable values
+        this.tableNamer = null;
+        this.context = DefaultHBaseContext.getBuilder().build();
+        this.admin = null;
+        this.tableSet = null;
     }
 }

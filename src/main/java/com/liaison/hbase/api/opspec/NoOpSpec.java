@@ -1,27 +1,30 @@
 package com.liaison.hbase.api.opspec;
 
-import com.liaison.hbase.api.OpResult;
+import java.io.Serializable;
+
+import org.apache.hadoop.hbase.client.Operation;
+
 import com.liaison.hbase.context.HBaseContext;
-import com.liaison.hbase.exception.HBaseException;
-import com.liaison.hbase.exception.HBaseOpInputValidationException;
 
-public class NoOpSpec extends CRUDOperationSpec<NoOpSpec> {
+public final class NoOpSpec extends OperationSpec<NoOpSpec, Operation> implements Serializable {
 
-    @Override
-    public NoOpSpec self() {
-        return this;
-    }
+    private static final long serialVersionUID = 1682509457085206829L;
 
     @Override
-    protected final void validateInputs() throws HBaseOpInputValidationException {
-        // TODO Auto-generated method stub
-    }
-    @Override
-    protected final OpResult executeOperation() throws HBaseException {
-        // TODO Auto-generated method stub
-        return null;
-    }
+    public NoOpSpec self() { return this; }
 
+    @Override
+    protected Operation buildHBaseOp() throws UnsupportedOperationException {
+        throw new UnsupportedOperationException(NoOpSpec.class.getSimpleName()
+                                                + " does not correspond to any HBase "
+                                                + Operation.class.getSimpleName());
+    }
+    
+    @Override
+    protected void prepareStrRep(final StringBuilder strGen) {
+        
+    }
+    
     public NoOpSpec(final HBaseContext context, final OperationController parent) {
         super(context, parent);
     }

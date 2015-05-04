@@ -33,7 +33,7 @@ public final class RowKey extends Value implements Serializable {
     public static Builder getRowKeyBuilder(final HBaseContext context) {
         return new Builder(context);
     }
-    public static final RowKey rowOf(byte[] value, final HBaseContext context) {
+    public static final RowKey of(byte[] value, final HBaseContext context) {
         return getRowKeyBuilder(context).value(value).build();
     }
 

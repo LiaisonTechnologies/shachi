@@ -131,7 +131,7 @@ public final class Util extends Uninstantiable {
         }
     }
     private static byte[] byteActionWithContext(final byte[] bytes, final HBaseContext context, final EnumSet<DefensiveCopyStrategy> copyIfTheseStrategies) throws IllegalArgumentException {
-        Util.ensureNotNull(context,
+        Util.ensureNotNull(copyIfTheseStrategies,
                            "Util#byteActionWithContext",
                            "copyIfTheseStrategies",
                            EnumSet.class);

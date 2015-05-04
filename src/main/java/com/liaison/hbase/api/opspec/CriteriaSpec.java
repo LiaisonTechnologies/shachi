@@ -1,17 +1,16 @@
 package com.liaison.hbase.api.opspec;
 
-import com.liaison.hbase.util.AbstractSelfRef;
-import com.liaison.hbase.util.Util;
+import java.io.Serializable;
 
-public abstract class CriteriaSpec<C extends CriteriaSpec<C, P>, P> extends AbstractSelfRef<C> {
+public abstract class CriteriaSpec<C extends CriteriaSpec<C, P>, P> extends StatefulSpec<C, P> implements Serializable {
     
-    private P parent;
+    private static final long serialVersionUID = 7087926388191014497L;
     
     public P and() {
-        return this.parent;
+        return getParent();
     }
-    
+
     public CriteriaSpec(final P parent) throws IllegalArgumentException {
-        Util.ensureNotNull(parent, this, "parent");
+        super(parent);
     }
 }
