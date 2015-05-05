@@ -10,7 +10,7 @@ package com.liaison.hbase.dto;
 
 import java.io.Serializable;
 
-import com.liaison.hbase.context.HBaseContext;
+import com.liaison.hbase.util.DefensiveCopyStrategy;
 import com.liaison.hbase.util.Util;
 
 public final class Datum extends Value implements Serializable {
@@ -31,16 +31,19 @@ public final class Datum extends Value implements Serializable {
         public Datum build() {
             return new Datum(this);
         }
-        private Builder(final HBaseContext context) throws IllegalArgumentException {
-            super(context);
+        private Builder() throws IllegalArgumentException {
+            super();
         }
     }
     
-    public static Builder getDatumBuilder(final HBaseContext context) {
-        return new Builder(context);
+    public static Builder getDatumBuilder() {
+        return new Builder();
     }
-    public static final Datum of(final byte[] value, final long timestamp, final HBaseContext context) {
-        return getDatumBuilder(context).value(value).ts(timestamp).build();
+    public static final Datum of(final byte[] value, final long timestamp, final DefensiveCopyStrategy copyStrategy) {
+        return getDatumBuilder().value(value, copyStrategy).ts(timestamp).build();
+    }
+    public static final Datum of(final byte[] value, final long timestamp) {
+        return getDatumBuilder().value(value).ts(timestamp).build();
     }
     
     private final long tS;

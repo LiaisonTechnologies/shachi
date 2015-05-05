@@ -10,7 +10,7 @@ package com.liaison.hbase.dto;
 
 import java.io.Serializable;
 
-import com.liaison.hbase.context.HBaseContext;
+import com.liaison.hbase.util.DefensiveCopyStrategy;
 
 public final class RowKey extends Value implements Serializable {
 
@@ -25,16 +25,19 @@ public final class RowKey extends Value implements Serializable {
         public RowKey build() {
             return new RowKey(this);
         }
-        private Builder(final HBaseContext context) throws IllegalArgumentException {
-            super(context);
+        private Builder() throws IllegalArgumentException {
+            super();
         }
     }
     
-    public static Builder getRowKeyBuilder(final HBaseContext context) {
-        return new Builder(context);
+    public static Builder getRowKeyBuilder() {
+        return new Builder();
     }
-    public static final RowKey of(byte[] value, final HBaseContext context) {
-        return getRowKeyBuilder(context).value(value).build();
+    public static final RowKey of(byte[] value, final DefensiveCopyStrategy copyStrategy) {
+        return getRowKeyBuilder().value(value, copyStrategy).build();
+    }
+    public static final RowKey of(byte[] value) {
+        return getRowKeyBuilder().value(value).build();
     }
 
     // TODO equals, toString, hashCode, etc.

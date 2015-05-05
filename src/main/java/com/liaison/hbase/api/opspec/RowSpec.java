@@ -6,7 +6,7 @@ import com.liaison.hbase.dto.RowKey;
 import com.liaison.hbase.model.TableModel;
 import com.liaison.hbase.util.Util;
 
-public final class RowSpec<P extends OperationSpec<P, ?>> extends CriteriaSpec<RowSpec<P>, P> implements Serializable {
+public final class RowSpec<P extends OperationSpec<P>> extends CriteriaSpec<RowSpec<P>, P> implements Serializable {
     
     private static final long serialVersionUID = 1106826447086026044L;
     

@@ -6,8 +6,8 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
-import com.liaison.hbase.context.HBaseContext;
 import com.liaison.hbase.dto.Value;
+import com.liaison.hbase.util.DefensiveCopyStrategy;
 import com.liaison.hbase.util.Util;
 
 public class Name extends Value implements Serializable {
@@ -55,37 +55,37 @@ public class Name extends Value implements Serializable {
         public Name build() {
             return new Name(this);
         }
-        private Builder(final HBaseContext context) throws IllegalArgumentException {
-            super(context);
+        private Builder() throws IllegalArgumentException {
+            super();
             this.str = null;
             this.alias = new HashSet<String>();
         }
     }
     
-    public static final Builder with(final byte[] name, final Charset decoding, final HBaseContext context) {
-        return new Builder(context).name(name, decoding);
+    public static final Builder with(final byte[] name, final Charset decoding) {
+        return new Builder().name(name, decoding);
     }
-    public static final Builder with(final String nameStr, final Charset encoding, final HBaseContext context) {
-        return new Builder(context).name(nameStr, encoding);
+    public static final Builder with(final String nameStr, final Charset encoding) {
+        return new Builder().name(nameStr, encoding);
     }
-    public static final Builder with(final byte[] name, final HBaseContext context) {
-        return new Builder(context).name(name);
+    public static final Builder with(final byte[] name) {
+        return new Builder().name(name);
     }
-    public static final Builder with(final String nameStr, final HBaseContext context) {
-        return new Builder(context).name(nameStr);
+    public static final Builder with(final String nameStr) {
+        return new Builder().name(nameStr);
     }
     
-    public static final Name of(final byte[] name, final Charset decoding, final HBaseContext context) {
-        return with(name, decoding, context).build();
+    public static final Name of(final byte[] name, final Charset decoding) {
+        return with(name, decoding).build();
     }
-    public static final Name of(final String nameStr, final Charset encoding, final HBaseContext context) {
-        return with(nameStr, encoding, context).build();
+    public static final Name of(final String nameStr, final Charset encoding) {
+        return with(nameStr, encoding).build();
     }
-    public static final Name of(final byte[] name, final HBaseContext context) {
-        return with(name, context).build();
+    public static final Name of(final byte[] name) {
+        return with(name).build();
     }
-    public static final Name of(final String nameStr, final HBaseContext context) {
-        return with(nameStr, context).build();
+    public static final Name of(final String nameStr) {
+        return with(nameStr).build();
     }
     
     private final String str;
@@ -136,7 +136,11 @@ public class Name extends Value implements Serializable {
     
     private Name(final Builder build) throws IllegalArgumentException {
         super(build);
-        if ((getValue() == null) || (getValue().length <= 0)) {
+        
+        final byte[] valueBytes;
+        
+        valueBytes = getValue(DefensiveCopyStrategy.NEVER);
+        if ((valueBytes == null) || (valueBytes.length <= 0)) {
             throw new IllegalArgumentException("Null/empty name not permitted");
         }
         this.str = build.str;

@@ -3,12 +3,10 @@ package com.liaison.hbase.api.opspec;
 import java.io.Serializable;
 import java.util.List;
 
-import org.apache.hadoop.hbase.client.Put;
-
 import com.liaison.hbase.context.HBaseContext;
 import com.liaison.hbase.util.Util;
 
-public class WriteOpSpec extends OperationSpec<WriteOpSpec, Put> implements Serializable {
+public final class WriteOpSpec extends OperationSpec<WriteOpSpec> implements Serializable {
 
     private static final long serialVersionUID = 2572256818666730468L;
     private CondSpec<WriteOpSpec> givenCondition;
@@ -17,11 +15,6 @@ public class WriteOpSpec extends OperationSpec<WriteOpSpec, Put> implements Seri
     
     @Override
     public WriteOpSpec self() { return this; }
-
-    @Override
-    protected Put buildHBaseOp() {
-        return null;
-    }
     
     public CondSpec<WriteOpSpec> getGivenCondition() {
         return this.givenCondition;

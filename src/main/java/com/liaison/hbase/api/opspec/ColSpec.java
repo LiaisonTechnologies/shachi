@@ -6,7 +6,7 @@ import com.liaison.hbase.model.FamilyModel;
 import com.liaison.hbase.model.QualModel;
 import com.liaison.hbase.util.Util;
 
-public abstract class ColSpec<C extends ColSpec<C, P>, P extends OperationSpec<P, ?>> extends CriteriaSpec<C, P> implements Serializable {
+public abstract class ColSpec<C extends ColSpec<C, P>, P extends OperationSpec<P>> extends CriteriaSpec<C, P> implements Serializable {
     
     private static final long serialVersionUID = 1772684254524544307L;
     

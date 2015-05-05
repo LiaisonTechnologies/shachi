@@ -6,7 +6,7 @@ import com.liaison.hbase.dto.RowKey;
 import com.liaison.hbase.dto.Value;
 import com.liaison.hbase.util.Util;
 
-public final class CondSpec<P extends OperationSpec<P, ?>> extends ColSpec<CondSpec<P>, P> implements Serializable {
+public final class CondSpec<P extends OperationSpec<P>> extends ColSpec<CondSpec<P>, P> implements Serializable {
 
     private static final long serialVersionUID = 328263884139551395L;
     

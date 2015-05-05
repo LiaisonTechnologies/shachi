@@ -4,12 +4,10 @@ import java.io.Serializable;
 import java.util.LinkedList;
 import java.util.List;
 
-import org.apache.hadoop.hbase.client.Get;
-
 import com.liaison.hbase.context.HBaseContext;
 import com.liaison.hbase.util.Util;
 
-public final class ReadOpSpec extends OperationSpec<ReadOpSpec, Get> implements Serializable {
+public final class ReadOpSpec extends OperationSpec<ReadOpSpec> implements Serializable {
 
     private static final long serialVersionUID = 1602390434837826147L;
     
@@ -19,11 +17,6 @@ public final class ReadOpSpec extends OperationSpec<ReadOpSpec, Get> implements 
     
     @Override
     protected ReadOpSpec self() { return this; }
-
-    @Override
-    protected Get buildHBaseOp() {
-        return null;
-    }
 
     public LongValueSpec<ReadOpSpec> getAtTime() {
         return this.atTime;

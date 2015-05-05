@@ -10,8 +10,8 @@ package com.liaison.hbase.dto;
 
 import java.io.Serializable;
 
-import com.liaison.hbase.context.HBaseContext;
 import com.liaison.hbase.util.AbstractSelfRefBuilder;
+import com.liaison.hbase.util.DefensiveCopyStrategy;
 import com.liaison.hbase.util.Util;
 
 public class Value implements Serializable {
@@ -19,15 +19,16 @@ public class Value implements Serializable {
     private static final long serialVersionUID = 8100342808865479731L;
 
     protected abstract static class AbstractValueBuilder<T, B extends AbstractSelfRefBuilder<T, B>> extends AbstractSelfRefBuilder<T, B> {
-        protected final HBaseContext context;
         protected byte[] value;
-        public B value(final byte[] value) {
-            this.value = Util.setWithContext(value, this.context);
+        public B value(final byte[] value, final DefensiveCopyStrategy copyStrategy) {
+            this.value = Util.setInternalByteArray(value, copyStrategy);
             return self();
         }
-        protected AbstractValueBuilder(final HBaseContext context) throws IllegalArgumentException {
-            Util.ensureNotNull(context, this, "context", HBaseContext.class);
-            this.context = context;
+        public B value(final byte[] value) {
+            return value(value, DefensiveCopyStrategy.DEFAULT);
+        }
+        
+        protected AbstractValueBuilder() throws IllegalArgumentException {
             this.value = null;
         }
     }
@@ -40,31 +41,34 @@ public class Value implements Serializable {
         public Value build() {
             return new Value(self());
         }
-        private Builder(final HBaseContext context) throws IllegalArgumentException {
-            super(context);
+        private Builder() throws IllegalArgumentException {
+            super();
         }
     }
     
-    public static Builder getValueBuilder(final HBaseContext context) {
-        return new Builder(context);
+    public static Builder getValueBuilder() {
+        return new Builder();
     }
-    public static Value of(final byte[] value, final HBaseContext context) {
-        return getValueBuilder(context).value(value).build();
+    public static Value of(final byte[] value, final DefensiveCopyStrategy copyStrategy) {
+        return getValueBuilder().value(value, copyStrategy).build();
+    }
+    public static Value of(final byte[] value) {
+        return getValueBuilder().value(value).build();
     }
     
-    private final HBaseContext context;
     private final byte[] value;
     
+    public byte[] getValue(final DefensiveCopyStrategy copyStrategy) {
+        return Util.getInternalByteArray(this.value, copyStrategy);
+    }
     public byte[] getValue() {
-        return Util.getWithContext(this.value, this.context);
+        return getValue(DefensiveCopyStrategy.DEFAULT);
     }
 
     // TODO equals, toString, hashCode, etc.
     
     protected Value(final AbstractValueBuilder<?,?> build) throws IllegalArgumentException {
-        Util.ensureNotNull(build.context, this, "context", HBaseContext.class);
         Util.ensureNotNull(build.value, this, "value", byte[].class);
-        this.context = build.context;
         this.value = build.value;
     }
     

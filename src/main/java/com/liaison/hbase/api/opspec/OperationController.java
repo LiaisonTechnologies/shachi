@@ -21,7 +21,7 @@ public class OperationController extends TreeNodeRoot<OperationController> imple
     private final State state;
     private final HBaseControl control;
     private final HBaseContext context;
-    private final LinkedHashMap<Object, OperationSpec<?, ?>> ops;
+    private final LinkedHashMap<Object, OperationSpec<?>> ops;
 
 
     @Override
@@ -32,7 +32,7 @@ public class OperationController extends TreeNodeRoot<OperationController> imple
     private final void verifyStateForAddingOps() throws IllegalStateException {
         Util.verifyState(State.ACCEPTING, this.state, this.stateLock);
     }
-    private final void putOpWithNewHandle(final Object handle, final OperationSpec<?, ?> op) throws IllegalArgumentException {
+    private final void putOpWithNewHandle(final Object handle, final OperationSpec<?> op) throws IllegalArgumentException {
         if (handle == null) {
             throw new IllegalArgumentException("Operation must be specified with non-null handle");
         }
@@ -58,9 +58,13 @@ public class OperationController extends TreeNodeRoot<OperationController> imple
         return nextCreateOp;
     }
     
-    public OpResult exec() {
+    public void show() {
         // TODO
         System.out.println(this.ops);
+    }
+    
+    public OpResult exec() {
+        // TODO
         return null;
     }
     

@@ -5,7 +5,7 @@ import java.util.function.BiPredicate;
 
 import com.liaison.hbase.util.Util;
 
-public class LongValueSpec<P extends OperationSpec<P, ?>> extends CriteriaSpec<LongValueSpec<P>, P> implements Serializable {
+public final class LongValueSpec<P extends OperationSpec<P>> extends CriteriaSpec<LongValueSpec<P>, P> implements Serializable {
     
     private static final long serialVersionUID = 7413385960948152177L;
     

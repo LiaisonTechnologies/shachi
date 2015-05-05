@@ -94,7 +94,7 @@ public class HBaseControl extends ThreadLocalResourceAwareHBaseController {
         }
         // <<<<< log <<<<<
 
-        tableNameBytes = model.getName().getValue();
+        tableNameBytes = model.getName().getValue(this.context.getDefensiveCopyStrategy());
         tableNameStr = model.getName().getStr();
         tableNameFull = this.tableNamer.buildName(model.getName(), TEMPORARY_KEY_FOR_STUFF);
         // >>>>> LOG >>>>>
@@ -153,7 +153,8 @@ public class HBaseControl extends ThreadLocalResourceAwareHBaseController {
                             final HColumnDescriptor colFamDesc;
                             
                             familyName = famEntry.getKey();
-                            familyNameBytes = familyName.getValue();
+                            familyNameBytes =
+                                familyName.getValue(this.context.getDefensiveCopyStrategy());
                             familyNameStr = familyName.getStr();
                             
                             colFamDesc = new HColumnDescriptor(familyNameBytes);
@@ -172,7 +173,9 @@ public class HBaseControl extends ThreadLocalResourceAwareHBaseController {
                     tableAdmin.createTable(tableDesc);
                     Util.traceLog(LOG, logMethodName, "table created");
                 }
-                tbl = new HTable(context.getHBaseConfiguration(), model.getName().getValue());
+                tbl =
+                    new HTable(context.getHBaseConfiguration(),
+                               model.getName().getValue(this.context.getDefensiveCopyStrategy()));
             } catch (IOException | IllegalArgumentException exc) {
                 // >>>>> LOG >>>>>
                 if (LOG.isDebugEnabled()) {

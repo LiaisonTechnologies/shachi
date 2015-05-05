@@ -9,9 +9,6 @@ import java.util.function.BiPredicate;
 
 import org.slf4j.Logger;
 
-import com.liaison.hbase.context.DefensiveCopyStrategy;
-import com.liaison.hbase.context.HBaseContext;
-
 public final class Util extends Uninstantiable {
 
     /**
@@ -133,16 +130,16 @@ public final class Util extends Uninstantiable {
             return Arrays.copyOf(inBytes, inBytes.length);
         }
     }
-    private static byte[] byteActionWithContext(final byte[] bytes, final HBaseContext context, final EnumSet<DefensiveCopyStrategy> copyIfTheseStrategies) throws IllegalArgumentException {
+    private static byte[] byteActionWithContext(final byte[] bytes, final DefensiveCopyStrategy selectedCopyStrategy, final EnumSet<DefensiveCopyStrategy> copyIfTheseStrategies) throws IllegalArgumentException {
         Util.ensureNotNull(copyIfTheseStrategies,
                            "Util#byteActionWithContext",
                            "copyIfTheseStrategies",
                            EnumSet.class);
-        Util.ensureNotNull(context,
+        Util.ensureNotNull(selectedCopyStrategy,
                            "Util#byteActionWithContext",
                            "context",
-                           HBaseContext.class);
-        if (copyIfTheseStrategies.contains(context.getDefensiveCopyStrategy())) {
+                           DefensiveCopyStrategy.class);
+        if (copyIfTheseStrategies.contains(selectedCopyStrategy)) {
             return copyOf(bytes);
         } else {
             return bytes;
@@ -155,16 +152,20 @@ public final class Util extends Uninstantiable {
      * defensive copy strategy specified by the context is one of the strategies specified in
      * {@link DefensiveCopyStrategy#COPY_ON_SET}, then make the copy; otherwise, set using the
      * original reference. 
-     * @param inBytes original byte[] reference to which a framework object's internal byte array
-     * reference is being set; a defensive copy may be made, depending on the context
-     * @param context HBaseContext whose {@link DefensiveCopyStrategy} specifies whether a
+     * @param clientBytes original byte[] reference to which a framework object's internal byte
+     * array reference is being set; a defensive copy may be made, depending on the context
+     * @param selectedCopyStrategy {@link DefensiveCopyStrategy} which specifies whether a
      * defensive copy of the input byte array will be made prior to setting
      * @return the value to use when setting the framework object; either the original reference or
      * a defensive copy, depending on the logic specified above
      * @throws IllegalArgumentException if context is null
      */
-    public static byte[] setWithContext(final byte[] inBytes, final HBaseContext context) throws IllegalArgumentException {
-        return byteActionWithContext(inBytes, context, DefensiveCopyStrategy.COPY_ON_SET);
+    public static byte[] setInternalByteArray(final byte[] clientBytes, final DefensiveCopyStrategy selectedCopyStrategy) throws IllegalArgumentException {
+        return byteActionWithContext(clientBytes,
+                                     ((selectedCopyStrategy == null)?
+                                         DefensiveCopyStrategy.ALWAYS:
+                                         selectedCopyStrategy),
+                                     DefensiveCopyStrategy.COPY_ON_SET);
     }
     /**
      * Prepares the given <b>existing/internal</b> byte array to be <b>RETURNED</b> from a
@@ -175,15 +176,19 @@ public final class Util extends Uninstantiable {
      * otherwise, return the original reference. 
      * @param inBytes a framework object's internal byte array; a defensive copy may be made,
      * depending on the context
-     * @param context HBaseContext whose {@link DefensiveCopyStrategy} specifies whether a
+     * @param selectedCopyStrategy {@link DefensiveCopyStrategy} which specifies whether a
      * defensive copy of the internal byte array will be made prior to the get return
      * @return the value which the get operation should return to the client; either the given
      * reference to the internal byte array or a defensive copy, depending on the logic specified
      * above
      * @throws IllegalArgumentException if context is null
      */
-    public static byte[] getWithContext(final byte[] storedBytes, final HBaseContext context) throws IllegalArgumentException {
-        return byteActionWithContext(storedBytes, context, DefensiveCopyStrategy.COPY_ON_GET);
+    public static byte[] getInternalByteArray(final byte[] storedBytes, final DefensiveCopyStrategy selectedCopyStrategy) throws IllegalArgumentException {
+        return byteActionWithContext(storedBytes,
+                                     ((selectedCopyStrategy == null)?
+                                         DefensiveCopyStrategy.ALWAYS:
+                                         selectedCopyStrategy),
+                                     DefensiveCopyStrategy.COPY_ON_GET);
     }
     
     public static void ensureNotNull(final Object ref, final String closureName, final String varName, final Class<?> varType) throws IllegalArgumentException {

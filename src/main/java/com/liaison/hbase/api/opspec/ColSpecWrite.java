@@ -5,7 +5,7 @@ import java.io.Serializable;
 import com.liaison.hbase.dto.Value;
 import com.liaison.hbase.util.Util;
 
-public final class ColSpecWrite<P extends OperationSpec<P, ?>> extends ColSpec<ColSpecWrite<P>, P> implements Serializable {
+public final class ColSpecWrite<P extends OperationSpec<P>> extends ColSpec<ColSpecWrite<P>, P> implements Serializable {
 
     private static final long serialVersionUID = -194106227851821468L;
     

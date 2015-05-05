@@ -3,6 +3,7 @@ package com.liaison.hbase.api.opspec;
 import java.io.Serializable;
 import java.util.LinkedList;
 
+import com.liaison.hbase.exception.SpecValidationException;
 import com.liaison.hbase.util.TreeNode;
 import com.liaison.hbase.util.TreeNodeNonRoot;
 import com.liaison.hbase.util.Util;
@@ -10,10 +11,6 @@ import com.liaison.hbase.util.Util;
 public abstract class StatefulSpec<A extends StatefulSpec<A, P>, P extends TreeNode<P>> extends TreeNodeNonRoot<A, P> implements Serializable {
     
     private static final long serialVersionUID = -6331552111315785761L;
-
-    private static enum SpecState {
-        FLUID, FROZEN;
-    }
 
     private SpecState state;
     private final LinkedList<StatefulSpec<?,?>> subordSpecList;
@@ -29,7 +26,11 @@ public abstract class StatefulSpec<A extends StatefulSpec<A, P>, P extends TreeN
         this.strRep = null;
     }
     
-    public final void freezeRecursive() {
+    protected void validate() throws SpecValidationException {
+        // provide a default implementation which does nothing
+    }
+    
+    public final void freezeRecursive() throws SpecValidationException {
         final LinkedList<StatefulSpec<?, ?>> subordSpecQueue;
         StatefulSpec<?, ?> currentSpec;
         
@@ -38,6 +39,7 @@ public abstract class StatefulSpec<A extends StatefulSpec<A, P>, P extends TreeN
         while (!subordSpecQueue.isEmpty()) {
             currentSpec = subordSpecQueue.removeFirst();
             if (!currentSpec.isFrozen()) {
+                currentSpec.validate();
                 currentSpec.state = SpecState.FROZEN;
                 subordSpecQueue.addAll(currentSpec.subordSpecList);
             }
