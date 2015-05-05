@@ -37,8 +37,18 @@ public final class RowSpec<P extends OperationSpec<P, ?>> extends CriteriaSpec<R
     }
     
     @Override
+    protected String prepareStrRepHeadline() {
+        return "[@table,@row]";
+    }
+    
+    @Override
     protected void prepareStrRep(final StringBuilder strGen) {
-        
+        if (this.table != null) {
+            Util.appendIndented(strGen, getDepth() + 1, "table: ", this.table, "\n");
+        }
+        if (this.rowKey != null) {
+            Util.appendIndented(strGen, getDepth() + 1, "rowKey: ", this.rowKey, "\n");
+        }
     }
     
     public RowSpec(final P parent) {

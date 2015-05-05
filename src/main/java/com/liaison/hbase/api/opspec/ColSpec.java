@@ -29,27 +29,20 @@ public abstract class ColSpec<C extends ColSpec<C, P>, P extends OperationSpec<P
     public C qual(final QualModel qual) throws IllegalStateException, IllegalArgumentException {
         prepMutation();
         this.column =
-            Util.validateExactlyOnceParam(column, this, "column", QualModel.class, this.column);
+            Util.validateExactlyOnceParam(qual, this, "column", QualModel.class, this.column);
         return self();
     }
     
-    protected abstract String prepareStrRepHeadline();
     protected void prepareStrRepAdditional(final StringBuilder strGen) {
-        // do nothing
+        // provide a default implementation which does nothing
     }
     @Override
     public final void prepareStrRep(final StringBuilder strGen) {
-        strGen.append(prepareStrRepHeadline());
-        strGen.append("\n");
         if (this.family != null) {
-            strGen.append("    family: ");
-            strGen.append(this.family);
-            strGen.append("\n");
+            Util.appendIndented(strGen, getDepth() + 1, "family: ", this.family, "\n");
         }
         if (this.column != null) {
-            strGen.append("    qual: ");
-            strGen.append(this.column);
-            strGen.append("\n");
+            Util.appendIndented(strGen, getDepth() + 1, "qual: ", this.column, "\n");
         }
         prepareStrRepAdditional(strGen);
     }

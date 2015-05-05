@@ -20,9 +20,11 @@ public final class NoOpSpec extends OperationSpec<NoOpSpec, Operation> implement
                                                 + Operation.class.getSimpleName());
     }
     
+
+    
     @Override
-    protected void prepareStrRep(final StringBuilder strGen) {
-        
+    protected String prepareStrRepHeadline() {
+        return "[<<Operation>>:NONE]";
     }
     
     public NoOpSpec(final HBaseContext context, final OperationController parent) {

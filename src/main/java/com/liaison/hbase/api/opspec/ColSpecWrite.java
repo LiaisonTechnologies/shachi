@@ -3,8 +3,6 @@ package com.liaison.hbase.api.opspec;
 import java.io.Serializable;
 
 import com.liaison.hbase.dto.Value;
-import com.liaison.hbase.model.FamilyModel;
-import com.liaison.hbase.model.QualModel;
 import com.liaison.hbase.util.Util;
 
 public final class ColSpecWrite<P extends OperationSpec<P, ?>> extends ColSpec<ColSpecWrite<P>, P> implements Serializable {
@@ -41,17 +39,11 @@ public final class ColSpecWrite<P extends OperationSpec<P, ?>> extends ColSpec<C
     }
     @Override
     protected void prepareStrRepAdditional(final StringBuilder strGen) {
-        strGen.append(prepareStrRepHeadline());
-        strGen.append("\n");
         if (this.value != null) {
-            strGen.append("    value: ");
-            strGen.append(this.value);
-            strGen.append("\n");
+            Util.appendIndented(strGen, getDepth() + 1, "value: ", this.value, "\n");
         }
         if (this.ts != null) {
-            strGen.append("    timestamp: ");
-            strGen.append(this.ts);
-            strGen.append("\n");
+            Util.appendIndented(strGen, getDepth() + 1, "ts: ", this.ts, "\n");
         }
     }
     

@@ -1,8 +1,6 @@
 package com.liaison.hbase.model;
 
-import com.liaison.hbase.util.Util;
-
-public class QualModel {
+public class QualModel extends NamedEntity {
     
     public static final class Builder {
         private Name name;
@@ -27,14 +25,9 @@ public class QualModel {
         return with(name).build();
     }
     
-    private final Name name;
-    
-    public Name getName() {
-        return this.name;
-    }
+    // TODO: equals/hashCode
     
     private QualModel(final Builder build) throws IllegalArgumentException {
-        Util.ensureNotNull(build.name, this, "name", Name.class);
-        this.name = build.name;
+        super(build.name);
     }
 }

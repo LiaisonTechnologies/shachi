@@ -1,14 +1,18 @@
 package com.liaison.hbase.api.opspec;
 
+import java.io.Serializable;
 import java.util.LinkedHashMap;
 
 import com.liaison.hbase.HBaseControl;
 import com.liaison.hbase.api.OpResult;
 import com.liaison.hbase.context.HBaseContext;
+import com.liaison.hbase.util.TreeNodeRoot;
 import com.liaison.hbase.util.Util;
 
-public class OperationController {
+public class OperationController extends TreeNodeRoot<OperationController> implements Serializable {
     
+    private static final long serialVersionUID = -6620685078075615195L;
+
     private static enum State {
         ACCEPTING, EXECUTING;
     }
@@ -18,6 +22,12 @@ public class OperationController {
     private final HBaseControl control;
     private final HBaseContext context;
     private final LinkedHashMap<Object, OperationSpec<?, ?>> ops;
+
+
+    @Override
+    protected OperationController self() {
+        return this;
+    }
     
     private final void verifyStateForAddingOps() throws IllegalStateException {
         Util.verifyState(State.ACCEPTING, this.state, this.stateLock);

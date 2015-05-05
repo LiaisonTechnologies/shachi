@@ -1,5 +1,6 @@
 package com.liaison.hbase.util;
 
+import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.Base64;
@@ -24,6 +25,8 @@ public final class Util extends Uninstantiable {
      */
     public static final Base64.Decoder BASE64_DEC;
     public static final byte[] HBASE_EMPTY = new byte[0];
+    
+    public static final String INDENT = "    ";
     
     public static <T> boolean refEquals(final T ref1, final T ref2, final BiPredicate<? super T, ? super T> equals) {
         return (((ref1 == null) && (ref2 == null))
@@ -250,6 +253,34 @@ public final class Util extends Uninstantiable {
                                             + entityName
                                             + " may only be set once, and is already initialized: "
                                             + valueSetTarget);
+        }
+    }
+    
+    public static void indent(final Appendable strGen, final int indentCount) throws IllegalStateException {
+        for (int counter = 0; counter < indentCount; counter++) {
+            try {
+                strGen.append(INDENT);
+            } catch (IOException ioExc) {
+                throw new IllegalStateException("Failed adding indentation ("
+                                                + (counter + 1)
+                                                + " of "
+                                                + indentCount
+                                                + ")");
+            }
+        }
+    }
+    public static void appendIndented(final Appendable strGen, final int indentCount, final Object... objListForLine) throws IllegalStateException {
+        if (objListForLine != null) {
+            indent(strGen, indentCount);
+            for (Object obj : objListForLine) {
+                if (obj != null) {
+                    try {
+                        strGen.append(obj.toString());
+                    } catch (IOException ioExc) {
+                        throw new IllegalStateException("Failed to append (" + obj + ")");
+                    }
+                }
+            }
         }
     }
     

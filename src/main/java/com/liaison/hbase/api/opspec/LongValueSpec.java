@@ -3,6 +3,8 @@ package com.liaison.hbase.api.opspec;
 import java.io.Serializable;
 import java.util.function.BiPredicate;
 
+import com.liaison.hbase.util.Util;
+
 public class LongValueSpec<P extends OperationSpec<P, ?>> extends CriteriaSpec<LongValueSpec<P>, P> implements Serializable {
     
     private static final long serialVersionUID = 7413385960948152177L;
@@ -206,8 +208,37 @@ public class LongValueSpec<P extends OperationSpec<P, ?>> extends CriteriaSpec<L
     }
     
     @Override
+    protected String prepareStrRepHeadline() {
+        return "[long-value]";
+    }
+    @Override
     protected void prepareStrRep(final StringBuilder strGen) {
-        
+        if (this.lowerBoundInclusive != null) {
+            Util.appendIndented(strGen,
+                                getDepth() + 1,
+                                "lower bound (inclusive): ",
+                                this.lowerBoundInclusive,
+                                "\n");
+        } else {
+            Util.appendIndented(strGen,
+                                getDepth() + 1,
+                                "lower bound (inclusive): -INFINITY (type min: ",
+                                Long.valueOf(this.typeMin),
+                                ")\n");
+        }
+        if (this.upperBoundExclusive != null) {
+            Util.appendIndented(strGen,
+                                getDepth() + 1,
+                                "upper bound (exclusive): ",
+                                this.upperBoundExclusive,
+                                "\n");
+        } else {
+            Util.appendIndented(strGen,
+                                getDepth() + 1,
+                                "upper bound (exclusive): +INFINITY (type max: ",
+                                Long.valueOf(this.typeMax),
+                                ")\n");
+        }
     }
     
     public LongValueSpec(final P parent, final Long typeMin, final Long typeMax) throws IllegalArgumentException, ArithmeticException {

@@ -3,10 +3,11 @@ package com.liaison.hbase.api.opspec;
 import java.io.Serializable;
 import java.util.LinkedList;
 
-import com.liaison.hbase.util.AbstractSelfRef;
+import com.liaison.hbase.util.TreeNode;
+import com.liaison.hbase.util.TreeNodeNonRoot;
 import com.liaison.hbase.util.Util;
 
-public abstract class StatefulSpec<A extends StatefulSpec<A, P>, P> extends AbstractSelfRef<A> implements Serializable {
+public abstract class StatefulSpec<A extends StatefulSpec<A, P>, P extends TreeNode<P>> extends TreeNodeNonRoot<A, P> implements Serializable {
     
     private static final long serialVersionUID = -6331552111315785761L;
 
@@ -16,7 +17,6 @@ public abstract class StatefulSpec<A extends StatefulSpec<A, P>, P> extends Abst
 
     private SpecState state;
     private final LinkedList<StatefulSpec<?,?>> subordSpecList;
-    private final P parent;
     private String strRep;
     
     public final boolean isFrozen() {
@@ -49,17 +49,17 @@ public abstract class StatefulSpec<A extends StatefulSpec<A, P>, P> extends Abst
         this.subordSpecList.add(subordSpec);
     }
     
-    protected final P getParent() {
-        return this.parent;
+    protected abstract String prepareStrRepHeadline();
+    protected void prepareStrRep(final StringBuilder strGen) {
+        // provide a default implementation which does nothing
     }
-    
-    protected abstract void prepareStrRep(final StringBuilder strGen);
     
     @Override
     public final String toString() {
         final StringBuilder strGen;
         if (this.strRep == null) {
             strGen = new StringBuilder();
+            Util.appendIndented(strGen, getDepth(), prepareStrRepHeadline(), "\n");
             prepareStrRep(strGen);
             this.strRep = strGen.toString();
         }
@@ -67,9 +67,8 @@ public abstract class StatefulSpec<A extends StatefulSpec<A, P>, P> extends Abst
     }
 
     public StatefulSpec(final P parent) throws IllegalArgumentException {
-        Util.ensureNotNull(parent, this, "parent", OperationController.class);
+        super(parent);
         this.state = SpecState.FLUID;
-        this.parent = parent;
         this.subordSpecList = new LinkedList<>();
     }
 }

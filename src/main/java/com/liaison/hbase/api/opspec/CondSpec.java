@@ -40,17 +40,11 @@ public final class CondSpec<P extends OperationSpec<P, ?>> extends ColSpec<CondS
     }
     @Override
     protected void prepareStrRepAdditional(final StringBuilder strGen) {
-        strGen.append(prepareStrRepHeadline());
-        strGen.append("\n");
         if (this.rowKey != null) {
-            strGen.append("    rowKey: ");
-            strGen.append(this.rowKey);
-            strGen.append("\n");
+            Util.appendIndented(strGen, getDepth() + 1, "rowKey: ", this.rowKey, "\n");
         }
         if (this.value != null) {
-            strGen.append("    value: ");
-            strGen.append(this.value);
-            strGen.append("\n");
+            Util.appendIndented(strGen, getDepth() + 1, "value: ", this.value, "\n");
         }
     }
 

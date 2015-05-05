@@ -6,7 +6,7 @@ import java.util.Map;
 
 import com.liaison.hbase.util.Util;
 
-public class FamilyModel {
+public class FamilyModel extends NamedEntity {
     
     public static final class Builder {
         private Name name;
@@ -44,13 +44,9 @@ public class FamilyModel {
         return with(name).build();
     }
     
-    private final Name name;
     private final Map<Name, QualModel> quals;
     private final boolean closedQualSet;
     
-    public Name getName() {
-        return this.name;
-    }
     public Map<Name, QualModel> getQuals() {
         return this.quals;
     }
@@ -58,9 +54,10 @@ public class FamilyModel {
         return closedQualSet;
     }
     
+    // TODO: equals/hashCode
+    
     private FamilyModel(final Builder build) throws IllegalArgumentException {
-        Util.ensureNotNull(build.name, this, "name", Name.class);
-        this.name = build.name;
+        super(build.name);
         this.quals = Collections.unmodifiableMap(build.quals);
         this.closedQualSet = build.closedQualSet;
     }

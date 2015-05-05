@@ -54,8 +54,34 @@ public class WriteOpSpec extends OperationSpec<WriteOpSpec, Put> implements Seri
     }
     
     @Override
+    protected String prepareStrRepHeadline() {
+        return "[<<Operation>>:WRITE]";
+    }
+    
+    @Override
     protected void prepareStrRep(final StringBuilder strGen) {
-        
+        if (this.onTableRow != null) {
+            Util.appendIndented(strGen,
+                                getDepth() + 1,
+                                "on table/row: ",
+                                "\n",
+                                this.onTableRow,
+                                "\n");
+        }
+        if (this.givenCondition != null) {
+            Util.appendIndented(strGen,
+                                getDepth() + 1,
+                                "given condition: ",
+                                "\n",
+                                this.givenCondition,
+                                "\n");
+        }
+        if (this.withColumn.size() > 0) {
+            Util.appendIndented(strGen, getDepth() + 1, "with column(s): ", "\n");
+            for (ColSpecWrite<WriteOpSpec> colSpec : this.withColumn) {
+                Util.appendIndented(strGen, getDepth() + 1, colSpec);
+            }
+        }
     }
 
     public WriteOpSpec(final HBaseContext context, final OperationController parent) {

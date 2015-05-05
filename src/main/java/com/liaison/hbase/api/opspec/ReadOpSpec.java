@@ -56,8 +56,34 @@ public final class ReadOpSpec extends OperationSpec<ReadOpSpec, Get> implements 
     }
     
     @Override
+    protected String prepareStrRepHeadline() {
+        return "[<<Operation>>:READ]";
+    }
+    
+    @Override
     protected void prepareStrRep(final StringBuilder strGen) {
-        
+        if (this.fromTableRow != null) {
+            Util.appendIndented(strGen,
+                                getDepth() + 1,
+                                "from table/row: ",
+                                "\n",
+                                this.fromTableRow,
+                                "\n");
+        }
+        if (this.atTime != null) {
+            Util.appendIndented(strGen,
+                                getDepth() + 1,
+                                "at (timestamp range): ",
+                                "\n",
+                                this.atTime,
+                                "\n");
+        }
+        if (this.withColumn.size() > 0) {
+            Util.appendIndented(strGen, getDepth() + 1, "with column(s): ", "\n");
+            for (ColSpecRead<ReadOpSpec> colSpec : this.withColumn) {
+                Util.appendIndented(strGen, getDepth() + 1, colSpec);
+            }
+        }
     }
 
     public ReadOpSpec(final HBaseContext context, final OperationController parent) {
