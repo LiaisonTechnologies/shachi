@@ -42,6 +42,7 @@ public final class Datum extends Value implements Serializable {
     public static final Datum of(final byte[] value, final long timestamp, final DefensiveCopyStrategy copyStrategy) {
         return getDatumBuilder().value(value, copyStrategy).ts(timestamp).build();
     }
+    @Deprecated
     public static final Datum of(final byte[] value, final long timestamp) {
         return getDatumBuilder().value(value).ts(timestamp).build();
     }

@@ -3,6 +3,9 @@ package com.liaison.hbase.api.opspec;
 import java.io.Serializable;
 
 import com.liaison.hbase.dto.Value;
+import com.liaison.hbase.exception.SpecValidationException;
+import com.liaison.hbase.model.FamilyModel;
+import com.liaison.hbase.model.QualModel;
 import com.liaison.hbase.util.Util;
 
 public final class ColSpecWrite<P extends OperationSpec<P>> extends ColSpec<ColSpecWrite<P>, P> implements Serializable {
@@ -14,6 +17,14 @@ public final class ColSpecWrite<P extends OperationSpec<P>> extends ColSpec<ColS
     
     @Override
     protected ColSpecWrite<P> self() { return this; }
+
+    @Override
+    protected void validate() throws SpecValidationException {
+        super.validate();
+        Util.validateRequired(getFamily(), this, "fam", FamilyModel.class);
+        Util.validateRequired(getColumn(), this, "qual", QualModel.class);
+        Util.validateRequired(getValue(), this, "value", Value.class);
+    }
 
     public Long getTs() {
         return this.ts;

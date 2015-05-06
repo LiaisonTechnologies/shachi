@@ -23,20 +23,35 @@ public class Name extends Value implements Serializable {
             return this;
         }
 
-        public Builder name(final byte[] name, Charset decoding) {
-            value(name);
+        private void setStrBasedOnInputBytes(final byte[] name, final Charset decoding) {
             if (decoding == null) {
                 this.str = Util.toString(name);
             } else {
                 this.str = Util.toString(name, decoding);
             }
-            return this;
-        }
-        public Builder name(final byte[] name) {
-            return name(name, null);
         }
         
-        public Builder name(final String str, Charset encoding) {
+        public Builder name(final byte[] name, final Charset decoding, final DefensiveCopyStrategy copyStrategy) {
+            value(name, copyStrategy);
+            setStrBasedOnInputBytes(name, decoding);
+            return this;
+        }
+        public Builder name(final byte[] name, final DefensiveCopyStrategy copyStrategy) {
+            return name(name, ((Charset) null), copyStrategy);
+        }
+        
+        @Deprecated
+        public Builder name(final byte[] name, final Charset decoding) {
+            value(name);
+            setStrBasedOnInputBytes(name, decoding);
+            return this;
+        }
+        @Deprecated
+        public Builder name(final byte[] name) {
+            return name(name, ((Charset) null));
+        }
+        
+        public Builder name(final String str, final Charset encoding) {
             final byte[] strAsBytes;
             this.str = str;
             if (encoding == null) {
@@ -44,12 +59,18 @@ public class Name extends Value implements Serializable {
             } else {
                 strAsBytes = Util.toBytes(str, encoding);
             }
-            value(strAsBytes);
+            /*
+             * A defensive copy is never needed/desired here, because the bytes are derived from a
+             * conversion from String, and the source string is immutable (even IF the conversion
+             * itself doesn't make a copy).
+             */
+            value(strAsBytes, DefensiveCopyStrategy.NEVER);
             return this;
         }
         public Builder name(final String nameStr) {
             return name(nameStr, null);
         }
+        
         
         @Override
         public Name build() {

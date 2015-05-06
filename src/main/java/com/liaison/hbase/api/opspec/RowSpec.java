@@ -3,6 +3,8 @@ package com.liaison.hbase.api.opspec;
 import java.io.Serializable;
 
 import com.liaison.hbase.dto.RowKey;
+import com.liaison.hbase.exception.SpecValidationException;
+import com.liaison.hbase.model.FamilyModel;
 import com.liaison.hbase.model.TableModel;
 import com.liaison.hbase.util.Util;
 
@@ -15,6 +17,13 @@ public final class RowSpec<P extends OperationSpec<P>> extends CriteriaSpec<RowS
     
     @Override
     public RowSpec<P> self() { return this; }
+
+    @Override
+    protected void validate() throws SpecValidationException {
+        super.validate();
+        Util.validateRequired(getTable(), this, "tbl", TableModel.class);
+        Util.validateRequired(getRowKey(), this, "row", RowKey.class);
+    }
     
     public TableModel getTable() {
         return this.table;

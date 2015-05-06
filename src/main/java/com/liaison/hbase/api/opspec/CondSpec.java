@@ -2,8 +2,13 @@ package com.liaison.hbase.api.opspec;
 
 import java.io.Serializable;
 
+import com.liaison.hbase.dto.Empty;
+import com.liaison.hbase.dto.NullableValue;
 import com.liaison.hbase.dto.RowKey;
 import com.liaison.hbase.dto.Value;
+import com.liaison.hbase.exception.SpecValidationException;
+import com.liaison.hbase.model.FamilyModel;
+import com.liaison.hbase.model.QualModel;
 import com.liaison.hbase.util.Util;
 
 public final class CondSpec<P extends OperationSpec<P>> extends ColSpec<CondSpec<P>, P> implements Serializable {
@@ -11,15 +16,24 @@ public final class CondSpec<P extends OperationSpec<P>> extends ColSpec<CondSpec
     private static final long serialVersionUID = 328263884139551395L;
     
     private RowKey rowKey;
-    private Value value;
+    private NullableValue value;
 
     @Override
     protected CondSpec<P> self() { return this; }
 
+    @Override
+    protected void validate() throws SpecValidationException {
+        super.validate();
+        Util.validateRequired(getRowKey(), this, "row", RowKey.class);
+        Util.validateRequired(getFamily(), this, "fam", FamilyModel.class);
+        Util.validateRequired(getColumn(), this, "qual", QualModel.class);
+        Util.validateRequired(getValue(), this, "value/empty", NullableValue.class);
+    }
+
     public RowKey getRowKey() {
         return this.rowKey;
     }
-    public Value getValue() {
+    public NullableValue getValue() {
         return this.value;
     }
 
@@ -31,6 +45,11 @@ public final class CondSpec<P extends OperationSpec<P>> extends ColSpec<CondSpec
     public CondSpec<P> value(final Value value) throws IllegalStateException, IllegalArgumentException {
         prepMutation();
         this.value = Util.validateExactlyOnceParam(value, this, "value", Value.class, this.value);
+        return self();
+    }
+    public CondSpec<P> empty(final Empty empty) throws IllegalStateException, IllegalArgumentException {
+        prepMutation();
+        this.value = Util.validateExactlyOnceParam(empty, this, "empty", Empty.class, this.value);
         return self();
     }
 

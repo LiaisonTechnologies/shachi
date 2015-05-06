@@ -16,6 +16,9 @@ public abstract class StatefulSpec<A extends StatefulSpec<A, P>, P extends TreeN
     private final LinkedList<StatefulSpec<?,?>> subordSpecList;
     private String strRep;
     
+    public final SpecState getState() {
+        return this.state;
+    }
     public final boolean isFrozen() {
         return this.state == SpecState.FROZEN;
     }
@@ -28,6 +31,7 @@ public abstract class StatefulSpec<A extends StatefulSpec<A, P>, P extends TreeN
     
     protected void validate() throws SpecValidationException {
         // provide a default implementation which does nothing
+        // TODO implement this in inheritors, where relevant
     }
     
     public final void freezeRecursive() throws SpecValidationException {

@@ -4,10 +4,15 @@ import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.Collection;
 import java.util.EnumSet;
 import java.util.function.BiPredicate;
 
 import org.slf4j.Logger;
+
+import com.liaison.hbase.api.opspec.SpecState;
+import com.liaison.hbase.api.opspec.StatefulSpec;
+import com.liaison.hbase.exception.SpecValidationException;
 
 public final class Util extends Uninstantiable {
 
@@ -286,6 +291,31 @@ public final class Util extends Uninstantiable {
                     }
                 }
             }
+        }
+    }
+    
+    public static <X> void validateRequired(final X specValue, final StatefulSpec<?, ?> spec, final String fieldName, final Class<? super X> fieldType) throws SpecValidationException {
+        try {
+            ensureNotNull(specValue, spec, fieldName, fieldType);
+        } catch (IllegalArgumentException iaExc) {
+            throw new SpecValidationException(spec.getState(), SpecState.FROZEN, spec, iaExc.getMessage());
+        }
+    }
+    public static <X> void validateAtLeastOne(final Collection<X> specValue, final StatefulSpec<?, ?> spec, final String fieldName, final Class<?> fieldType) throws SpecValidationException {
+        try {
+            ensureNotNull(specValue, spec, fieldName);
+        } catch (IllegalArgumentException iaExc) {
+            throw new SpecValidationException(spec.getState(), SpecState.FROZEN, spec, iaExc.getMessage());
+        }
+        if (specValue.size() <= 0) {
+            throw new SpecValidationException(spec.getState(),
+                                              SpecState.FROZEN,
+                                              spec,
+                                              ("At least one "
+                                               + fieldName
+                                               + " ("
+                                               + fieldType.getSimpleName()
+                                               + ") is required"));
         }
     }
     

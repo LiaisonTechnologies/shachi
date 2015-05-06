@@ -36,6 +36,7 @@ public final class RowKey extends Value implements Serializable {
     public static final RowKey of(byte[] value, final DefensiveCopyStrategy copyStrategy) {
         return getRowKeyBuilder().value(value, copyStrategy).build();
     }
+    @Deprecated
     public static final RowKey of(byte[] value) {
         return getRowKeyBuilder().value(value).build();
     }

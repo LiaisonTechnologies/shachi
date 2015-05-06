@@ -3,6 +3,7 @@ package com.liaison.hbase.api.opspec;
 import java.io.Serializable;
 
 import com.liaison.hbase.context.HBaseContext;
+import com.liaison.hbase.exception.SpecValidationException;
 import com.liaison.hbase.util.Util;
 
 public abstract class OperationSpec<O extends OperationSpec<O>> extends StatefulSpec<O, OperationController> implements Serializable {
@@ -15,7 +16,8 @@ public abstract class OperationSpec<O extends OperationSpec<O>> extends Stateful
         return this.context;
     }
     
-    public final OperationController then() {
+    public final OperationController then() throws SpecValidationException {
+        freezeRecursive();
         return getParent();
     }
     

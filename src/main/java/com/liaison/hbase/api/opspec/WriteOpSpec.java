@@ -4,6 +4,7 @@ import java.io.Serializable;
 import java.util.List;
 
 import com.liaison.hbase.context.HBaseContext;
+import com.liaison.hbase.exception.SpecValidationException;
 import com.liaison.hbase.util.Util;
 
 public final class WriteOpSpec extends OperationSpec<WriteOpSpec> implements Serializable {
@@ -15,6 +16,13 @@ public final class WriteOpSpec extends OperationSpec<WriteOpSpec> implements Ser
     
     @Override
     public WriteOpSpec self() { return this; }
+
+    @Override
+    protected void validate() throws SpecValidationException {
+        super.validate();
+        Util.validateRequired(getOnTableRow(), this, "from", RowSpec.class);
+        Util.validateAtLeastOne(getWithColumn(), this, "with", ColSpecWrite.class);
+    }
     
     public CondSpec<WriteOpSpec> getGivenCondition() {
         return this.givenCondition;

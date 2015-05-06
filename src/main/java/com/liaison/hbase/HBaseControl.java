@@ -1,13 +1,17 @@
 package com.liaison.hbase;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.hadoop.hbase.HColumnDescriptor;
 import org.apache.hadoop.hbase.HTableDescriptor;
 import org.apache.hadoop.hbase.TableName;
+import org.apache.hadoop.hbase.client.Get;
 import org.apache.hadoop.hbase.client.HBaseAdmin;
 import org.apache.hadoop.hbase.client.HTable;
+import org.apache.hadoop.hbase.client.Put;
+import org.apache.hadoop.hbase.client.Result;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -15,13 +19,27 @@ import co.paralleluniverse.fibers.SuspendExecution;
 import co.paralleluniverse.strands.Strand;
 
 import com.liaison.hbase.api.NamingStrategy;
+import com.liaison.hbase.api.OpResult;
+import com.liaison.hbase.api.opspec.ColSpecRead;
+import com.liaison.hbase.api.opspec.ColSpecWrite;
+import com.liaison.hbase.api.opspec.CondSpec;
 import com.liaison.hbase.api.opspec.OperationController;
+import com.liaison.hbase.api.opspec.OperationSpec;
+import com.liaison.hbase.api.opspec.ReadOpSpec;
+import com.liaison.hbase.api.opspec.RowSpec;
+import com.liaison.hbase.api.opspec.WriteOpSpec;
 import com.liaison.hbase.context.DefaultHBaseContext;
 import com.liaison.hbase.context.HBaseContext;
+import com.liaison.hbase.dto.NullableValue;
+import com.liaison.hbase.dto.RowKey;
 import com.liaison.hbase.exception.HBaseControllerLifecycleException;
 import com.liaison.hbase.exception.HBaseInitializationException;
+import com.liaison.hbase.model.FamilyModel;
 import com.liaison.hbase.model.Name;
+import com.liaison.hbase.model.QualModel;
 import com.liaison.hbase.model.TableModel;
+import com.liaison.hbase.util.DefensiveCopyStrategy;
+import com.liaison.hbase.util.ReadUtils;
 import com.liaison.hbase.util.Util;
 
 public class HBaseControl extends ThreadLocalResourceAwareHBaseController {
@@ -244,6 +262,123 @@ public class HBaseControl extends ThreadLocalResourceAwareHBaseController {
     
     public OperationController now() {
         return new OperationController(this, this.context);
+    }
+    
+    private static void verifyStateForExec(final OperationSpec<?> opSpec) throws IllegalStateException {
+        if (!opSpec.isFrozen()) {
+            throw new IllegalStateException(opSpec.getClass().getSimpleName()
+                                            + " must be frozen before spec may be executed"); 
+        }
+    }
+    
+    public OpResult exec(final ReadOpSpec readSpec) throws IllegalArgumentException {
+        final DefensiveCopyStrategy dcs;
+        final RowSpec<?> tableRowSpec;
+        final HTable readFromTable;
+        final Get readGet;
+        final List<ColSpecRead<ReadOpSpec>> colReadList;
+        FamilyModel colFam;
+        QualModel colQual;
+        final Result res;
+        
+        verifyStateForExec(readSpec);
+        dcs = this.context.getDefensiveCopyStrategy();
+        
+        //TODO: major error handling, null-checking, etc.
+        try {
+            tableRowSpec = readSpec.getFromTableRow();
+            readFromTable = this.tableSet.get(tableRowSpec.getTable()).get();
+            readGet = new Get(tableRowSpec.getRowKey().getValue(dcs));
+            ReadUtils.applyTS(readGet, readSpec);
+            colReadList = readSpec.getWithColumn();
+            if (colReadList != null) {
+                for (ColSpecRead<ReadOpSpec> colSpec : colReadList) {
+                    colFam = colSpec.getFamily();
+                    colQual = colSpec.getColumn();
+                    if (colFam != null) {
+                        if (colQual != null) {
+                            readGet.addColumn(colFam.getName().getValue(dcs),
+                                              colQual.getName().getValue(dcs));
+                        } else {
+                            readGet.addFamily(colFam.getName().getValue(dcs));
+                        }
+                    }
+                }
+            }
+            res = readFromTable.get(readGet);
+        } catch (Exception temporary) {
+            // TODO
+        }
+        
+        //TODO
+        return null;
+    }
+    
+    public OpResult exec(final WriteOpSpec writeSpec) throws IllegalArgumentException, IllegalStateException {
+        final DefensiveCopyStrategy dcs;
+        final RowSpec<?> tableRowSpec;
+        final HTable writeToTable;
+        final List<ColSpecWrite<WriteOpSpec>> colWriteList;
+        Long writeTS;
+        final CondSpec<?> condition;
+        final NullableValue condPossibleValue;
+        RowKey rowKey;
+        FamilyModel fam;
+        QualModel qual;
+        final Put writePut;
+        
+        verifyStateForExec(writeSpec);
+        
+        dcs = this.context.getDefensiveCopyStrategy();
+        
+        try {
+            tableRowSpec = writeSpec.getOnTableRow();
+            writeToTable = this.tableSet.get(tableRowSpec.getTable()).get();
+            writePut = new Put(tableRowSpec.getRowKey().getValue(dcs));
+            
+            colWriteList = writeSpec.getWithColumn();
+            if (colWriteList != null) {
+                for (ColSpecWrite<WriteOpSpec> colWrite : colWriteList) {
+                    writeTS = colWrite.getTs();
+                    if (writeTS == null) {
+                        writePut.add(colWrite.getFamily().getName().getValue(dcs),
+                                     colWrite.getColumn().getName().getValue(dcs),
+                                     colWrite.getValue().getValue(dcs));
+                    } else {
+                        writePut.add(colWrite.getFamily().getName().getValue(dcs),
+                                     colWrite.getColumn().getName().getValue(dcs),
+                                     writeTS.longValue(),
+                                     colWrite.getValue().getValue(dcs));
+                    }
+                }
+            }
+            
+            condition = writeSpec.getGivenCondition();
+            if (condition != null) {
+                condPossibleValue = condition.getValue();
+                rowKey = condition.getRowKey();
+                fam = condition.getFamily();
+                qual = condition.getColumn();
+                
+                /*
+                 * It's okay to use NullableValue#getValue here without disambiguating Value vs.
+                 * Empty, as both are immutable, and the constructor for the former enforces that
+                 * getValue must return NON-NULL, and the constructor for the latter enforces that
+                 * getValue must return NULL. Thus, getValue returns what checkAndPut needs in
+                 * either case.
+                 */
+                writeToTable.checkAndPut(rowKey.getValue(dcs),
+                                         fam.getName().getValue(dcs),
+                                         qual.getName().getValue(dcs),
+                                         condPossibleValue.getValue(dcs),
+                                         writePut);
+            } else {
+                writeToTable.put(writePut);
+            }
+        } catch (Exception temporary) {
+            // TODO
+        }
+        return null;
     }
     
     public HBaseControl() {

@@ -1,10 +1,14 @@
 package com.liaison.hbase.api.opspec;
 
 import java.io.Serializable;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
 import com.liaison.hbase.context.HBaseContext;
+import com.liaison.hbase.dto.RowKey;
+import com.liaison.hbase.exception.SpecValidationException;
+import com.liaison.hbase.model.TableModel;
 import com.liaison.hbase.util.Util;
 
 public final class ReadOpSpec extends OperationSpec<ReadOpSpec> implements Serializable {
@@ -18,6 +22,13 @@ public final class ReadOpSpec extends OperationSpec<ReadOpSpec> implements Seria
     @Override
     protected ReadOpSpec self() { return this; }
 
+    @Override
+    protected void validate() throws SpecValidationException {
+        super.validate();
+        Util.validateRequired(getFromTableRow(), this, "from", RowSpec.class);
+        Util.validateAtLeastOne(getWithColumn(), this, "with", ColSpecRead.class);
+    }
+
     public LongValueSpec<ReadOpSpec> getAtTime() {
         return this.atTime;
     }
@@ -25,7 +36,7 @@ public final class ReadOpSpec extends OperationSpec<ReadOpSpec> implements Seria
         return this.fromTableRow;
     }
     public List<ColSpecRead<ReadOpSpec>> getWithColumn() {
-        return this.withColumn;
+        return Collections.unmodifiableList(this.withColumn);
     }
     
     public LongValueSpec<ReadOpSpec> atTime() throws IllegalStateException {
