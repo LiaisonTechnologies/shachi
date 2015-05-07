@@ -33,6 +33,7 @@ import com.liaison.hbase.context.HBaseContext;
 import com.liaison.hbase.dto.NullableValue;
 import com.liaison.hbase.dto.RowKey;
 import com.liaison.hbase.exception.HBaseControllerLifecycleException;
+import com.liaison.hbase.exception.HBaseEmptyResultSetException;
 import com.liaison.hbase.exception.HBaseInitializationException;
 import com.liaison.hbase.model.FamilyModel;
 import com.liaison.hbase.model.Name;
@@ -69,6 +70,52 @@ public class HBaseControl extends ThreadLocalResourceAwareHBaseController {
     private final ThreadLocal<HBaseAdmin> admin;
     private final ConcurrentHashMap<TableModel, ThreadLocal<HTable>> tableSet;
     
+    private static final void createTableFromModel(final HBaseAdmin tableAdmin, final TableModel model, final DefensiveCopyStrategy dcs) throws IOException {
+        final String logMethodName;
+        final HTableDescriptor tableDesc;
+        final byte[] tableNameBytes;
+        
+        // >>>>> LOG >>>>>
+        if (LOG.isTraceEnabled()) {
+            logMethodName = "generateTableDesc(model=" + model + ")";
+            LOG.trace(">>> " + logMethodName);
+        } else {
+            logMethodName = null;
+        }
+        // <<<<< log <<<<<
+
+        tableNameBytes = model.getName().getValue(dcs);
+        
+        if (!tableAdmin.tableExists(tableNameBytes)) {
+            Util.traceLog(LOG, logMethodName, "table does not exist; creating...");
+            tableDesc = new HTableDescriptor(TableName.valueOf(tableNameBytes));
+            model.getFamilies()
+                .entrySet()
+                .stream()
+                .forEachOrdered((famEntry) -> {
+                    final Name familyName;
+                    final String familyNameStr;
+                    final byte[] familyNameBytes;
+                    final HColumnDescriptor colFamDesc;
+                    
+                    familyName = famEntry.getKey();
+                    familyNameBytes = familyName.getValue(dcs);
+                    familyNameStr = familyName.getStr();
+                    
+                    colFamDesc = new HColumnDescriptor(familyNameBytes);
+                    tableDesc.addFamily(colFamDesc);
+                    
+                    // >>>>> LOG >>>>>
+                    if (LOG.isTraceEnabled()) {
+                        LOG.trace("[" + logMethodName + "] added family: " + familyNameStr);
+                    }
+                    // <<<<< log <<<<<
+                });
+            tableAdmin.createTable(tableDesc);
+            Util.traceLog(LOG, logMethodName, "table created");
+        }
+    }
+    
     /**
      * Establish a connection to the HBase table with the given name and set of column families. If
      * the table does not yet exist, create it.
@@ -96,7 +143,6 @@ public class HBaseControl extends ThreadLocalResourceAwareHBaseController {
         String logMethodName = null;
         final byte[] tableNameBytes;
         final String tableNameStr;
-        final byte[] tableNameFull;
         final HBaseAdmin tableAdmin;
         HTableDescriptor tableDesc;
         byte[] colFam;
@@ -114,16 +160,20 @@ public class HBaseControl extends ThreadLocalResourceAwareHBaseController {
 
         tableNameBytes = model.getName().getValue(this.context.getDefensiveCopyStrategy());
         tableNameStr = model.getName().getStr();
-        tableNameFull = this.tableNamer.buildName(model.getName(), TEMPORARY_KEY_FOR_STUFF);
         // >>>>> LOG >>>>>
         if (LOG.isTraceEnabled()) {
-            LOG.trace("[" + logMethodName + "] full table name: " + Util.toString(tableNameFull));
+            LOG.trace("[" + logMethodName + "] full table name: " + model.getName());
         }
         // <<<<< log <<<<<
         
         attemptCount = 0;
         tableAdmin = admin.get();
         while ((tbl == null) && (attemptCount < TABLECONNECT_ATTEMPTS_MAX)) {
+            /*
+             * If this is the first attempt, proceed immediately. Otherwise, delay by the current
+             * exponential-backoff delay interval, then apply the exponential backoff for the next
+             * interval (if it becomes necessary)
+             */
             if (attemptCount == 0) {
                 retryDelay = TABLECONNECT_RETRYDELAY_INIT_MS;
             } else {
@@ -145,7 +195,6 @@ public class HBaseControl extends ThreadLocalResourceAwareHBaseController {
                 retryDelay *= TABLECONNECT_RETRYDELAY_MULTIPLIER;
                 retryDelay = Math.min(TABLECONNECT_RETRYDELAY_MAX_MS, retryDelay);
             }
-            
             attemptCount++;
             
             // >>>>> LOG >>>>>
@@ -157,40 +206,14 @@ public class HBaseControl extends ThreadLocalResourceAwareHBaseController {
             }
             // <<<<< log <<<<<
             
+            /*
+             * If a table with the name given by the model does not yet exist, then generate a
+             * descriptor corresponding to that table name, then create it. Then (regardless of
+             * whether or not table creation was necessary in the previous step), return an HTable
+             * handle for the table.
+             */
             try {
-                if (!tableAdmin.tableExists(tableNameFull)) {
-                    Util.traceLog(LOG, logMethodName, "table does not exist; creating...");
-                    tableDesc = new HTableDescriptor(TableName.valueOf(tableNameFull));
-                    model.getFamilies()
-                        .entrySet()
-                        .stream()
-                        .forEachOrdered((famEntry) -> {
-                            final Name familyName;
-                            final String familyNameStr;
-                            final byte[] familyNameBytes;
-                            final HColumnDescriptor colFamDesc;
-                            
-                            familyName = famEntry.getKey();
-                            familyNameBytes =
-                                familyName.getValue(this.context.getDefensiveCopyStrategy());
-                            familyNameStr = familyName.getStr();
-                            
-                            colFamDesc = new HColumnDescriptor(familyNameBytes);
-                            
-                            // TODO fix this -- do we need to revert back to a normal loop rather than a stream?
-                            //tableDesc.addFamily(colFamDesc);
-                            
-                            
-                            
-                            // >>>>> LOG >>>>>
-                            if (LOG.isTraceEnabled()) {
-                                //LOG.trace("[" + logMethodName + "] added family: " + familyNameStr);
-                            }
-                            // <<<<< log <<<<<
-                        });
-                    tableAdmin.createTable(tableDesc);
-                    Util.traceLog(LOG, logMethodName, "table created");
-                }
+                createTableFromModel(tableAdmin, model, getContext().getDefensiveCopyStrategy());
                 tbl =
                     new HTable(context.getHBaseConfiguration(),
                                model.getName().getValue(this.context.getDefensiveCopyStrategy()));
@@ -306,6 +329,9 @@ public class HBaseControl extends ThreadLocalResourceAwareHBaseController {
                 }
             }
             res = readFromTable.get(readGet);
+            if ((res == null) || (res.isEmpty())) {
+                throw new HBaseEmptyResultSetException(tableRowSpec.getRowKey(), colReadList, "no result set");
+            }
         } catch (Exception temporary) {
             // TODO
         }

@@ -9,18 +9,19 @@
 package com.liaison.hbase.exception;
 
 import com.liaison.hbase.dto.FamilyQualifierPair;
+import com.liaison.hbase.dto.RowKey;
 
 public class HBaseEmptyCellValueException extends HBaseColumnException {
     
     private static final long serialVersionUID = 8167381539562556543L;
     
-    public HBaseEmptyCellValueException(final byte[] rowKey, final FamilyQualifierPair fqp, String message) {
+    public HBaseEmptyCellValueException(final RowKey rowKey, final FamilyQualifierPair fqp, String message) {
         super(rowKey, fqp, message);
     }
-    public HBaseEmptyCellValueException(final byte[] rowKey, final FamilyQualifierPair fqp, String message, Throwable cause) {
+    public HBaseEmptyCellValueException(final RowKey rowKey, final FamilyQualifierPair fqp, String message, Throwable cause) {
         super(rowKey, fqp, message, cause);
     }
-    public HBaseEmptyCellValueException(final byte[] rowKey, final FamilyQualifierPair fqp, String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
+    public HBaseEmptyCellValueException(final RowKey rowKey, final FamilyQualifierPair fqp, String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
         super(rowKey, fqp, message, cause, enableSuppression, writableStackTrace);
     }
 }

@@ -9,6 +9,8 @@
 package com.liaison.hbase.dto;
 
 import java.io.Serializable;
+import java.util.Arrays;
+import java.util.function.Consumer;
 
 import com.liaison.hbase.util.AbstractSelfRefBuilder;
 import com.liaison.hbase.util.DefensiveCopyStrategy;
@@ -51,11 +53,25 @@ public abstract class NullableValue implements Serializable {
         }
     }
     
+    private static final String ENTITY_PREFIX_FOR_TOSTRING = "v";
+    
     public static Builder getValueBuilder() {
         return new Builder();
     }
+    protected static String buildStrRep(final String entityTypeIdentifier, final Consumer<StringBuilder> contentGenerator) {
+        final StringBuilder strGen;
+        strGen = new StringBuilder();
+        strGen.append("<HB:");
+        strGen.append(entityTypeIdentifier);
+        strGen.append(":");
+        contentGenerator.accept(strGen);
+        strGen.append(">");
+        return strGen.toString();
+    }
     
     private final byte[] value;
+    private Integer hc;
+    private String strRep;
     
     public byte[] getValue(final DefensiveCopyStrategy copyStrategy) {
         return Util.getInternalByteArray(this.value, copyStrategy);
@@ -64,7 +80,34 @@ public abstract class NullableValue implements Serializable {
     public byte[] getValue() {
         return getValue(DefensiveCopyStrategy.DEFAULT);
     }
-
+    
+    @Override
+    public int hashCode() {
+        if (this.hc == null) {
+            this.hc = Integer.valueOf(Arrays.hashCode(getValue(DefensiveCopyStrategy.NEVER)));
+        }
+        return this.hc.intValue();
+    }
+    @Override
+    public boolean equals(final Object otherObj) {
+        final NullableValue otherVal;
+        if (otherObj instanceof NullableValue) {
+            otherVal = (Value) otherObj;
+            return Util.refEquals(this.value, otherVal.value);
+        }
+        return false;
+    }
+    @Override
+    public String toString() {
+        if (this.strRep == null) {
+            this.strRep =
+                buildStrRep(ENTITY_PREFIX_FOR_TOSTRING, (strGen) -> {
+                    strGen.append(Util.toString(this.value));
+                });
+        }
+        return this.strRep;
+    }
+    
     // TODO equals, toString, hashCode, etc.
     
     protected NullableValue(final AbstractValueBuilder<?,?> build) throws IllegalArgumentException {

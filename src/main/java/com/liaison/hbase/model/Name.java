@@ -83,6 +83,8 @@ public class Name extends Value implements Serializable {
         }
     }
     
+    private static final String ENTITY_PREFIX_FOR_TOSTRING = "n";
+    
     public static final Builder with(final byte[] name, final Charset decoding) {
         return new Builder().name(name, decoding);
     }
@@ -137,20 +139,18 @@ public class Name extends Value implements Serializable {
         }
         return this.hc.intValue();
     }
-    
+
     @Override
     public String toString() {
-        final StringBuilder strGen;
         if (this.strRep == null) {
-            strGen = new StringBuilder();
-            strGen.append("<HB:");
-            strGen.append(this.str);
-            if (this.alias.size() > 0) {
-                strGen.append("|");
-                strGen.append(this.alias.size());
-            }
-            strGen.append(">");
-            this.strRep = strGen.toString();
+            this.strRep =
+                buildStrRep(ENTITY_PREFIX_FOR_TOSTRING, (strGen) -> {
+                    strGen.append(this.str);
+                    if (this.alias.size() > 0) {
+                        strGen.append("|");
+                        strGen.append(this.alias.size());
+                    }
+                });
         }
         return this.strRep;
     }

@@ -8,27 +8,28 @@
  */
 package com.liaison.hbase.exception;
 
-import com.liaison.hbase.dto.FamilyQualifierPair;
+import com.liaison.hbase.api.opspec.ColSpec;
+import com.liaison.hbase.dto.RowKey;
 
 public class HBaseMultiColumnException extends HBaseRowQueryException {
     
-    private static final long serialVersionUID = 7196636404982884264L;
+    private static final long serialVersionUID = 219076743239752424L;
     
-    private final Iterable<FamilyQualifierPair> fqpList;
+    private final Iterable<? extends ColSpec<?,?>> fqpList;
     
-    public Iterable<FamilyQualifierPair> getFqpList() {
+    public final Iterable<? extends ColSpec<?,?>> getFqpList() {
         return this.fqpList;
     }
     
-    public HBaseMultiColumnException(final byte[] rowKey, final Iterable<FamilyQualifierPair> fqpList, String message) {
+    public HBaseMultiColumnException(final RowKey rowKey, final Iterable<? extends ColSpec<?,?>> fqpList, String message) {
         super(rowKey, message);
         this.fqpList = fqpList;
     }
-    public HBaseMultiColumnException(final byte[] rowKey, final Iterable<FamilyQualifierPair> fqpList, String message, Throwable cause) {
+    public HBaseMultiColumnException(final RowKey rowKey, final Iterable<? extends ColSpec<?,?>> fqpList, String message, Throwable cause) {
         super(rowKey, message, cause);
         this.fqpList = fqpList;
     }
-    public HBaseMultiColumnException(final byte[] rowKey, final Iterable<FamilyQualifierPair> fqpList, String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
+    public HBaseMultiColumnException(final RowKey rowKey, final Iterable<? extends ColSpec<?,?>> fqpList, String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
         super(rowKey, message, cause, enableSuppression, writableStackTrace);
         this.fqpList = fqpList;
     }

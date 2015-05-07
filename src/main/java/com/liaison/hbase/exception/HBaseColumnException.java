@@ -9,6 +9,7 @@
 package com.liaison.hbase.exception;
 
 import com.liaison.hbase.dto.FamilyQualifierPair;
+import com.liaison.hbase.dto.RowKey;
 
 public class HBaseColumnException extends HBaseRowQueryException {
     
@@ -20,15 +21,15 @@ public class HBaseColumnException extends HBaseRowQueryException {
         return this.fqp;
     }
     
-    public HBaseColumnException(final byte[] rowKey, final FamilyQualifierPair fqp, String message) {
+    public HBaseColumnException(final RowKey rowKey, final FamilyQualifierPair fqp, String message) {
         super(rowKey, message);
         this.fqp = fqp;
     }
-    public HBaseColumnException(final byte[] rowKey, final FamilyQualifierPair fqp, String message, Throwable cause) {
+    public HBaseColumnException(final RowKey rowKey, final FamilyQualifierPair fqp, String message, Throwable cause) {
         super(rowKey, message, cause);
         this.fqp = fqp;
     }
-    public HBaseColumnException(final byte[] rowKey, final FamilyQualifierPair fqp, String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
+    public HBaseColumnException(final RowKey rowKey, final FamilyQualifierPair fqp, String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
         super(rowKey, message, cause, enableSuppression, writableStackTrace);
         this.fqp = fqp;
     }

@@ -24,7 +24,7 @@ public class Value extends NullableValue implements Serializable {
     public static Value of(final byte[] value) {
         return getValueBuilder().value(value).build();
     }
-
+    
     // TODO equals, toString, hashCode, etc.
     
     protected Value(final AbstractValueBuilder<?,?> build) throws IllegalArgumentException {
