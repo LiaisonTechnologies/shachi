@@ -10,8 +10,12 @@ public abstract class OperationSpec<O extends OperationSpec<O>> extends Stateful
     
     private static final long serialVersionUID = 5533663131351737507L;
     
+    private final Object handle;
     private final HBaseContext context;
     
+    public final Object getHandle() {
+        return this.handle;
+    }
     protected HBaseContext getContext() {
         return this.context;
     }
@@ -21,8 +25,27 @@ public abstract class OperationSpec<O extends OperationSpec<O>> extends Stateful
         return getParent();
     }
     
-    public OperationSpec(final HBaseContext context, final OperationController parent) {
+    @Override
+    public final int prepareHashCode() {
+        return this.handle.hashCode();
+    }
+    protected abstract boolean deepEquals(final OperationSpec<?> otherOpSpec);
+    @Override
+    public final boolean equals(final Object otherObj) {
+        final OperationSpec<?> otherOpSpec;
+        if (otherObj instanceof OperationSpec) {
+            otherOpSpec = (OperationSpec<?>) otherObj;
+            return ((Util.refEquals(this.handle, otherOpSpec.handle))
+                    &&
+                    deepEquals(otherOpSpec));
+        }
+        return false;
+    }
+    
+    public OperationSpec(final Object handle, final HBaseContext context, final OperationController parent) {
         super(parent);
+        Util.ensureNotNull(handle, this, "handle", Object.class);
+        this.handle = handle;
         Util.ensureNotNull(context, this, "context", HBaseContext.class);
         this.context = context;
     }

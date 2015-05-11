@@ -30,6 +30,10 @@ public final class Util extends Uninstantiable {
     
     public static final String INDENT = "    ";
     
+    public static int hashCode(final Object ref) {
+        return (ref == null)?0:ref.hashCode();
+    }
+    
     public static <T> boolean refEquals(final T ref1, final T ref2, final BiPredicate<? super T, ? super T> equals) {
         return (((ref1 == null) && (ref2 == null))
                 ||
@@ -56,6 +60,12 @@ public final class Util extends Uninstantiable {
             }
         }
         return str;
+    }
+    public static byte[] simplify(byte[] bytes) {
+        if ((bytes != null) && (bytes.length <= 0)) {
+            bytes = null;
+        }
+        return bytes;
     }
     
     /**

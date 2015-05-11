@@ -18,7 +18,6 @@ import org.slf4j.LoggerFactory;
 import co.paralleluniverse.fibers.SuspendExecution;
 import co.paralleluniverse.strands.Strand;
 
-import com.liaison.hbase.api.NamingStrategy;
 import com.liaison.hbase.api.OpResult;
 import com.liaison.hbase.api.opspec.ColSpecRead;
 import com.liaison.hbase.api.opspec.ColSpecWrite;
@@ -32,9 +31,14 @@ import com.liaison.hbase.context.DefaultHBaseContext;
 import com.liaison.hbase.context.HBaseContext;
 import com.liaison.hbase.dto.NullableValue;
 import com.liaison.hbase.dto.RowKey;
+import com.liaison.hbase.exception.HBaseColumnException;
 import com.liaison.hbase.exception.HBaseControllerLifecycleException;
 import com.liaison.hbase.exception.HBaseEmptyResultSetException;
+import com.liaison.hbase.exception.HBaseException;
 import com.liaison.hbase.exception.HBaseInitializationException;
+import com.liaison.hbase.exception.HBaseMultiColumnException;
+import com.liaison.hbase.exception.HBaseRuntimeException;
+import com.liaison.hbase.exception.HBaseTableRowException;
 import com.liaison.hbase.model.FamilyModel;
 import com.liaison.hbase.model.Name;
 import com.liaison.hbase.model.QualModel;
@@ -60,12 +64,7 @@ public class HBaseControl extends ThreadLocalResourceAwareHBaseController {
     static {
         LOG = LoggerFactory.getLogger(HBaseControl.class);
     }
-    
-    /**
-     * TODO change key generic type
-     */
-    private final NamingStrategy<String, byte[]> tableNamer;
-    
+        
     private final HBaseContext context;
     private final ThreadLocal<HBaseAdmin> admin;
     private final ConcurrentHashMap<TableModel, ThreadLocal<HTable>> tableSet;
@@ -294,7 +293,7 @@ public class HBaseControl extends ThreadLocalResourceAwareHBaseController {
         }
     }
     
-    public OpResult exec(final ReadOpSpec readSpec) throws IllegalArgumentException {
+    public OpResult exec(final ReadOpSpec readSpec) throws IllegalArgumentException, HBaseException, HBaseRuntimeException {
         final DefensiveCopyStrategy dcs;
         final RowSpec<?> tableRowSpec;
         final HTable readFromTable;
@@ -309,10 +308,17 @@ public class HBaseControl extends ThreadLocalResourceAwareHBaseController {
         
         //TODO: major error handling, null-checking, etc.
         try {
-            tableRowSpec = readSpec.getFromTableRow();
+            tableRowSpec = readSpec.getTableRow();
             readFromTable = this.tableSet.get(tableRowSpec.getTable()).get();
             readGet = new Get(tableRowSpec.getRowKey().getValue(dcs));
-            ReadUtils.applyTS(readGet, readSpec);
+            try {
+                ReadUtils.applyTS(readGet, readSpec);
+            } catch (IOException ioExc) {
+                throw new HBaseTableRowException(tableRowSpec,
+                                              "Failed to apply timestamp cond to READ per spec: "
+                                              + readSpec + "; " + ioExc,
+                                              ioExc);
+            }
             colReadList = readSpec.getWithColumn();
             if (colReadList != null) {
                 for (ColSpecRead<ReadOpSpec> colSpec : colReadList) {
@@ -328,21 +334,36 @@ public class HBaseControl extends ThreadLocalResourceAwareHBaseController {
                     }
                 }
             }
-            res = readFromTable.get(readGet);
-            if ((res == null) || (res.isEmpty())) {
-                throw new HBaseEmptyResultSetException(tableRowSpec.getRowKey(), colReadList, "no result set");
+            try {
+                res = readFromTable.get(readGet);
+            } catch (IOException ioExc) {
+                throw new HBaseMultiColumnException(tableRowSpec,
+                                                    colReadList,
+                                                    "READ failed; " + ioExc,
+                                                    ioExc);
             }
-        } catch (Exception temporary) {
-            // TODO
+            if ((res == null) || (res.isEmpty())) {
+                throw new HBaseEmptyResultSetException(tableRowSpec,
+                                                       colReadList,
+                                                       "READ failed; null/empty result set");
+            }
+        } catch (HBaseException | HBaseRuntimeException exc) {
+            throw exc;
+        } catch (Exception exc) {
+            throw new HBaseRuntimeException("Unexpected failure during READ operation ("
+                                            + readSpec
+                                            + "): "
+                                            + exc.toString(),
+                                            exc);
         }
         
         //TODO
         return null;
     }
     
-    public OpResult exec(final WriteOpSpec writeSpec) throws IllegalArgumentException, IllegalStateException {
+    public OpResult exec(final WriteOpSpec writeSpec) throws IllegalArgumentException, IllegalStateException, HBaseException, HBaseRuntimeException {
         final DefensiveCopyStrategy dcs;
-        final RowSpec<?> tableRowSpec;
+        final RowSpec<WriteOpSpec> tableRowSpec;
         final HTable writeToTable;
         final List<ColSpecWrite<WriteOpSpec>> colWriteList;
         Long writeTS;
@@ -358,7 +379,7 @@ public class HBaseControl extends ThreadLocalResourceAwareHBaseController {
         dcs = this.context.getDefensiveCopyStrategy();
         
         try {
-            tableRowSpec = writeSpec.getOnTableRow();
+            tableRowSpec = writeSpec.getTableRow();
             writeToTable = this.tableSet.get(tableRowSpec.getTable()).get();
             writePut = new Put(tableRowSpec.getRowKey().getValue(dcs));
             
@@ -386,30 +407,41 @@ public class HBaseControl extends ThreadLocalResourceAwareHBaseController {
                 fam = condition.getFamily();
                 qual = condition.getColumn();
                 
-                /*
-                 * It's okay to use NullableValue#getValue here without disambiguating Value vs.
-                 * Empty, as both are immutable, and the constructor for the former enforces that
-                 * getValue must return NON-NULL, and the constructor for the latter enforces that
-                 * getValue must return NULL. Thus, getValue returns what checkAndPut needs in
-                 * either case.
-                 */
-                writeToTable.checkAndPut(rowKey.getValue(dcs),
-                                         fam.getName().getValue(dcs),
-                                         qual.getName().getValue(dcs),
-                                         condPossibleValue.getValue(dcs),
-                                         writePut);
+                try {
+                    /*
+                     * It's okay to use NullableValue#getValue here without disambiguating Value vs.
+                     * Empty, as both are immutable, and the constructor for the former enforces that
+                     * getValue must return NON-NULL, and the constructor for the latter enforces that
+                     * getValue must return NULL. Thus, getValue returns what checkAndPut needs in
+                     * either case.
+                     */
+                    writeToTable.checkAndPut(rowKey.getValue(dcs),
+                                             fam.getName().getValue(dcs),
+                                             qual.getName().getValue(dcs),
+                                             condPossibleValue.getValue(dcs),
+                                             writePut);
+                } catch (IOException ioExc) {
+                    // TODO
+                    //throw new HBaseColumnException(tableRowSpec, colWriteList, "", ioExc);
+                    throw new HBaseException("");
+                }
             } else {
                 writeToTable.put(writePut);
             }
-        } catch (Exception temporary) {
-            // TODO
+        } catch (HBaseException | HBaseRuntimeException exc) {
+            throw exc;
+        } catch (Exception exc) {
+            throw new HBaseRuntimeException("Unexpected failure during WRITE operation ("
+                                            + writeSpec
+                                            + "): "
+                                            + exc.toString(),
+                                            exc);
         }
         return null;
     }
     
     public HBaseControl() {
         // TODO initialization to reasonable values
-        this.tableNamer = null;
         this.context = DefaultHBaseContext.getBuilder().build();
         this.admin = null;
         this.tableSet = null;

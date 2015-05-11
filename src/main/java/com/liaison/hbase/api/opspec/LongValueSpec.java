@@ -240,6 +240,25 @@ public final class LongValueSpec<P extends OperationSpec<P>> extends CriteriaSpe
                                 ")\n");
         }
     }
+    @Override
+    protected int prepareHashCode() {
+        return (Util.hashCode(this.lowerBoundInclusive)
+                ^ Util.hashCode(this.upperBoundExclusive)
+                ^ Long.hashCode(this.typeMin)
+                ^ Long.hashCode(this.typeMax));
+    }
+    @Override
+    public boolean equals(final Object otherObj) {
+        final LongValueSpec<?> otherLVS;
+        if (otherObj instanceof LongValueSpec) {
+            otherLVS = (LongValueSpec<?>) otherObj;
+            return (Util.refEquals(this.lowerBoundInclusive, otherLVS.lowerBoundInclusive)
+                    && Util.refEquals(this.upperBoundExclusive, otherLVS.upperBoundExclusive)
+                    && (this.typeMin == otherLVS.typeMin)
+                    && (this.typeMax == otherLVS.typeMax));
+        }
+        return false;
+    }
     
     public LongValueSpec(final P parent, final Long typeMin, final Long typeMax) throws IllegalArgumentException, ArithmeticException {
         super(parent);

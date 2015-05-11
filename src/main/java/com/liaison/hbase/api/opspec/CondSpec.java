@@ -67,6 +67,22 @@ public final class CondSpec<P extends OperationSpec<P>> extends ColSpec<CondSpec
         }
     }
 
+    @Override
+    protected int deepHashCode() {
+        return (Util.hashCode(this.rowKey) ^ Util.hashCode(this.value));
+    }
+
+    @Override
+    protected boolean deepEquals(final ColSpec<?, ?> otherColSpec) {
+        final CondSpec<?> otherCondSpec;
+        if (otherColSpec instanceof CondSpec) {
+            otherCondSpec = (CondSpec<?>) otherColSpec;
+            return (Util.refEquals(this.rowKey, otherCondSpec.rowKey)
+                    && Util.refEquals(this.value, otherCondSpec.value));
+        }
+        return false;
+    }
+
     public CondSpec(final P parent) {
         super(parent);
     }

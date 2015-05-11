@@ -8,20 +8,20 @@
  */
 package com.liaison.hbase.exception;
 
-import com.liaison.hbase.dto.FamilyQualifierPair;
-import com.liaison.hbase.dto.RowKey;
+import com.liaison.hbase.api.opspec.ColSpec;
+import com.liaison.hbase.api.opspec.RowSpec;
 
 public class HBaseEmptyCellValueException extends HBaseColumnException {
     
     private static final long serialVersionUID = 8167381539562556543L;
     
-    public HBaseEmptyCellValueException(final RowKey rowKey, final FamilyQualifierPair fqp, String message) {
-        super(rowKey, fqp, message);
+    public HBaseEmptyCellValueException(final RowSpec<?> rowSpec, final ColSpec<?,?> colSpec, String message) {
+        super(rowSpec, colSpec, message);
     }
-    public HBaseEmptyCellValueException(final RowKey rowKey, final FamilyQualifierPair fqp, String message, Throwable cause) {
-        super(rowKey, fqp, message, cause);
+    public HBaseEmptyCellValueException(final RowSpec<?> rowSpec, final ColSpec<?,?> colSpec, String message, Throwable cause) {
+        super(rowSpec, colSpec, message, cause);
     }
-    public HBaseEmptyCellValueException(final RowKey rowKey, final FamilyQualifierPair fqp, String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
-        super(rowKey, fqp, message, cause, enableSuppression, writableStackTrace);
+    public HBaseEmptyCellValueException(final RowSpec<?> rowSpec, final ColSpec<?,?> colSpec, String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
+        super(rowSpec, colSpec, message, cause, enableSuppression, writableStackTrace);
     }
 }

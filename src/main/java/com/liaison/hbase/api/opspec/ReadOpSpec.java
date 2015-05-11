@@ -6,18 +6,15 @@ import java.util.LinkedList;
 import java.util.List;
 
 import com.liaison.hbase.context.HBaseContext;
-import com.liaison.hbase.dto.RowKey;
 import com.liaison.hbase.exception.SpecValidationException;
-import com.liaison.hbase.model.TableModel;
 import com.liaison.hbase.util.Util;
 
-public final class ReadOpSpec extends OperationSpec<ReadOpSpec> implements Serializable {
+public final class ReadOpSpec extends TableRowOpSpec<ReadOpSpec> implements Serializable {
 
     private static final long serialVersionUID = 1602390434837826147L;
     
     private LongValueSpec<ReadOpSpec> atTime;
-    private RowSpec<ReadOpSpec> fromTableRow;
-    private List<ColSpecRead<ReadOpSpec>> withColumn;
+    private final List<ColSpecRead<ReadOpSpec>> withColumn;
     
     @Override
     protected ReadOpSpec self() { return this; }
@@ -25,15 +22,12 @@ public final class ReadOpSpec extends OperationSpec<ReadOpSpec> implements Seria
     @Override
     protected void validate() throws SpecValidationException {
         super.validate();
-        Util.validateRequired(getFromTableRow(), this, "from", RowSpec.class);
+        Util.validateRequired(getTableRow(), this, "from", RowSpec.class);
         Util.validateAtLeastOne(getWithColumn(), this, "with", ColSpecRead.class);
     }
 
     public LongValueSpec<ReadOpSpec> getAtTime() {
         return this.atTime;
-    }
-    public RowSpec<ReadOpSpec> getFromTableRow() {
-        return this.fromTableRow;
     }
     public List<ColSpecRead<ReadOpSpec>> getWithColumn() {
         return Collections.unmodifiableList(this.withColumn);
@@ -45,11 +39,11 @@ public final class ReadOpSpec extends OperationSpec<ReadOpSpec> implements Seria
         this.atTime = new LongValueSpec<>(this);
         return this.atTime;
     }
-    public RowSpec<ReadOpSpec> from() throws IllegalStateException {
-        prepMutation();
-        Util.validateExactlyOnce("fromTableRow", RowSpec.class, this.fromTableRow);
-        this.fromTableRow = new RowSpec<>(this);
-        return this.fromTableRow;
+    public RowSpec<ReadOpSpec> from() throws IllegalArgumentException, IllegalStateException {
+        final RowSpec<ReadOpSpec> rowSpec;
+        rowSpec = new RowSpec<>(this);
+        setTableRow(rowSpec);
+        return rowSpec;
     }
     public ColSpecRead<ReadOpSpec> with() {
         final ColSpecRead<ReadOpSpec> withCol;
@@ -66,12 +60,14 @@ public final class ReadOpSpec extends OperationSpec<ReadOpSpec> implements Seria
     
     @Override
     protected void prepareStrRep(final StringBuilder strGen) {
-        if (this.fromTableRow != null) {
+        final RowSpec<ReadOpSpec> tableRow;
+        tableRow = getTableRow(); 
+        if (tableRow != null) {
             Util.appendIndented(strGen,
                                 getDepth() + 1,
                                 "from table/row: ",
                                 "\n",
-                                this.fromTableRow,
+                                tableRow,
                                 "\n");
         }
         if (this.atTime != null) {
@@ -89,9 +85,27 @@ public final class ReadOpSpec extends OperationSpec<ReadOpSpec> implements Seria
             }
         }
     }
+    
+    @Override
+    protected boolean deepEquals(final OperationSpec<?> otherOpSpec) {
+        final ReadOpSpec otherReadSpec;
+        if (otherOpSpec instanceof ReadOpSpec) {
+            otherReadSpec = (ReadOpSpec) otherOpSpec;
+            /*
+             * Equality checks ordered from least to most expensive, to allow for relatively quick
+             * short-circuiting
+             */
+            return ((Util.refEquals(this.atTime, otherReadSpec.atTime))
+                    &&
+                    (Util.refEquals(getTableRow(), otherReadSpec.getTableRow()))
+                    &&
+                    (Util.refEquals(this.withColumn, otherReadSpec.withColumn)));
+        }
+        return false;
+    }
 
-    public ReadOpSpec(final HBaseContext context, final OperationController parent) {
-        super(context, parent);
+    public ReadOpSpec(final Object handle, final HBaseContext context, final OperationController parent) {
+        super(handle, context, parent);
         this.withColumn = new LinkedList<>();
     }
 }

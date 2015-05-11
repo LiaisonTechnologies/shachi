@@ -15,6 +15,7 @@ public abstract class StatefulSpec<A extends StatefulSpec<A, P>, P extends TreeN
     private SpecState state;
     private final LinkedList<StatefulSpec<?,?>> subordSpecList;
     private String strRep;
+    private Integer hc;
     
     public final SpecState getState() {
         return this.state;
@@ -26,7 +27,12 @@ public abstract class StatefulSpec<A extends StatefulSpec<A, P>, P extends TreeN
         if (isFrozen()) {
             throw new IllegalStateException("Cannot mutate post-freeze: " + toString());
         }
+        /*
+         * reset generated string representation and int value, as the core properties from which
+         * they were generated are changing
+         */
         this.strRep = null;
+        this.hc = null;
     }
     
     protected void validate() throws SpecValidationException {
@@ -59,7 +65,6 @@ public abstract class StatefulSpec<A extends StatefulSpec<A, P>, P extends TreeN
     protected void prepareStrRep(final StringBuilder strGen) {
         // provide a default implementation which does nothing
     }
-    
     @Override
     public final String toString() {
         final StringBuilder strGen;
@@ -71,6 +76,16 @@ public abstract class StatefulSpec<A extends StatefulSpec<A, P>, P extends TreeN
         }
         return this.strRep;
     }
+    protected abstract int prepareHashCode();
+    @Override
+    public final int hashCode() {
+        if (this.hc == null) {
+            this.hc = Integer.valueOf(prepareHashCode());
+        }
+        return this.hc.intValue();
+    }
+    @Override
+    public abstract boolean equals(final Object otherObj);
 
     public StatefulSpec(final P parent) throws IllegalArgumentException {
         super(parent);

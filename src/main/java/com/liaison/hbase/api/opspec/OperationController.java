@@ -46,14 +46,14 @@ public class OperationController extends TreeNodeRoot<OperationController> imple
     public ReadOpSpec read(final Object handle) throws IllegalStateException, IllegalArgumentException {
         final ReadOpSpec nextReadOp;
         verifyStateForAddingOps();
-        nextReadOp = new ReadOpSpec(this.context, this);
+        nextReadOp = new ReadOpSpec(handle, this.context, this);
         putOpWithNewHandle(handle, nextReadOp);
         return nextReadOp;
     }
     public WriteOpSpec write(final Object handle) throws IllegalStateException, IllegalArgumentException {
         final WriteOpSpec nextCreateOp;
         verifyStateForAddingOps();
-        nextCreateOp = new WriteOpSpec(this.context, this);
+        nextCreateOp = new WriteOpSpec(handle, this.context, this);
         putOpWithNewHandle(handle, nextCreateOp);
         return nextCreateOp;
     }

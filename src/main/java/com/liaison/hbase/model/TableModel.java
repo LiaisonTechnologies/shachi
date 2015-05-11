@@ -7,7 +7,9 @@ import java.util.Map;
 import com.liaison.hbase.util.Util;
 
 public class TableModel extends NamedEntity {
-    
+
+    private static final long serialVersionUID = 5725568314447294526L;
+
     public static final class Builder {
         private Name name;
         private LinkedHashMap<Name, FamilyModel> families;

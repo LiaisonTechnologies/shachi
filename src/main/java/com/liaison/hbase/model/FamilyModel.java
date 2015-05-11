@@ -8,6 +8,8 @@ import com.liaison.hbase.util.Util;
 
 public class FamilyModel extends NamedEntity {
     
+    private static final long serialVersionUID = -6051047393328804323L;
+
     public static final class Builder {
         private Name name;
         private LinkedHashMap<Name, QualModel> quals;

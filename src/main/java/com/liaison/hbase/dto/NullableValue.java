@@ -62,11 +62,16 @@ public abstract class NullableValue implements Serializable {
         final StringBuilder strGen;
         strGen = new StringBuilder();
         strGen.append("<HB:");
-        strGen.append(entityTypeIdentifier);
-        strGen.append(":");
+        if (entityTypeIdentifier != null) {
+            strGen.append(entityTypeIdentifier);
+            strGen.append(":");
+        }
         contentGenerator.accept(strGen);
         strGen.append(">");
         return strGen.toString();
+    }
+    protected static String buildStrRep(final Consumer<StringBuilder> contentGenerator) {
+        return buildStrRep(null, contentGenerator);
     }
     
     private final byte[] value;

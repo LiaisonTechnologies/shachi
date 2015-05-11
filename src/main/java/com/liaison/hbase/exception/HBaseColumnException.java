@@ -8,29 +8,29 @@
  */
 package com.liaison.hbase.exception;
 
-import com.liaison.hbase.dto.FamilyQualifierPair;
-import com.liaison.hbase.dto.RowKey;
+import com.liaison.hbase.api.opspec.ColSpec;
+import com.liaison.hbase.api.opspec.RowSpec;
 
-public class HBaseColumnException extends HBaseRowQueryException {
+public class HBaseColumnException extends HBaseTableRowException {
     
     private static final long serialVersionUID = 7523928044172073564L;
     
-    private final FamilyQualifierPair fqp;
+    private final ColSpec<?,?> colSpec;
     
-    public FamilyQualifierPair getFqp() {
-        return this.fqp;
+    public ColSpec<?,?> getColSpec() {
+        return this.colSpec;
     }
     
-    public HBaseColumnException(final RowKey rowKey, final FamilyQualifierPair fqp, String message) {
-        super(rowKey, message);
-        this.fqp = fqp;
+    public HBaseColumnException(final RowSpec<?> rowSpec, final ColSpec<?,?> colSpec, String message) {
+        super(rowSpec, message);
+        this.colSpec = colSpec;
     }
-    public HBaseColumnException(final RowKey rowKey, final FamilyQualifierPair fqp, String message, Throwable cause) {
-        super(rowKey, message, cause);
-        this.fqp = fqp;
+    public HBaseColumnException(final RowSpec<?> rowSpec, final ColSpec<?,?> colSpec, String message, Throwable cause) {
+        super(rowSpec, message, cause);
+        this.colSpec = colSpec;
     }
-    public HBaseColumnException(final RowKey rowKey, final FamilyQualifierPair fqp, String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
-        super(rowKey, message, cause, enableSuppression, writableStackTrace);
-        this.fqp = fqp;
+    public HBaseColumnException(final RowSpec<?> rowSpec, final ColSpec<?,?> colSpec, String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
+        super(rowSpec, message, cause, enableSuppression, writableStackTrace);
+        this.colSpec = colSpec;
     }
 }

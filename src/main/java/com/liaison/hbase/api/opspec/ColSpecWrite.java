@@ -57,6 +57,22 @@ public final class ColSpecWrite<P extends OperationSpec<P>> extends ColSpec<ColS
             Util.appendIndented(strGen, getDepth() + 1, "ts: ", this.ts, "\n");
         }
     }
+
+    @Override
+    protected int deepHashCode() {
+        return (Util.hashCode(this.ts) ^ Util.hashCode(this.value));
+    }
+
+    @Override
+    protected boolean deepEquals(final ColSpec<?, ?> otherColSpec) {
+        final ColSpecWrite<?> otherCSW;
+        if (otherColSpec instanceof ColSpecWrite) {
+            otherCSW = (ColSpecWrite<?>) otherColSpec;
+            return (Util.refEquals(this.ts, otherCSW.ts)
+                    && Util.refEquals(this.value, otherCSW.value));
+        }
+        return false;
+    }
     
     public ColSpecWrite(final P parent) {
         super(parent);

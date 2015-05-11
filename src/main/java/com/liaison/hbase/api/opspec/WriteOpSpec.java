@@ -1,18 +1,19 @@
 package com.liaison.hbase.api.opspec;
 
 import java.io.Serializable;
+import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 
 import com.liaison.hbase.context.HBaseContext;
 import com.liaison.hbase.exception.SpecValidationException;
 import com.liaison.hbase.util.Util;
 
-public final class WriteOpSpec extends OperationSpec<WriteOpSpec> implements Serializable {
+public final class WriteOpSpec extends TableRowOpSpec<WriteOpSpec> implements Serializable {
 
     private static final long serialVersionUID = 2572256818666730468L;
     private CondSpec<WriteOpSpec> givenCondition;
-    private RowSpec<WriteOpSpec> onTableRow;
-    private List<ColSpecWrite<WriteOpSpec>> withColumn;
+    private final List<ColSpecWrite<WriteOpSpec>> withColumn;
     
     @Override
     public WriteOpSpec self() { return this; }
@@ -20,25 +21,22 @@ public final class WriteOpSpec extends OperationSpec<WriteOpSpec> implements Ser
     @Override
     protected void validate() throws SpecValidationException {
         super.validate();
-        Util.validateRequired(getOnTableRow(), this, "from", RowSpec.class);
+        Util.validateRequired(getTableRow(), this, "from", RowSpec.class);
         Util.validateAtLeastOne(getWithColumn(), this, "with", ColSpecWrite.class);
     }
     
     public CondSpec<WriteOpSpec> getGivenCondition() {
         return this.givenCondition;
     }
-    public RowSpec<WriteOpSpec> getOnTableRow() {
-        return this.onTableRow;
-    }
     public List<ColSpecWrite<WriteOpSpec>> getWithColumn() {
-        return this.withColumn;
+        return Collections.unmodifiableList(this.withColumn);
     }
 
-    public RowSpec<WriteOpSpec> on() throws IllegalStateException {
-        prepMutation();
-        Util.validateExactlyOnce("onTableRow", RowSpec.class, this.onTableRow);
-        this.onTableRow = new RowSpec<>(this);
-        return this.onTableRow;
+    public RowSpec<WriteOpSpec> on() throws IllegalArgumentException, IllegalStateException {
+        final RowSpec<WriteOpSpec> rowSpec;
+        rowSpec = new RowSpec<>(this);
+        setTableRow(rowSpec);
+        return rowSpec;
     }
     public CondSpec<WriteOpSpec> given() throws IllegalStateException {
         prepMutation();
@@ -61,12 +59,14 @@ public final class WriteOpSpec extends OperationSpec<WriteOpSpec> implements Ser
     
     @Override
     protected void prepareStrRep(final StringBuilder strGen) {
-        if (this.onTableRow != null) {
+        final RowSpec<WriteOpSpec> tableRow;
+        tableRow = getTableRow(); 
+        if (tableRow != null) {
             Util.appendIndented(strGen,
                                 getDepth() + 1,
                                 "on table/row: ",
                                 "\n",
-                                this.onTableRow,
+                                tableRow,
                                 "\n");
         }
         if (this.givenCondition != null) {
@@ -84,8 +84,27 @@ public final class WriteOpSpec extends OperationSpec<WriteOpSpec> implements Ser
             }
         }
     }
+    
+    @Override
+    protected boolean deepEquals(final OperationSpec<?> otherOpSpec) {
+        final WriteOpSpec otherWriteSpec;
+        if (otherOpSpec instanceof WriteOpSpec) {
+            otherWriteSpec = (WriteOpSpec) otherOpSpec;
+            /*
+             * Equality checks ordered from least to most expensive, to allow for relatively quick
+             * short-circuiting
+             */
+            return ((Util.refEquals(this.getTableRow(), otherWriteSpec.getTableRow()))
+                    &&
+                    (Util.refEquals(this.givenCondition, otherWriteSpec.givenCondition))
+                    &&
+                    (Util.refEquals(this.withColumn, otherWriteSpec.withColumn)));
+        }
+        return false;
+    }
 
-    public WriteOpSpec(final HBaseContext context, final OperationController parent) {
-        super(context, parent);
+    public WriteOpSpec(final Object handle, final HBaseContext context, final OperationController parent) {
+        super(handle, context, parent);
+        this.withColumn = new LinkedList<>();
     }
 }

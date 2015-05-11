@@ -16,6 +16,8 @@ import com.liaison.hbase.util.Util;
 public final class Datum extends Value implements Serializable {
     
     private static final long serialVersionUID = 8100342808865479731L;
+    
+    private static final String ENTITY_PREFIX_FOR_TOSTRING = "d";
 
     public static final class Builder extends AbstractValueBuilder<Datum, Builder> {
         private Long tsObj;
@@ -47,18 +49,49 @@ public final class Datum extends Value implements Serializable {
         return getDatumBuilder().value(value).ts(timestamp).build();
     }
     
-    private final long tS;
+    private final long ts;
+    
+    private Integer hc;
+    private String strRep;
     
     public long getTS() {
-        return tS;
+        return ts;
     }
 
-    // TODO equals, toString, hashCode, etc.
+    @Override
+    public int hashCode() {
+        if (this.hc == null) {
+            this.hc = Integer.valueOf(super.hashCode() ^ Long.hashCode(this.ts));
+        }
+        return this.hc.intValue();
+    }
+    @Override
+    public boolean equals(final Object otherObj) {
+        final Datum otherDatum;
+        if (otherObj instanceof Datum) {
+            otherDatum = (Datum) otherObj;
+            return (super.equals(otherObj) && (this.ts == otherDatum.ts));
+        }
+        return false;
+    }
+    @Override
+    public String toString() {
+        if (this.strRep == null) {
+            this.strRep =
+                buildStrRep(ENTITY_PREFIX_FOR_TOSTRING, (strGen) -> {
+                    strGen.append(Util.toString(getValue(DefensiveCopyStrategy.NEVER)));
+                    strGen.append("(@");
+                    strGen.append(this.ts);
+                    strGen.append(")");
+                });
+        }
+        return this.strRep;
+    }
     
     private Datum(final Builder build) throws IllegalArgumentException {
         super(build);
         Util.ensureNotNull(build.value, this, "value", byte[].class);
         Util.ensureNotNull(build.tsObj, this, "tsObj", Long.class);
-        this.tS = build.tsObj.longValue();
+        this.ts = build.tsObj.longValue();
     }
 }

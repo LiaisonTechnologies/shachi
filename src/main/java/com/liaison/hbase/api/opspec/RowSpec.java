@@ -4,7 +4,6 @@ import java.io.Serializable;
 
 import com.liaison.hbase.dto.RowKey;
 import com.liaison.hbase.exception.SpecValidationException;
-import com.liaison.hbase.model.FamilyModel;
 import com.liaison.hbase.model.TableModel;
 import com.liaison.hbase.util.Util;
 
@@ -62,5 +61,21 @@ public final class RowSpec<P extends OperationSpec<P>> extends CriteriaSpec<RowS
     
     public RowSpec(final P parent) {
         super(parent);
+    }
+
+    @Override
+    protected int prepareHashCode() {
+        return (Util.hashCode(this.table) ^ Util.hashCode(this.rowKey));
+    }
+
+    @Override
+    public boolean equals(final Object otherObj) {
+        final RowSpec<?> otherRowSpec;
+        if (otherObj instanceof RowSpec) {
+            otherRowSpec = (RowSpec<?>) otherObj;
+            return (Util.refEquals(this.table, otherRowSpec.table)
+                    && Util.refEquals(this.rowKey, otherRowSpec.rowKey));
+        }
+        return false;
     }
 }

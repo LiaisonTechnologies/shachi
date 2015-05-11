@@ -2,6 +2,8 @@ package com.liaison.hbase.model;
 
 public class QualModel extends NamedEntity {
     
+    private static final long serialVersionUID = 7491884927269731635L;
+
     public static final class Builder {
         private Name name;
         

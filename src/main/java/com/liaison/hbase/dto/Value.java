@@ -25,8 +25,6 @@ public class Value extends NullableValue implements Serializable {
         return getValueBuilder().value(value).build();
     }
     
-    // TODO equals, toString, hashCode, etc.
-    
     protected Value(final AbstractValueBuilder<?,?> build) throws IllegalArgumentException {
         super(build);
         Util.ensureNotNull(build.value, this, "value", byte[].class);

@@ -47,6 +47,26 @@ public abstract class ColSpec<C extends ColSpec<C, P>, P extends OperationSpec<P
         prepareStrRepAdditional(strGen);
     }
     
+    protected abstract int deepHashCode();
+    @Override
+    public final int prepareHashCode() {
+        return (Util.hashCode(this.family)
+                ^ Util.hashCode(this.column)
+                ^ deepHashCode());
+    }
+    protected abstract boolean deepEquals(final ColSpec<?,?> otherColSpec);
+    @Override
+    public final boolean equals(final Object otherObj) {
+        final ColSpec<?,?> otherColSpec;
+        if (otherObj instanceof ColSpec) {
+            otherColSpec = (ColSpec<?,?>) otherObj;
+            return (Util.refEquals(this.family, this.family)
+                    && Util.refEquals(this.column, this.column)
+                    && deepEquals(otherColSpec));
+        }
+        return false;
+    }
+    
     public ColSpec(final P parent) {
         super(parent);
     }

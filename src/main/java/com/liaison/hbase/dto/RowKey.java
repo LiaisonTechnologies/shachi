@@ -11,10 +11,13 @@ package com.liaison.hbase.dto;
 import java.io.Serializable;
 
 import com.liaison.hbase.util.DefensiveCopyStrategy;
+import com.liaison.hbase.util.Util;
 
 public final class RowKey extends Value implements Serializable {
 
     private static final long serialVersionUID = 7786225976018409474L;
+    
+    private static final String ENTITY_PREFIX_FOR_TOSTRING = "r";
 
     public static final class Builder extends AbstractValueBuilder<RowKey, Builder> {
         @Override
@@ -40,8 +43,24 @@ public final class RowKey extends Value implements Serializable {
     public static final RowKey of(byte[] value) {
         return getRowKeyBuilder().value(value).build();
     }
-
-    // TODO equals, toString, hashCode, etc.
+    
+    private String strRep;
+    
+    @Override
+    public boolean equals(final Object otherObj) {
+        return ((otherObj instanceof RowKey) && (super.equals(otherObj)));
+    }
+    @Override
+    public String toString() {
+        if (this.strRep == null) {
+            this.strRep =
+                buildStrRep(ENTITY_PREFIX_FOR_TOSTRING, (strGen) -> {
+                    strGen.append(Util.toString(getValue(DefensiveCopyStrategy.NEVER)));
+                });
+        }
+        return this.strRep;
+    }
+    
     
     private RowKey(final Builder build) throws IllegalArgumentException {
         super(build);

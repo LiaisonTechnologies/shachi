@@ -9,19 +9,19 @@
 package com.liaison.hbase.exception;
 
 import com.liaison.hbase.api.opspec.ColSpec;
-import com.liaison.hbase.dto.RowKey;
+import com.liaison.hbase.api.opspec.RowSpec;
 
 public class HBaseEmptyResultSetException extends HBaseMultiColumnException {
     
     private static final long serialVersionUID = 1935706509279956966L;
     
-    public HBaseEmptyResultSetException(final RowKey rowKey, final Iterable<? extends ColSpec<?,?>> fqpList, final String message) {
-        super(rowKey, fqpList, message);
+    public HBaseEmptyResultSetException(final RowSpec<?> rowSpec, final Iterable<? extends ColSpec<?,?>> colSpecList, final String message) {
+        super(rowSpec, colSpecList, message);
     }
-    public HBaseEmptyResultSetException(final RowKey rowKey, final Iterable<? extends ColSpec<?,?>> fqpList, final String message, final Throwable cause) {
-        super(rowKey, fqpList, message, cause);
+    public HBaseEmptyResultSetException(final RowSpec<?> rowSpec, final Iterable<? extends ColSpec<?,?>> colSpecList, final String message, final Throwable cause) {
+        super(rowSpec, colSpecList, message, cause);
     }
-    public HBaseEmptyResultSetException(final RowKey rowKey, final Iterable<? extends ColSpec<?,?>> fqpList, final String message, final Throwable cause, final boolean enableSuppression, final boolean writableStackTrace) {
-        super(rowKey, fqpList, message, cause, enableSuppression, writableStackTrace);
+    public HBaseEmptyResultSetException(final RowSpec<?> rowSpec, final Iterable<? extends ColSpec<?,?>> colSpecList, final String message, final Throwable cause, final boolean enableSuppression, final boolean writableStackTrace) {
+        super(rowSpec, colSpecList, message, cause, enableSuppression, writableStackTrace);
     }
 }
