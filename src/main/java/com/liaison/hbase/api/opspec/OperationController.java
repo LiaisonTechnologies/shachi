@@ -4,7 +4,7 @@ import java.io.Serializable;
 import java.util.LinkedHashMap;
 
 import com.liaison.hbase.HBaseControl;
-import com.liaison.hbase.api.OpResult;
+import com.liaison.hbase.api.OpResultSet;
 import com.liaison.hbase.context.HBaseContext;
 import com.liaison.hbase.util.TreeNodeRoot;
 import com.liaison.hbase.util.Util;
@@ -63,7 +63,7 @@ public class OperationController extends TreeNodeRoot<OperationController> imple
         System.out.println(this.ops);
     }
     
-    public OpResult exec() {
+    public OpResultSet exec() {
         // TODO
         return null;
     }

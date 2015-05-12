@@ -6,7 +6,7 @@ import java.util.Map;
 
 import com.liaison.hbase.util.Util;
 
-public class FamilyModel extends NamedEntity {
+public final class FamilyModel extends NamedEntity {
     
     private static final long serialVersionUID = -6051047393328804323L;
 
@@ -39,6 +39,8 @@ public class FamilyModel extends NamedEntity {
         }
     }
     
+    private static final String ENTITY_TITLE = "[FAM]";
+    
     public static Builder with(final Name name) {
         return new Builder().name(name);
     }
@@ -56,7 +58,33 @@ public class FamilyModel extends NamedEntity {
         return closedQualSet;
     }
     
-    // TODO: equals/hashCode
+    @Override
+    protected String getEntityTitle() {
+        return ENTITY_TITLE;
+    }
+    
+    @Override
+    protected void deepToString(final StringBuilder strGen) {
+        strGen.append(":qual={");
+        strGen.append(this.quals);
+        strGen.append("}");
+    }
+    
+    @Override
+    protected int deepHashCode() {
+        return this.quals.hashCode();
+    }
+    
+    @Override
+    protected boolean deepEquals(final NamedEntity otherNE) {
+        final FamilyModel otherFamilyModel;
+        if (otherNE instanceof FamilyModel) {
+            otherFamilyModel = (FamilyModel) otherNE;
+            return ((this.closedQualSet == otherFamilyModel.closedQualSet)
+                    && (this.quals.equals(otherFamilyModel.quals)));
+        }
+        return false;
+    }
     
     private FamilyModel(final Builder build) throws IllegalArgumentException {
         super(build.name);

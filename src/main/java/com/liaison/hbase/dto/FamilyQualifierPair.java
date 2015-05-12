@@ -46,6 +46,12 @@ public class FamilyQualifierPair implements Serializable {
     public static Builder getBuilder() {
         return new Builder();
     }
+    public static FamilyQualifierPair of(final FamilyModel fam, final QualModel qual, final String description) throws IllegalArgumentException {
+        return getBuilder().family(fam).qual(qual).description(description).build();
+    }
+    public static FamilyQualifierPair of(final FamilyModel fam, final QualModel qual) throws IllegalArgumentException {
+        return getBuilder().family(fam).qual(qual).build();
+    }
     
     private final FamilyModel family;
     private final QualModel qual;

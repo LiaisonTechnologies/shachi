@@ -18,7 +18,7 @@ import org.slf4j.LoggerFactory;
 import co.paralleluniverse.fibers.SuspendExecution;
 import co.paralleluniverse.strands.Strand;
 
-import com.liaison.hbase.api.OpResult;
+import com.liaison.hbase.api.OpResultSet;
 import com.liaison.hbase.api.opspec.ColSpecRead;
 import com.liaison.hbase.api.opspec.ColSpecWrite;
 import com.liaison.hbase.api.opspec.CondSpec;
@@ -31,7 +31,6 @@ import com.liaison.hbase.context.DefaultHBaseContext;
 import com.liaison.hbase.context.HBaseContext;
 import com.liaison.hbase.dto.NullableValue;
 import com.liaison.hbase.dto.RowKey;
-import com.liaison.hbase.exception.HBaseColumnException;
 import com.liaison.hbase.exception.HBaseControllerLifecycleException;
 import com.liaison.hbase.exception.HBaseEmptyResultSetException;
 import com.liaison.hbase.exception.HBaseException;
@@ -53,11 +52,6 @@ public class HBaseControl extends ThreadLocalResourceAwareHBaseController {
     private static final long TABLECONNECT_RETRYDELAY_INIT_MS = 10;
     private static final long TABLECONNECT_RETRYDELAY_MAX_MS = 5000;
     private static final int TABLECONNECT_RETRYDELAY_MULTIPLIER = 2;
-    
-    /**
-     * TODO change this, figure out what should be used instead
-     */
-    private static final String TEMPORARY_KEY_FOR_STUFF = "KEY";
     
     private static final Logger LOG;
     
@@ -115,6 +109,13 @@ public class HBaseControl extends ThreadLocalResourceAwareHBaseController {
         }
     }
     
+    private static void verifyStateForExec(final OperationSpec<?> opSpec) throws IllegalStateException {
+        if (!opSpec.isFrozen()) {
+            throw new IllegalStateException(opSpec.getClass().getSimpleName()
+                                            + " must be frozen before spec may be executed"); 
+        }
+    }
+    
     /**
      * Establish a connection to the HBase table with the given name and set of column families. If
      * the table does not yet exist, create it.
@@ -135,16 +136,13 @@ public class HBaseControl extends ThreadLocalResourceAwareHBaseController {
      * @param tableName
      * @param columnFamilies String array indicating the column families which exist in the named table
      * @return
-     * @throws TokenManagerInitializationException
+     * @throws HBaseInitializationException
      */
-    private HTable connectToTable(final TableModel model) {
+    private HTable connectToTable(final TableModel model) throws HBaseInitializationException {
         String logMsg;
         String logMethodName = null;
-        final byte[] tableNameBytes;
         final String tableNameStr;
         final HBaseAdmin tableAdmin;
-        HTableDescriptor tableDesc;
-        byte[] colFam;
         HTable tbl = null;
         int attemptCount;
         long retryDelay = -1;
@@ -157,7 +155,6 @@ public class HBaseControl extends ThreadLocalResourceAwareHBaseController {
         }
         // <<<<< log <<<<<
 
-        tableNameBytes = model.getName().getValue(this.context.getDefensiveCopyStrategy());
         tableNameStr = model.getName().getStr();
         // >>>>> LOG >>>>>
         if (LOG.isTraceEnabled()) {
@@ -286,14 +283,7 @@ public class HBaseControl extends ThreadLocalResourceAwareHBaseController {
         return new OperationController(this, this.context);
     }
     
-    private static void verifyStateForExec(final OperationSpec<?> opSpec) throws IllegalStateException {
-        if (!opSpec.isFrozen()) {
-            throw new IllegalStateException(opSpec.getClass().getSimpleName()
-                                            + " must be frozen before spec may be executed"); 
-        }
-    }
-    
-    public OpResult exec(final ReadOpSpec readSpec) throws IllegalArgumentException, HBaseException, HBaseRuntimeException {
+    public OpResultSet exec(final ReadOpSpec readSpec) throws IllegalArgumentException, HBaseException, HBaseRuntimeException {
         final DefensiveCopyStrategy dcs;
         final RowSpec<?> tableRowSpec;
         final HTable readFromTable;
@@ -361,7 +351,7 @@ public class HBaseControl extends ThreadLocalResourceAwareHBaseController {
         return null;
     }
     
-    public OpResult exec(final WriteOpSpec writeSpec) throws IllegalArgumentException, IllegalStateException, HBaseException, HBaseRuntimeException {
+    public OpResultSet exec(final WriteOpSpec writeSpec) throws IllegalArgumentException, IllegalStateException, HBaseException, HBaseRuntimeException {
         final DefensiveCopyStrategy dcs;
         final RowSpec<WriteOpSpec> tableRowSpec;
         final HTable writeToTable;
@@ -401,13 +391,13 @@ public class HBaseControl extends ThreadLocalResourceAwareHBaseController {
             }
             
             condition = writeSpec.getGivenCondition();
-            if (condition != null) {
-                condPossibleValue = condition.getValue();
-                rowKey = condition.getRowKey();
-                fam = condition.getFamily();
-                qual = condition.getColumn();
-                
-                try {
+            try {
+                if (condition != null) {
+                    condPossibleValue = condition.getValue();
+                    rowKey = condition.getRowKey();
+                    fam = condition.getFamily();
+                    qual = condition.getColumn();
+                    
                     /*
                      * It's okay to use NullableValue#getValue here without disambiguating Value vs.
                      * Empty, as both are immutable, and the constructor for the former enforces that
@@ -420,13 +410,18 @@ public class HBaseControl extends ThreadLocalResourceAwareHBaseController {
                                              qual.getName().getValue(dcs),
                                              condPossibleValue.getValue(dcs),
                                              writePut);
-                } catch (IOException ioExc) {
-                    // TODO
-                    //throw new HBaseColumnException(tableRowSpec, colWriteList, "", ioExc);
-                    throw new HBaseException("");
+                } else {
+                    writeToTable.put(writePut);
                 }
-            } else {
-                writeToTable.put(writePut);
+            } catch (IOException ioExc) {
+                throw new HBaseMultiColumnException(tableRowSpec,
+                                                    colWriteList,
+                                                    ("WRITE failure"
+                                                     + ((condition == null)
+                                                        ?"; "
+                                                        :" (with condition: " + condition + "); ")
+                                                     + ioExc),
+                                                    ioExc);
             }
         } catch (HBaseException | HBaseRuntimeException exc) {
             throw exc;

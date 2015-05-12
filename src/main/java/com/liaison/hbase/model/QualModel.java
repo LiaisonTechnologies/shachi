@@ -1,6 +1,6 @@
 package com.liaison.hbase.model;
 
-public class QualModel extends NamedEntity {
+public final class QualModel extends NamedEntity {
     
     private static final long serialVersionUID = 7491884927269731635L;
 
@@ -20,6 +20,8 @@ public class QualModel extends NamedEntity {
         }
     }
     
+    private static final String ENTITY_TITLE = "[QUAL]";
+    
     public static final Builder with(final Name name) {
         return new Builder().name(name);
     }
@@ -27,7 +29,27 @@ public class QualModel extends NamedEntity {
         return with(name).build();
     }
     
-    // TODO: equals/hashCode
+    @Override
+    protected String getEntityTitle() {
+        return ENTITY_TITLE;
+    }
+    
+    @Override
+    protected void deepToString(final StringBuilder strGen) {
+        // nothing to add
+    }
+    
+    @Override
+    protected int deepHashCode() {
+        // no need to modify NamedEntity#hashCode
+        return 0;
+    }
+    
+    @Override
+    protected boolean deepEquals(final NamedEntity otherNE) {
+        // beyond ensuring that it is a QualModel instance, no need to modify NamedEntity#equals
+        return (otherNE instanceof QualModel);
+    }
     
     private QualModel(final Builder build) throws IllegalArgumentException {
         super(build.name);

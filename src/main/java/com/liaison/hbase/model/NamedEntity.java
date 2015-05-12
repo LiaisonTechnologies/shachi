@@ -17,33 +17,40 @@ public abstract class NamedEntity implements Serializable {
         return this.name;
     }
     
+    protected abstract void deepToString(final StringBuilder strGen);
+    protected String getEntityTitle() {
+        return getClass().getSimpleName();
+    }
     @Override
-    public String toString() {
+    public final String toString() {
         final StringBuilder strGen;
         if (this.strRep == null) {
             strGen = new StringBuilder();
-            strGen.append(getClass().getSimpleName());
+            strGen.append(getEntityTitle());
             strGen.append(":");
             strGen.append(this.name);
+            deepToString(strGen);
             this.strRep = strGen.toString();
         }
         return this.strRep;
     }
     
+    protected abstract int deepHashCode();
     @Override
-    public int hashCode() {
+    public final int hashCode() {
         if (this.hc == null) {
-            this.hc = Integer.valueOf(this.name.hashCode());
+            this.hc = Integer.valueOf(this.name.hashCode() ^ deepHashCode());
         }
         return this.hc.intValue();
     }
     
+    protected abstract boolean deepEquals(final NamedEntity otherNE);
     @Override
-    public boolean equals(final Object otherObj) {
+    public final boolean equals(final Object otherObj) {
         final NamedEntity otherNE;
         if (otherObj instanceof NamedEntity) {
             otherNE = (NamedEntity) otherObj;
-            return Util.refEquals(this.name, otherNE.name);
+            return (Util.refEquals(this.name, otherNE.name) && deepEquals(otherNE));
         }
         return false;
     }
