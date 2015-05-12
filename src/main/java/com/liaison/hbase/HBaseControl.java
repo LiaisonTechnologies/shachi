@@ -48,6 +48,170 @@ import com.liaison.hbase.util.Util;
 
 public class HBaseControl extends ThreadLocalResourceAwareHBaseController {
 
+    public final class HBaseDelegate {
+        
+        public Result exec(final ReadOpSpec readSpec) throws IllegalArgumentException, HBaseException, HBaseRuntimeException {
+            final DefensiveCopyStrategy dcs;
+            final RowSpec<?> tableRowSpec;
+            final HTable readFromTable;
+            final Get readGet;
+            final List<ColSpecRead<ReadOpSpec>> colReadList;
+            FamilyModel colFam;
+            QualModel colQual;
+            final Result res;
+            
+            verifyStateForExec(readSpec);
+            dcs = HBaseControl.this.context.getDefensiveCopyStrategy();
+            
+            //TODO: major error handling, null-checking, etc.
+            try {
+                tableRowSpec = readSpec.getTableRow();
+                readFromTable = HBaseControl.this.tableSet.get(tableRowSpec.getTable()).get();
+                readGet = new Get(tableRowSpec.getRowKey().getValue(dcs));
+                try {
+                    ReadUtils.applyTS(readGet, readSpec);
+                } catch (IOException ioExc) {
+                    throw new HBaseTableRowException(tableRowSpec,
+                                                  "Failed to apply timestamp cond to READ per spec: "
+                                                  + readSpec + "; " + ioExc,
+                                                  ioExc);
+                }
+                colReadList = readSpec.getWithColumn();
+                if (colReadList != null) {
+                    for (ColSpecRead<ReadOpSpec> colSpec : colReadList) {
+                        colFam = colSpec.getFamily();
+                        colQual = colSpec.getColumn();
+                        if (colFam != null) {
+                            if (colQual != null) {
+                                readGet.addColumn(colFam.getName().getValue(dcs),
+                                                  colQual.getName().getValue(dcs));
+                            } else {
+                                readGet.addFamily(colFam.getName().getValue(dcs));
+                            }
+                        }
+                    }
+                }
+                try {
+                    res = readFromTable.get(readGet);
+                } catch (IOException ioExc) {
+                    throw new HBaseMultiColumnException(tableRowSpec,
+                                                        colReadList,
+                                                        "READ failed; " + ioExc,
+                                                        ioExc);
+                }
+                if ((res == null) || (res.isEmpty())) {
+                    throw new HBaseEmptyResultSetException(tableRowSpec,
+                                                           colReadList,
+                                                           "READ failed; null/empty result set");
+                }
+            } catch (HBaseException | HBaseRuntimeException exc) {
+                throw exc;
+            } catch (Exception exc) {
+                throw new HBaseRuntimeException("Unexpected failure during READ operation ("
+                                                + readSpec
+                                                + "): "
+                                                + exc.toString(),
+                                                exc);
+            }
+            return res;
+        }
+        
+        public boolean exec(final WriteOpSpec writeSpec) throws IllegalArgumentException, IllegalStateException, HBaseException, HBaseRuntimeException {
+            final DefensiveCopyStrategy dcs;
+            final RowSpec<WriteOpSpec> tableRowSpec;
+            final HTable writeToTable;
+            final List<ColSpecWrite<WriteOpSpec>> colWriteList;
+            Long writeTS;
+            final CondSpec<?> condition;
+            final NullableValue condPossibleValue;
+            RowKey rowKey;
+            FamilyModel fam;
+            QualModel qual;
+            final Put writePut;
+            boolean writeCompleted;
+            
+            writeCompleted = false;
+            verifyStateForExec(writeSpec);
+            
+            dcs = HBaseControl.this.context.getDefensiveCopyStrategy();
+            
+            try {
+                tableRowSpec = writeSpec.getTableRow();
+                writeToTable = HBaseControl.this.tableSet.get(tableRowSpec.getTable()).get();
+                writePut = new Put(tableRowSpec.getRowKey().getValue(dcs));
+                
+                colWriteList = writeSpec.getWithColumn();
+                if (colWriteList != null) {
+                    for (ColSpecWrite<WriteOpSpec> colWrite : colWriteList) {
+                        writeTS = colWrite.getTs();
+                        if (writeTS == null) {
+                            writePut.add(colWrite.getFamily().getName().getValue(dcs),
+                                         colWrite.getColumn().getName().getValue(dcs),
+                                         colWrite.getValue().getValue(dcs));
+                        } else {
+                            writePut.add(colWrite.getFamily().getName().getValue(dcs),
+                                         colWrite.getColumn().getName().getValue(dcs),
+                                         writeTS.longValue(),
+                                         colWrite.getValue().getValue(dcs));
+                        }
+                    }
+                }
+                
+                condition = writeSpec.getGivenCondition();
+                try {
+                    if (condition != null) {
+                        condPossibleValue = condition.getValue();
+                        rowKey = condition.getRowKey();
+                        fam = condition.getFamily();
+                        qual = condition.getColumn();
+                        
+                        /*
+                         * It's okay to use NullableValue#getValue here without disambiguating Value vs.
+                         * Empty, as both are immutable, and the constructor for the former enforces that
+                         * getValue must return NON-NULL, and the constructor for the latter enforces that
+                         * getValue must return NULL. Thus, getValue returns what checkAndPut needs in
+                         * either case.
+                         */
+                        writeCompleted =
+                            writeToTable.checkAndPut(rowKey.getValue(dcs),
+                                                     fam.getName().getValue(dcs),
+                                                     qual.getName().getValue(dcs),
+                                                     condPossibleValue.getValue(dcs),
+                                                     writePut);
+                    } else {
+                        writeToTable.put(writePut);
+                        writeCompleted = true;
+                    }
+                } catch (IOException ioExc) {
+                    throw new HBaseMultiColumnException(tableRowSpec,
+                                                        colWriteList,
+                                                        ("WRITE failure"
+                                                         + ((condition == null)
+                                                            ?"; "
+                                                            :" (with condition: " + condition + "); ")
+                                                         + ioExc),
+                                                        ioExc);
+                }
+            } catch (HBaseException | HBaseRuntimeException exc) {
+                throw exc;
+            } catch (Exception exc) {
+                throw new HBaseException("Unexpected failure during WRITE operation ("
+                                         + writeSpec
+                                         + "): "
+                                         + exc.toString(),
+                                         exc);
+            }
+            return writeCompleted;
+        }
+        
+        /**
+         * Use a private constructor so that the enclosing HBaseControl instance can control who
+         * has access to the delegate (and, consequently, who can execute HBase operations based
+         * upon specifications).
+         */
+        private HBaseDelegate() { }
+    }
+    
     private static final int TABLECONNECT_ATTEMPTS_MAX = 10;
     private static final long TABLECONNECT_RETRYDELAY_INIT_MS = 10;
     private static final long TABLECONNECT_RETRYDELAY_MAX_MS = 5000;
@@ -58,10 +222,6 @@ public class HBaseControl extends ThreadLocalResourceAwareHBaseController {
     static {
         LOG = LoggerFactory.getLogger(HBaseControl.class);
     }
-        
-    private final HBaseContext context;
-    private final ThreadLocal<HBaseAdmin> admin;
-    private final ConcurrentHashMap<TableModel, ThreadLocal<HTable>> tableSet;
     
     private static final void createTableFromModel(final HBaseAdmin tableAdmin, final TableModel model, final DefensiveCopyStrategy dcs) throws IOException {
         final String logMethodName;
@@ -115,6 +275,11 @@ public class HBaseControl extends ThreadLocalResourceAwareHBaseController {
                                             + " must be frozen before spec may be executed"); 
         }
     }
+    
+    private final HBaseContext context;
+    private final ThreadLocal<HBaseAdmin> admin;
+    private final ConcurrentHashMap<TableModel, ThreadLocal<HTable>> tableSet;
+    private final HBaseDelegate delegate;
     
     /**
      * Establish a connection to the HBase table with the given name and set of column families. If
@@ -280,164 +445,13 @@ public class HBaseControl extends ThreadLocalResourceAwareHBaseController {
     }
     
     public OperationController now() {
-        return new OperationController(this, this.context);
-    }
-    
-    public OpResultSet exec(final ReadOpSpec readSpec) throws IllegalArgumentException, HBaseException, HBaseRuntimeException {
-        final DefensiveCopyStrategy dcs;
-        final RowSpec<?> tableRowSpec;
-        final HTable readFromTable;
-        final Get readGet;
-        final List<ColSpecRead<ReadOpSpec>> colReadList;
-        FamilyModel colFam;
-        QualModel colQual;
-        final Result res;
-        
-        verifyStateForExec(readSpec);
-        dcs = this.context.getDefensiveCopyStrategy();
-        
-        //TODO: major error handling, null-checking, etc.
-        try {
-            tableRowSpec = readSpec.getTableRow();
-            readFromTable = this.tableSet.get(tableRowSpec.getTable()).get();
-            readGet = new Get(tableRowSpec.getRowKey().getValue(dcs));
-            try {
-                ReadUtils.applyTS(readGet, readSpec);
-            } catch (IOException ioExc) {
-                throw new HBaseTableRowException(tableRowSpec,
-                                              "Failed to apply timestamp cond to READ per spec: "
-                                              + readSpec + "; " + ioExc,
-                                              ioExc);
-            }
-            colReadList = readSpec.getWithColumn();
-            if (colReadList != null) {
-                for (ColSpecRead<ReadOpSpec> colSpec : colReadList) {
-                    colFam = colSpec.getFamily();
-                    colQual = colSpec.getColumn();
-                    if (colFam != null) {
-                        if (colQual != null) {
-                            readGet.addColumn(colFam.getName().getValue(dcs),
-                                              colQual.getName().getValue(dcs));
-                        } else {
-                            readGet.addFamily(colFam.getName().getValue(dcs));
-                        }
-                    }
-                }
-            }
-            try {
-                res = readFromTable.get(readGet);
-            } catch (IOException ioExc) {
-                throw new HBaseMultiColumnException(tableRowSpec,
-                                                    colReadList,
-                                                    "READ failed; " + ioExc,
-                                                    ioExc);
-            }
-            if ((res == null) || (res.isEmpty())) {
-                throw new HBaseEmptyResultSetException(tableRowSpec,
-                                                       colReadList,
-                                                       "READ failed; null/empty result set");
-            }
-        } catch (HBaseException | HBaseRuntimeException exc) {
-            throw exc;
-        } catch (Exception exc) {
-            throw new HBaseRuntimeException("Unexpected failure during READ operation ("
-                                            + readSpec
-                                            + "): "
-                                            + exc.toString(),
-                                            exc);
-        }
-        
-        //TODO
-        return null;
-    }
-    
-    public OpResultSet exec(final WriteOpSpec writeSpec) throws IllegalArgumentException, IllegalStateException, HBaseException, HBaseRuntimeException {
-        final DefensiveCopyStrategy dcs;
-        final RowSpec<WriteOpSpec> tableRowSpec;
-        final HTable writeToTable;
-        final List<ColSpecWrite<WriteOpSpec>> colWriteList;
-        Long writeTS;
-        final CondSpec<?> condition;
-        final NullableValue condPossibleValue;
-        RowKey rowKey;
-        FamilyModel fam;
-        QualModel qual;
-        final Put writePut;
-        
-        verifyStateForExec(writeSpec);
-        
-        dcs = this.context.getDefensiveCopyStrategy();
-        
-        try {
-            tableRowSpec = writeSpec.getTableRow();
-            writeToTable = this.tableSet.get(tableRowSpec.getTable()).get();
-            writePut = new Put(tableRowSpec.getRowKey().getValue(dcs));
-            
-            colWriteList = writeSpec.getWithColumn();
-            if (colWriteList != null) {
-                for (ColSpecWrite<WriteOpSpec> colWrite : colWriteList) {
-                    writeTS = colWrite.getTs();
-                    if (writeTS == null) {
-                        writePut.add(colWrite.getFamily().getName().getValue(dcs),
-                                     colWrite.getColumn().getName().getValue(dcs),
-                                     colWrite.getValue().getValue(dcs));
-                    } else {
-                        writePut.add(colWrite.getFamily().getName().getValue(dcs),
-                                     colWrite.getColumn().getName().getValue(dcs),
-                                     writeTS.longValue(),
-                                     colWrite.getValue().getValue(dcs));
-                    }
-                }
-            }
-            
-            condition = writeSpec.getGivenCondition();
-            try {
-                if (condition != null) {
-                    condPossibleValue = condition.getValue();
-                    rowKey = condition.getRowKey();
-                    fam = condition.getFamily();
-                    qual = condition.getColumn();
-                    
-                    /*
-                     * It's okay to use NullableValue#getValue here without disambiguating Value vs.
-                     * Empty, as both are immutable, and the constructor for the former enforces that
-                     * getValue must return NON-NULL, and the constructor for the latter enforces that
-                     * getValue must return NULL. Thus, getValue returns what checkAndPut needs in
-                     * either case.
-                     */
-                    writeToTable.checkAndPut(rowKey.getValue(dcs),
-                                             fam.getName().getValue(dcs),
-                                             qual.getName().getValue(dcs),
-                                             condPossibleValue.getValue(dcs),
-                                             writePut);
-                } else {
-                    writeToTable.put(writePut);
-                }
-            } catch (IOException ioExc) {
-                throw new HBaseMultiColumnException(tableRowSpec,
-                                                    colWriteList,
-                                                    ("WRITE failure"
-                                                     + ((condition == null)
-                                                        ?"; "
-                                                        :" (with condition: " + condition + "); ")
-                                                     + ioExc),
-                                                    ioExc);
-            }
-        } catch (HBaseException | HBaseRuntimeException exc) {
-            throw exc;
-        } catch (Exception exc) {
-            throw new HBaseRuntimeException("Unexpected failure during WRITE operation ("
-                                            + writeSpec
-                                            + "): "
-                                            + exc.toString(),
-                                            exc);
-        }
-        return null;
+        return new OperationController(this.delegate, this.context);
     }
     
     public HBaseControl() {
         // TODO initialization to reasonable values
         this.context = DefaultHBaseContext.getBuilder().build();
+        this.delegate = new HBaseDelegate();
         this.admin = null;
         this.tableSet = null;
     }
