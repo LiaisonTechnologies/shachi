@@ -18,7 +18,6 @@ import org.slf4j.LoggerFactory;
 import co.paralleluniverse.fibers.SuspendExecution;
 import co.paralleluniverse.strands.Strand;
 
-import com.liaison.hbase.api.OpResultSet;
 import com.liaison.hbase.api.opspec.ColSpecRead;
 import com.liaison.hbase.api.opspec.ColSpecWrite;
 import com.liaison.hbase.api.opspec.CondSpec;
@@ -27,7 +26,6 @@ import com.liaison.hbase.api.opspec.OperationSpec;
 import com.liaison.hbase.api.opspec.ReadOpSpec;
 import com.liaison.hbase.api.opspec.RowSpec;
 import com.liaison.hbase.api.opspec.WriteOpSpec;
-import com.liaison.hbase.context.DefaultHBaseContext;
 import com.liaison.hbase.context.HBaseContext;
 import com.liaison.hbase.dto.NullableValue;
 import com.liaison.hbase.dto.RowKey;
@@ -36,6 +34,7 @@ import com.liaison.hbase.exception.HBaseEmptyResultSetException;
 import com.liaison.hbase.exception.HBaseException;
 import com.liaison.hbase.exception.HBaseInitializationException;
 import com.liaison.hbase.exception.HBaseMultiColumnException;
+import com.liaison.hbase.exception.HBaseNoSuchTableException;
 import com.liaison.hbase.exception.HBaseRuntimeException;
 import com.liaison.hbase.exception.HBaseTableRowException;
 import com.liaison.hbase.model.FamilyModel;
@@ -53,6 +52,7 @@ public class HBaseControl extends ThreadLocalResourceAwareHBaseController {
         public Result exec(final ReadOpSpec readSpec) throws IllegalArgumentException, HBaseException, HBaseRuntimeException {
             final DefensiveCopyStrategy dcs;
             final RowSpec<?> tableRowSpec;
+            
             final HTable readFromTable;
             final Get readGet;
             final List<ColSpecRead<ReadOpSpec>> colReadList;
@@ -60,13 +60,15 @@ public class HBaseControl extends ThreadLocalResourceAwareHBaseController {
             QualModel colQual;
             final Result res;
             
+            // Ensure that the spec contains all required attributes for a READ operation
             verifyStateForExec(readSpec);
+            
             dcs = HBaseControl.this.context.getDefensiveCopyStrategy();
             
             //TODO: major error handling, null-checking, etc.
             try {
                 tableRowSpec = readSpec.getTableRow();
-                readFromTable = HBaseControl.this.tableSet.get(tableRowSpec.getTable()).get();
+                readFromTable = obtainTable(tableRowSpec.getTable());
                 readGet = new Get(tableRowSpec.getRowKey().getValue(dcs));
                 try {
                     ReadUtils.applyTS(readGet, readSpec);
@@ -131,13 +133,15 @@ public class HBaseControl extends ThreadLocalResourceAwareHBaseController {
             boolean writeCompleted;
             
             writeCompleted = false;
+            
+            // Ensure that the spec contains all required attributes for a READ operation
             verifyStateForExec(writeSpec);
             
             dcs = HBaseControl.this.context.getDefensiveCopyStrategy();
             
             try {
                 tableRowSpec = writeSpec.getTableRow();
-                writeToTable = HBaseControl.this.tableSet.get(tableRowSpec.getTable()).get();
+                writeToTable = obtainTable(tableRowSpec.getTable());
                 writePut = new Put(tableRowSpec.getRowKey().getValue(dcs));
                 
                 colWriteList = writeSpec.getWithColumn();
@@ -223,7 +227,7 @@ public class HBaseControl extends ThreadLocalResourceAwareHBaseController {
         LOG = LoggerFactory.getLogger(HBaseControl.class);
     }
     
-    private static final void createTableFromModel(final HBaseAdmin tableAdmin, final TableModel model, final DefensiveCopyStrategy dcs) throws IOException {
+    private static final void createTableFromModel(final HBaseAdmin tableAdmin, final TableModel model, Name tableName, final DefensiveCopyStrategy dcs) throws IOException {
         final String logMethodName;
         final HTableDescriptor tableDesc;
         final byte[] tableNameBytes;
@@ -237,33 +241,36 @@ public class HBaseControl extends ThreadLocalResourceAwareHBaseController {
         }
         // <<<<< log <<<<<
 
-        tableNameBytes = model.getName().getValue(dcs);
+        if (tableName == null) {
+            tableName = model.getName();
+        }
+        tableNameBytes = tableName.getValue(dcs);
         
         if (!tableAdmin.tableExists(tableNameBytes)) {
             Util.traceLog(LOG, logMethodName, "table does not exist; creating...");
             tableDesc = new HTableDescriptor(TableName.valueOf(tableNameBytes));
             model.getFamilies()
-                .entrySet()
-                .stream()
-                .forEachOrdered((famEntry) -> {
-                    final Name familyName;
-                    final String familyNameStr;
-                    final byte[] familyNameBytes;
-                    final HColumnDescriptor colFamDesc;
+                 .entrySet()
+                 .stream()
+                 .forEachOrdered((famEntry) -> {
+                     final Name familyName;
+                     final String familyNameStr;
+                     final byte[] familyNameBytes;
+                     final HColumnDescriptor colFamDesc;
+
+                     familyName = famEntry.getKey();
+                     familyNameBytes = familyName.getValue(dcs);
+                     familyNameStr = familyName.getStr();
+
+                     colFamDesc = new HColumnDescriptor(familyNameBytes);
+                     tableDesc.addFamily(colFamDesc);
                     
-                    familyName = famEntry.getKey();
-                    familyNameBytes = familyName.getValue(dcs);
-                    familyNameStr = familyName.getStr();
-                    
-                    colFamDesc = new HColumnDescriptor(familyNameBytes);
-                    tableDesc.addFamily(colFamDesc);
-                    
-                    // >>>>> LOG >>>>>
-                    if (LOG.isTraceEnabled()) {
-                        LOG.trace("[" + logMethodName + "] added family: " + familyNameStr);
-                    }
-                    // <<<<< log <<<<<
-                });
+                     // >>>>> LOG >>>>>
+                     if (LOG.isTraceEnabled()) {
+                         LOG.trace("[" + logMethodName + "] added family: " + familyNameStr);
+                     }
+                     // <<<<< log <<<<<
+                 });
             tableAdmin.createTable(tableDesc);
             Util.traceLog(LOG, logMethodName, "table created");
         }
@@ -280,6 +287,40 @@ public class HBaseControl extends ThreadLocalResourceAwareHBaseController {
     private final ThreadLocal<HBaseAdmin> admin;
     private final ConcurrentHashMap<TableModel, ThreadLocal<HTable>> tableSet;
     private final HBaseDelegate delegate;
+    
+    /**
+     * Create a new instance of HBaseAdmin using the configuration assigned to this instance.
+     * 
+     * TODO: This method of connecting to the HBase admin client is deprecated as of 0.99.0, and
+     * has been replaced by a new method (previously unavailable) wherein a Connection is
+     * established first, then an Admin reference is retrieved from the Connection. (See:
+     * https://hbase.apache.org/apidocs/index.html?org/apache/hadoop/hbase/client/HBaseAdmin.html
+     * -AND- https://hbase.apache.org/apidocs/org/apache/hadoop/hbase/client/Connection.html#
+     * getAdmin%28%29)
+     * 
+     * @return HBaseAdmin instance representing the HBase instance referenced by the configuration
+     * @throws TokenManagerInitializationException If an {@link IOException} occurs during
+     * establishment of the HBaseAdmin connection.
+     */
+    private HBaseAdmin connectAdmin() throws HBaseInitializationException {
+        String logMsg;
+        final HBaseAdmin admin;
+        // >>>>> LOG >>>>>
+        if (LOG.isTraceEnabled()) { LOG.trace(">>> connectAdmin"); }
+        // <<<<< log <<<<<
+        try {
+            admin = new HBaseAdmin(this.context.getHBaseConfiguration());
+        } catch (IOException ioExc) {
+            logMsg = 
+                "Failed to establish admin connection; " + ioExc.toString();
+            LOG.error(logMsg, ioExc);
+            throw new HBaseInitializationException(logMsg, ioExc);
+        }
+        // >>>>> LOG >>>>>
+        if (LOG.isTraceEnabled()) { LOG.trace("<<< connectAdmin"); }
+        // <<<<< log <<<<<
+        return admin;
+    }
     
     /**
      * Establish a connection to the HBase table with the given name and set of column families. If
@@ -306,6 +347,7 @@ public class HBaseControl extends ThreadLocalResourceAwareHBaseController {
     private HTable connectToTable(final TableModel model) throws HBaseInitializationException {
         String logMsg;
         String logMethodName = null;
+        final Name tableName;
         final String tableNameStr;
         final HBaseAdmin tableAdmin;
         HTable tbl = null;
@@ -320,10 +362,11 @@ public class HBaseControl extends ThreadLocalResourceAwareHBaseController {
         }
         // <<<<< log <<<<<
 
-        tableNameStr = model.getName().getStr();
+        tableName = this.context.getTableNamingStrategy().generate(model);
+        tableNameStr = tableName.getStr();
         // >>>>> LOG >>>>>
         if (LOG.isTraceEnabled()) {
-            LOG.trace("[" + logMethodName + "] full table name: " + model.getName());
+            LOG.trace("[" + logMethodName + "] full table name: " + tableName);
         }
         // <<<<< log <<<<<
         
@@ -340,7 +383,7 @@ public class HBaseControl extends ThreadLocalResourceAwareHBaseController {
             } else {
                 // >>>>> LOG >>>>>
                 if (LOG.isDebugEnabled()) {
-                    logMsg = "Table '" + model.getName() + "' connection attempt "
+                    logMsg = "Table '" + tableName + "' connection attempt "
                              + attemptCount + "/" + TABLECONNECT_ATTEMPTS_MAX
                              + " failed; retrying in " + retryDelay + "ms...";
                     Util.traceLog(LOG, logMethodName, logMsg);
@@ -360,7 +403,7 @@ public class HBaseControl extends ThreadLocalResourceAwareHBaseController {
             
             // >>>>> LOG >>>>>
             if (LOG.isDebugEnabled()) {
-                logMsg = "Table '" + model.getName() + "' connection attempt "
+                logMsg = "Table '" + tableName + "' connection attempt "
                          + attemptCount + "/" + TABLECONNECT_ATTEMPTS_MAX
                          + " starting...";
                 Util.traceLog(LOG, logMethodName, logMsg);
@@ -374,16 +417,19 @@ public class HBaseControl extends ThreadLocalResourceAwareHBaseController {
              * handle for the table.
              */
             try {
-                createTableFromModel(tableAdmin, model, getContext().getDefensiveCopyStrategy());
+                createTableFromModel(tableAdmin,
+                                     model,
+                                     tableName,
+                                     getContext().getDefensiveCopyStrategy());
                 tbl =
                     new HTable(context.getHBaseConfiguration(),
-                               model.getName().getValue(this.context.getDefensiveCopyStrategy()));
+                               tableName.getValue(this.context.getDefensiveCopyStrategy()));
             } catch (IOException | IllegalArgumentException exc) {
                 // >>>>> LOG >>>>>
                 if (LOG.isDebugEnabled()) {
                     logMsg = 
                         "Failed to establish connection to table "
-                        + model.getName()
+                        + tableName
                         + "; "
                         + exc.toString();
                     Util.traceLog(LOG, logMethodName, logMsg, exc);
@@ -440,6 +486,25 @@ public class HBaseControl extends ThreadLocalResourceAwareHBaseController {
         return tbl;
     }
     
+    private HTable obtainTable(final TableModel model) throws HBaseNoSuchTableException, HBaseInitializationException {
+        String logMsg;
+        ThreadLocal<HTable> tlTable;
+
+        tlTable = this.tableSet.get(model);
+        if (tlTable == null) {
+            tlTable =
+                ThreadLocal.withInitial(() -> {
+                    return connectToTable(model);
+                });
+            tlTable = this.tableSet.putIfAbsent(model, tlTable);
+        }
+        if (tlTable == null) {
+            logMsg = "No table for model " + model + " exists, and initialization failed";
+            throw new HBaseInitializationException(logMsg);
+        }
+        return tlTable.get();
+    }
+    
     public HBaseContext getContext() {
         return this.context;
     }
@@ -448,11 +513,11 @@ public class HBaseControl extends ThreadLocalResourceAwareHBaseController {
         return new OperationController(this.delegate, this.context);
     }
     
-    public HBaseControl() {
-        // TODO initialization to reasonable values
-        this.context = DefaultHBaseContext.getBuilder().build();
+    public HBaseControl(final HBaseContext context) {
+        Util.ensureNotNull(context, this, "context", HBaseContext.class);
+        this.context = context;
         this.delegate = new HBaseDelegate();
-        this.admin = null;
-        this.tableSet = null;
+        this.admin = ThreadLocal.withInitial(() -> {return connectAdmin();});
+        this.tableSet = new ConcurrentHashMap<>();
     }
 }

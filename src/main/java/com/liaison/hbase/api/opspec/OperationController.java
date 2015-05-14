@@ -69,14 +69,12 @@ public class OperationController extends TreeNodeRoot<OperationController> imple
     public OpResultSet exec() throws HBaseUnsupportedOperationException, HBaseTableRowException, HBaseException {
         String logMsg;
         final OpResultSet opResSet;
-        Object handle;
         OperationSpec<?> opSpec;
         ReadOpSpec readOpSpec;
         WriteOpSpec writeOpSpec;
         
         opResSet = new OpResultSet(this.context.getDefensiveCopyStrategy());
         for (Map.Entry<Object, OperationSpec<?>> op : this.ops.entrySet()) {
-            handle = op.getKey();
             opSpec = op.getValue();
             if (opSpec instanceof ReadOpSpec) {
                 readOpSpec = (ReadOpSpec) opSpec;

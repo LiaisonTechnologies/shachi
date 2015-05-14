@@ -7,5 +7,6 @@ import com.liaison.hbase.util.DefensiveCopyStrategy;
 public interface HBaseContext {
     Configuration getHBaseConfiguration();
     DefensiveCopyStrategy getDefensiveCopyStrategy();
+    TableNamingStrategy getTableNamingStrategy();
     boolean doCreateAbsentTables();
 }

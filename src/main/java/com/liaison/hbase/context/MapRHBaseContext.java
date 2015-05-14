@@ -1,15 +1,16 @@
 package com.liaison.hbase.context;
 
-public class DefaultHBaseContext extends CommonHBaseContext {
 
-    public static final class Builder extends AbstractHBaseContextBuilder<DefaultHBaseContext, Builder> {
+public class MapRHBaseContext extends CommonHBaseContext {
+
+    public static final class Builder extends AbstractHBaseContextBuilder<MapRHBaseContext, Builder> {
         @Override
         public Builder self() {
             return this;
         }
         @Override
-        public DefaultHBaseContext build() {
-            return new DefaultHBaseContext(this);
+        public MapRHBaseContext build() {
+            return new MapRHBaseContext(this);
         }
         private Builder() { }
     }
@@ -26,7 +27,7 @@ public class DefaultHBaseContext extends CommonHBaseContext {
         return DEFAULT_TABLENAMINGSTRATEGY;
     }
     
-    public DefaultHBaseContext(final Builder build) {
+    public MapRHBaseContext(final Builder build) {
         super(build);
     }
 }

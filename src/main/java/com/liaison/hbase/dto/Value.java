@@ -17,6 +17,28 @@ public class Value extends NullableValue implements Serializable {
     
     private static final long serialVersionUID = 8100342808865479731L;
     
+    public static class Builder extends AbstractValueBuilder<Value, Builder> {
+        @Override
+        protected Builder self() {
+            return this;
+        }
+        @Override
+        public Value build() {
+            return new Value(self());
+        }
+        public Empty voidBuild() {
+            return new Empty(self());
+        }
+        
+        private Builder() throws IllegalArgumentException {
+            super();
+        }
+    }
+    
+    public static Builder getValueBuilder() {
+        return new Builder();
+    }
+    
     public static Value of(final byte[] value, final DefensiveCopyStrategy copyStrategy) {
         return getValueBuilder().value(value, copyStrategy).build();
     }

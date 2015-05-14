@@ -35,29 +35,9 @@ public abstract class NullableValue implements Serializable {
             this.value = null;
         }
     }
-    public static class Builder extends AbstractValueBuilder<Value, Builder> {
-        @Override
-        protected Builder self() {
-            return this;
-        }
-        @Override
-        public Value build() {
-            return new Value(self());
-        }
-        public Empty voidBuild() {
-            return new Empty(self());
-        }
-        
-        private Builder() throws IllegalArgumentException {
-            super();
-        }
-    }
     
     private static final String ENTITY_PREFIX_FOR_TOSTRING = "v";
     
-    public static Builder getValueBuilder() {
-        return new Builder();
-    }
     protected static String buildStrRep(final String entityTypeIdentifier, final Consumer<StringBuilder> contentGenerator) {
         final StringBuilder strGen;
         strGen = new StringBuilder();
