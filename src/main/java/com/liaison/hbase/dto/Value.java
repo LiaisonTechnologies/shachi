@@ -9,6 +9,7 @@
 package com.liaison.hbase.dto;
 
 import java.io.Serializable;
+import java.nio.charset.Charset;
 
 import com.liaison.hbase.util.DefensiveCopyStrategy;
 import com.liaison.hbase.util.Util;
@@ -45,6 +46,15 @@ public class Value extends NullableValue implements Serializable {
     @Deprecated
     public static Value of(final byte[] value) {
         return getValueBuilder().value(value).build();
+    }
+    public static Value of(final String str) {
+        return getValueBuilder().value(Util.toBytes(str), DefensiveCopyStrategy.NEVER).build();
+    }
+    public static Value of(final String str, final Charset charset) {
+        return
+            getValueBuilder()
+            .value(Util.toBytes(str, charset), DefensiveCopyStrategy.NEVER)
+            .build();
     }
     
     protected Value(final AbstractValueBuilder<?,?> build) throws IllegalArgumentException {

@@ -15,8 +15,10 @@ public class MapRHBaseContext extends CommonHBaseContext {
         private Builder() { }
     }
     
+    private static final String DEFAULT_MAPRTABLES_PREFIX = "/user/mapr/tables/";
     private static final TableNamingStrategy
-        DEFAULT_TABLENAMINGSTRATEGY = new IdentityTableNamingStrategy();
+        DEFAULT_TABLENAMINGSTRATEGY =
+            new DirectoryPrefixedTableNamingStrategy(DEFAULT_MAPRTABLES_PREFIX);
 
     public static final Builder getBuilder() {
         return new Builder();

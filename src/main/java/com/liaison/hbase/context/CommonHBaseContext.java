@@ -3,7 +3,6 @@ package com.liaison.hbase.context;
 import java.util.function.Supplier;
 
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.hbase.HBaseConfiguration;
 
 import com.liaison.hbase.util.AbstractSelfRefBuilder;
 import com.liaison.hbase.util.DefensiveCopyStrategy;
@@ -15,7 +14,7 @@ public abstract class CommonHBaseContext implements HBaseContext {
         protected DefensiveCopyStrategy defensiveCopyStrategy;
         protected Boolean createAbsentTables;
         protected TableNamingStrategy tableNamingStrategy;
-        protected Supplier<HBaseConfiguration> configProvider;
+        protected Supplier<Configuration> configProvider;
         public B createAbsentTables(final boolean createAbsentTables) {
             this.createAbsentTables = Boolean.valueOf(createAbsentTables);
             return self();
@@ -28,7 +27,7 @@ public abstract class CommonHBaseContext implements HBaseContext {
             this.tableNamingStrategy = tableNamingStrategy;
             return self();
         }
-        public B configProvider(final Supplier<HBaseConfiguration> configProvider) {
+        public B configProvider(final Supplier<Configuration> configProvider) {
             this.configProvider = configProvider;
             return self();
         }
@@ -47,7 +46,7 @@ public abstract class CommonHBaseContext implements HBaseContext {
     private final DefensiveCopyStrategy defensiveCopyStrategy;
     private final boolean createAbsentTables;
     private final TableNamingStrategy tableNamingStrategy;
-    private final Supplier<HBaseConfiguration> configProvider;
+    private final Supplier<Configuration> configProvider;
     
     protected abstract TableNamingStrategy getDefaultTableNamingStrategy();
     
