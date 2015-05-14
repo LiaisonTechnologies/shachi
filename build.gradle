@@ -42,7 +42,7 @@ repositories {
 }
 
 dependencies {
-    compile "co.paralleluniverse:quasar-core:${verQuasar}${classifier}@jar"
+    compile "co.paralleluniverse:quasar-core:${verQuasar}${classifier}"
     compile "org.apache.hbase:hbase-client:${verHBase}"
     compile "org.apache.hbase:hbase-common:${verHBase}"
     testCompile "org.testng:testng:${verTestNG}"

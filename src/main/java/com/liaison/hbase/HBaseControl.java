@@ -489,14 +489,24 @@ public class HBaseControl extends ThreadLocalResourceAwareHBaseController {
     private HTable obtainTable(final TableModel model) throws HBaseNoSuchTableException, HBaseInitializationException {
         String logMsg;
         ThreadLocal<HTable> tlTable;
+        final ThreadLocal<HTable> tlNewTable;
 
         tlTable = this.tableSet.get(model);
         if (tlTable == null) {
-            tlTable =
+            tlNewTable =
                 ThreadLocal.withInitial(() -> {
                     return connectToTable(model);
                 });
-            tlTable = this.tableSet.putIfAbsent(model, tlTable);
+            tlTable = this.tableSet.putIfAbsent(model, tlNewTable);
+            /*
+             * In the unlikely event that some other concurrent strand put a ThreadLocal<HTable>
+             * into the concurrent map between the initial check and the putIfAbsent, then be sure
+             * to return *that* one, rather than the one just created locally (tlNewTable). In most
+             * cases, the return should be tlNewTable, though.
+             */
+            if (tlTable == null) {
+                tlTable = tlNewTable;
+            }
         }
         if (tlTable == null) {
             logMsg = "No table for model " + model + " exists, and initialization failed";
