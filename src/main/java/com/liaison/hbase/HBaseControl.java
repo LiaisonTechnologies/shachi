@@ -519,7 +519,7 @@ public class HBaseControl extends ThreadLocalResourceAwareHBaseController {
         return this.context;
     }
     
-    public OperationController now() {
+    public OperationController begin() {
         return new OperationController(this.delegate, this.context);
     }
     

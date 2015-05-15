@@ -53,6 +53,7 @@ task fatJar(type: Jar) {
     baseName = project.name + '-all'
     from {
         configurations.compile.collect {
+            logger.info "Including compile dependency in fat JAR: ${it}"
             it.isDirectory() ? it : zipTree(it)
         }
     }

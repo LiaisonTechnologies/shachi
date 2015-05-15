@@ -29,6 +29,19 @@ public class TestMapREnd2End {
     private static final String COLUMNQUAL_Z = "Z";
     private static final long TS_SAMPLE_1 = 1234567890;
     
+    private static final QualModel QUAL_MODEL_Z =
+        QualModel.with(Name.of(COLUMNQUAL_Z)).build();
+    private static final FamilyModel FAM_MODEL_a =
+        FamilyModel
+            .with(Name.of(COLUMNFAMILY_a))
+            .qual(QUAL_MODEL_Z)
+            .build();
+    private static final TableModel TEST_MODEL_A =
+        TableModel
+            .with(Name.of(TABLENAME_A))
+            .family(FAM_MODEL_a)
+            .build();
+    
     static {
         LOG = LoggerFactory.getLogger(TestMapREnd2End.class);
     }
@@ -59,15 +72,15 @@ public class TestMapREnd2End {
             LOG.info(testPrefix + "starting write...");
             opResSet = 
                 control
-                    .now()
+                    .begin()
                     .write(HANDLE_TESTWRITE_1)
                         .on()
-                            .tbl(TableModel.of(Name.of(TABLENAME_A)))
+                            .tbl(TEST_MODEL_A)
                             .row(RowKey.of(rowKeyStr))
                         .and()
                         .with()
-                            .fam(FamilyModel.of(Name.of(COLUMNFAMILY_a)))
-                            .qual(QualModel.of(Name.of(COLUMNQUAL_Z)))
+                            .fam(FAM_MODEL_a)
+                            .qual(QUAL_MODEL_Z)
                             .ts(0)
                             .value(Value.of(randomData))
                         .and()
@@ -76,18 +89,19 @@ public class TestMapREnd2End {
             
             LOG.info(testPrefix + "write complete!");
             LOG.info(testPrefix + "write results: " + opResSet.getResultsByHandle());
-            
+
+            LOG.info(testPrefix + "starting read...");
             opResSet =
                 control
-                    .now()
+                    .begin()
                     .read(HANDLE_TESTREAD_1)
                         .from()
-                            .tbl(TableModel.of(Name.of(TABLENAME_A)))
+                            .tbl(TEST_MODEL_A)
                             .row(RowKey.of(rowKeyStr))
                         .and()
                         .with()
-                            .fam(FamilyModel.of(Name.of(COLUMNFAMILY_a)))
-                            .qual(QualModel.of(Name.of(COLUMNQUAL_Z)))
+                            .fam(FAM_MODEL_a)
+                            .qual(QUAL_MODEL_Z)
                         .and()
                         .atTime()
                             .gt(TS_SAMPLE_1 - 10)
@@ -95,7 +109,10 @@ public class TestMapREnd2End {
                         .and()
                         .then()
                         .exec();
-            System.out.println(opResSet.getResultsByHandle());
+            
+            LOG.info(testPrefix + "read complete!");
+            
+            LOG.info(testPrefix + "read results: " + opResSet.getResultsByHandle());
         } catch (HBaseException hbExc) {
             hbExc.printStackTrace();
         } finally {

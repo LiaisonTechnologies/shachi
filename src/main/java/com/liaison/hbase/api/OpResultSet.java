@@ -10,6 +10,7 @@ import org.apache.hadoop.hbase.Cell;
 import org.apache.hadoop.hbase.CellUtil;
 import org.apache.hadoop.hbase.client.Result;
 
+import com.liaison.hbase.api.ReadOpResult.ReadOpResultBuilder;
 import com.liaison.hbase.api.opspec.ColSpecRead;
 import com.liaison.hbase.api.opspec.OperationSpec;
 import com.liaison.hbase.api.opspec.ReadOpSpec;
@@ -113,14 +114,14 @@ public class OpResultSet implements Serializable {
     }
     
     public void assimilate(final ReadOpSpec readSpec, final Result res) throws HBaseTableRowException {
-        final OpResult.Builder<ReadOpSpec> opResBuild;
+        final ReadOpResultBuilder opResBuild;
         final RowSpec<ReadOpSpec> rowSpec;
         final List<ColSpecRead<ReadOpSpec>> colSpecList;
         Datum datum;
 
         rowSpec = readSpec.getTableRow();
         try {
-            opResBuild = OpResult.getBuilder(ReadOpSpec.class).origin(readSpec);
+            opResBuild = ReadOpResult.getBuilder().origin(readSpec);
             colSpecList = readSpec.getWithColumn();
             for (ColSpecRead<ReadOpSpec> readColSpec : colSpecList) {
                 try {
@@ -146,8 +147,8 @@ public class OpResultSet implements Serializable {
     public void assimilate(final WriteOpSpec writeSpec, final boolean writePerformed) throws HBaseTableRowException {
         try {
             storeResult(writeSpec,
-                        OpResult
-                            .getBuilder(WriteOpSpec.class)
+                        WriteOpResult
+                            .getBuilder()
                             .origin(writeSpec)
                             .mutationPerformed(writePerformed)
                             .build());
