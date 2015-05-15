@@ -8,7 +8,7 @@ import com.liaison.hbase.exception.HBaseException;
 import com.liaison.hbase.util.AbstractSelfRefBuilder;
 import com.liaison.hbase.util.Util;
 
-public class OpResult<O extends TableRowOpSpec<O>> implements Serializable {
+public abstract class OpResult<O extends TableRowOpSpec<O>> implements Serializable {
     
     private static final long serialVersionUID = -276369205056256487L;
 
