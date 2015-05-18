@@ -48,71 +48,119 @@ public class HBaseControl extends ThreadLocalResourceAwareHBaseController {
 
     public final class HBaseDelegate {
         
+        private void addColumn(final String logMethodName, final DefensiveCopyStrategy dcs, final Get readGet, final ColSpecRead<ReadOpSpec> colSpec) {
+            final FamilyModel colFam;
+            final QualModel colQual;
+            
+            if (colSpec != null) {
+                colFam = colSpec.getFamily();
+                colQual = colSpec.getColumn();
+                if (colFam != null) {
+                    if (colQual != null) {
+                        readGet.addColumn(colFam.getName().getValue(dcs),
+                                          colQual.getName().getValue(dcs));
+                        LOG.trace(logMethodName,
+                                  ()->"adding to GET: family=",
+                                  ()->colFam,
+                                  ()->"qual=",
+                                  ()->colQual);
+                    } else {
+                        readGet.addFamily(colFam.getName().getValue(dcs));
+                        LOG.trace(logMethodName,
+                                  ()->"adding to GET: family=",
+                                  ()->colFam);
+                    }
+                }
+            }
+        }
+        
         public Result exec(final ReadOpSpec readSpec) throws IllegalArgumentException, HBaseException, HBaseRuntimeException {
+            String logMsg;
+            final String logMethodName;
             final DefensiveCopyStrategy dcs;
             final RowSpec<?> tableRowSpec;
-            
             final HTable readFromTable;
             final Get readGet;
             final List<ColSpecRead<ReadOpSpec>> colReadList;
-            FamilyModel colFam;
-            QualModel colQual;
             final Result res;
+            
+            Util.ensureNotNull(readSpec, this, "readSpec", ReadOpSpec.class);
+            
+            logMethodName =
+                LOG.enter(()->"exec(READ:",
+                          ()->String.valueOf(readSpec.getHandle()),
+                          ()->")");
             
             // Ensure that the spec contains all required attributes for a READ operation
             verifyStateForExec(readSpec);
             
             dcs = HBaseControl.this.context.getDefensiveCopyStrategy();
+            LOG.trace(logMethodName,
+                      ()->"defensive-copying: ",
+                      ()->String.valueOf(dcs));
             
             //TODO: major error handling, null-checking, etc.
             try {
                 tableRowSpec = readSpec.getTableRow();
+                LOG.trace(logMethodName,
+                          ()->"table-row: ",
+                          ()->tableRowSpec);
+                
                 readFromTable = obtainTable(tableRowSpec.getTable());
+                LOG.trace(logMethodName, ()->"table obtained");
+                
                 readGet = new Get(tableRowSpec.getRowKey().getValue(dcs));
                 try {
                     ReadUtils.applyTS(readGet, readSpec);
+                    LOG.trace(logMethodName,
+                              ()->"applied timestamp constraints (if applicable): ",
+                              ()->String.valueOf(readSpec.atTime()));
                 } catch (IOException ioExc) {
-                    throw new HBaseTableRowException(tableRowSpec,
-                                                  "Failed to apply timestamp cond to READ per spec: "
-                                                  + readSpec + "; " + ioExc,
-                                                  ioExc);
+                    logMsg = "Failed to apply timestamp cond to READ per spec: "
+                             + readSpec + "; " + ioExc;
+                    LOG.error(logMethodName, logMsg, ioExc);
+                    throw new HBaseTableRowException(tableRowSpec, logMsg, ioExc);
                 }
+                
                 colReadList = readSpec.getWithColumn();
+                LOG.trace(logMethodName,
+                          ()->"columns: ",
+                          ()->colReadList);
                 if (colReadList != null) {
                     for (ColSpecRead<ReadOpSpec> colSpec : colReadList) {
-                        colFam = colSpec.getFamily();
-                        colQual = colSpec.getColumn();
-                        if (colFam != null) {
-                            if (colQual != null) {
-                                readGet.addColumn(colFam.getName().getValue(dcs),
-                                                  colQual.getName().getValue(dcs));
-                            } else {
-                                readGet.addFamily(colFam.getName().getValue(dcs));
-                            }
-                        }
+                        this.addColumn(logMethodName, dcs, readGet, colSpec);
                     }
                 }
+
+                LOG.trace(logMethodName, ()->"performing read...");
                 try {
                     res = readFromTable.get(readGet);
                 } catch (IOException ioExc) {
-                    throw new HBaseMultiColumnException(tableRowSpec,
-                                                        colReadList,
-                                                        "READ failed; " + ioExc,
-                                                        ioExc);
+                    logMsg = "READ failed; " + ioExc;
+                    LOG.error(logMethodName, logMsg, ioExc);
+                    throw new HBaseMultiColumnException(tableRowSpec, colReadList, logMsg, ioExc);
                 }
+                
+                LOG.trace(logMethodName,
+                          ()->"read complete; result: ",
+                          ()->res);
                 if ((res == null) || (res.isEmpty())) {
-                    throw new HBaseEmptyResultSetException(tableRowSpec,
-                                                           colReadList,
-                                                           "READ failed; null/empty result set");
+                    logMsg = "READ failed; null/empty result set";
+                    LOG.error(logMethodName, logMsg);
+                    throw new HBaseEmptyResultSetException(tableRowSpec, colReadList, logMsg);
                 }
             } catch (HBaseException | HBaseRuntimeException exc) {
+                // already logged; just rethrow to get out of the current try block
                 throw exc;
             } catch (Exception exc) {
-                throw new HBaseRuntimeException("Unexpected failure during READ operation ("
-                                                + readSpec
-                                                + "): "
-                                                + exc.toString(),
-                                                exc);
+                logMsg = "Unexpected failure during READ operation ("
+                         + readSpec
+                         + "): "
+                         + exc.toString();
+                LOG.error(logMsg, logMethodName, exc);
+                throw new HBaseRuntimeException(logMsg, exc);
+            } finally {
+                LOG.leave(logMethodName);
             }
             return res;
         }
@@ -233,7 +281,7 @@ public class HBaseControl extends ThreadLocalResourceAwareHBaseController {
         
         logMethodName =
             LOG.enter(()->"generateTableDesc(model=",
-                      ()->model.toString(),
+                      ()->model,
                       ()->")");
 
         if (tableName == null) {
@@ -266,10 +314,17 @@ public class HBaseControl extends ThreadLocalResourceAwareHBaseController {
     }
     
     private static void verifyStateForExec(final OperationSpec<?> opSpec) throws IllegalStateException {
+        final String logMethodName;
+        
+        logMethodName =
+            LOG.enter(()->"verifyStateForExec(spec:",
+                      ()->opSpec,
+                      ()->")");
         if (!opSpec.isFrozen()) {
             throw new IllegalStateException(opSpec.getClass().getSimpleName()
                                             + " must be frozen before spec may be executed"); 
         }
+        LOG.leave(logMethodName);
     }
     
     private final HBaseContext context;
@@ -321,7 +376,7 @@ public class HBaseControl extends ThreadLocalResourceAwareHBaseController {
         } else {
             LOG.debug(logMethodName,
                       ()->"Table '",
-                      ()->tableName.toString(),
+                      ()->tableName,
                       ()->"' connection attempt ",
                       ()->Integer.toString(attemptCount),
                       ()->"/",
@@ -345,7 +400,7 @@ public class HBaseControl extends ThreadLocalResourceAwareHBaseController {
     private HTable attemptConnect(final String logMethodName, final HBaseAdmin tableAdmin, final TableModel model, final Name tableName, final int attemptCount) throws IOException, IllegalArgumentException {
         LOG.debug(logMethodName,
                   ()->"Table '",
-                  ()->tableName.toString(),
+                  ()->tableName,
                   ()->"' connection attempt ",
                   ()->Integer.toString(attemptCount),
                   ()->"/",
@@ -374,13 +429,13 @@ public class HBaseControl extends ThreadLocalResourceAwareHBaseController {
         try {
             LOG.trace(logMethodName,
                       ()->"Adding to list of all-thread closeable resources: ",
-                      ()->tbl.toString(),
+                      ()->tbl,
                       ()->"...");
             addCloseableResource(tbl);
             closeableResourceCount = countCloseableResources();
             LOG.trace(logMethodName,
                       ()->"Added to list of all-thread closeable resources: ",
-                      ()->tbl.toString(),
+                      ()->tbl,
                       ()->" (resource list size: ",
                       ()->Integer.toString(closeableResourceCount),
                       ()->")");
@@ -429,13 +484,13 @@ public class HBaseControl extends ThreadLocalResourceAwareHBaseController {
         
         logMethodName
             = LOG.enter(()-> "connectToTable(model=",
-                        ()->model.toString(),
+                        ()->model,
                         ()->")");
 
         tableName = this.context.getTableNamingStrategy().generate(model);
         tableNameStr = tableName.getStr();
 
-        LOG.trace(logMethodName, ()->"full table name: ", ()->tableName.toString());
+        LOG.trace(logMethodName, ()->"full table name: ", ()->tableName);
         
         attemptCount = 0;
         tableAdmin = admin.get();
@@ -449,7 +504,7 @@ public class HBaseControl extends ThreadLocalResourceAwareHBaseController {
                 LOG.debug(exc,
                           logMethodName,
                           ()->"Failed to establish connection to table '",
-                          ()->tableName.toString(),
+                          ()->tableName,
                           ()->"'");
                 lastException = exc;
             }
