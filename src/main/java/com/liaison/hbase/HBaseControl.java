@@ -12,8 +12,6 @@ import org.apache.hadoop.hbase.client.HBaseAdmin;
 import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.client.Result;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import co.paralleluniverse.fibers.SuspendExecution;
 import co.paralleluniverse.strands.Strand;
@@ -42,6 +40,7 @@ import com.liaison.hbase.model.Name;
 import com.liaison.hbase.model.QualModel;
 import com.liaison.hbase.model.TableModel;
 import com.liaison.hbase.util.DefensiveCopyStrategy;
+import com.liaison.hbase.util.LogMeMaybe;
 import com.liaison.hbase.util.ReadUtils;
 import com.liaison.hbase.util.Util;
 
@@ -221,10 +220,10 @@ public class HBaseControl extends ThreadLocalResourceAwareHBaseController {
     private static final long TABLECONNECT_RETRYDELAY_MAX_MS = 5000;
     private static final int TABLECONNECT_RETRYDELAY_MULTIPLIER = 2;
     
-    private static final Logger LOG;
+    private static final LogMeMaybe LOG;
     
     static {
-        LOG = LoggerFactory.getLogger(HBaseControl.class);
+        LOG = new LogMeMaybe(HBaseControl.class);
     }
     
     private static final void createTableFromModel(final HBaseAdmin tableAdmin, final TableModel model, Name tableName, final DefensiveCopyStrategy dcs) throws IOException {
@@ -232,14 +231,10 @@ public class HBaseControl extends ThreadLocalResourceAwareHBaseController {
         final HTableDescriptor tableDesc;
         final byte[] tableNameBytes;
         
-        // >>>>> LOG >>>>>
-        if (LOG.isTraceEnabled()) {
-            logMethodName = "generateTableDesc(model=" + model + ")";
-            LOG.trace(">>> " + logMethodName);
-        } else {
-            logMethodName = null;
-        }
-        // <<<<< log <<<<<
+        logMethodName =
+            LOG.enter(()->"generateTableDesc(model=",
+                      ()->model.toString(),
+                      ()->")");
 
         if (tableName == null) {
             tableName = model.getName();
@@ -247,32 +242,26 @@ public class HBaseControl extends ThreadLocalResourceAwareHBaseController {
         tableNameBytes = tableName.getValue(dcs);
         
         if (!tableAdmin.tableExists(tableNameBytes)) {
-            Util.traceLog(LOG, logMethodName, "table does not exist; creating...");
+            LOG.trace(logMethodName, ()->"table does not exist; creating...");
             tableDesc = new HTableDescriptor(TableName.valueOf(tableNameBytes));
             model.getFamilies()
                  .entrySet()
                  .stream()
                  .forEachOrdered((famEntry) -> {
                      final Name familyName;
-                     final String familyNameStr;
                      final byte[] familyNameBytes;
                      final HColumnDescriptor colFamDesc;
 
                      familyName = famEntry.getKey();
                      familyNameBytes = familyName.getValue(dcs);
-                     familyNameStr = familyName.getStr();
 
                      colFamDesc = new HColumnDescriptor(familyNameBytes);
                      tableDesc.addFamily(colFamDesc);
-                    
-                     // >>>>> LOG >>>>>
-                     if (LOG.isTraceEnabled()) {
-                         LOG.trace("[" + logMethodName + "] added family: " + familyNameStr);
-                     }
-                     // <<<<< log <<<<<
+                     
+                     LOG.trace(logMethodName, ()->"added family: ", ()->familyName.getStr());
                  });
             tableAdmin.createTable(tableDesc);
-            Util.traceLog(LOG, logMethodName, "table created");
+            LOG.trace(logMethodName, ()->"table created");
         }
     }
     
@@ -304,22 +293,105 @@ public class HBaseControl extends ThreadLocalResourceAwareHBaseController {
      */
     private HBaseAdmin connectAdmin() throws HBaseInitializationException {
         String logMsg;
+        final String logMethodName;
         final HBaseAdmin admin;
-        // >>>>> LOG >>>>>
-        if (LOG.isTraceEnabled()) { LOG.trace(">>> connectAdmin"); }
-        // <<<<< log <<<<<
+        
+        logMethodName = LOG.enter(()->"connectAdmin");
         try {
             admin = new HBaseAdmin(this.context.getHBaseConfiguration());
         } catch (IOException ioExc) {
-            logMsg = 
-                "Failed to establish admin connection; " + ioExc.toString();
-            LOG.error(logMsg, ioExc);
+            logMsg = "Failed to establish admin connection";
+            LOG.error(ioExc, ()->logMsg);
             throw new HBaseInitializationException(logMsg, ioExc);
         }
-        // >>>>> LOG >>>>>
-        if (LOG.isTraceEnabled()) { LOG.trace("<<< connectAdmin"); }
-        // <<<<< log <<<<<
+        LOG.leave(logMethodName);
         return admin;
+    }
+    
+    private long sleepIfOnRetry(final String logMethodName, final Name tableName, final int attemptCount, final long currentRetryDelay) {
+        long nextRetryDelay;
+        
+        /*
+         * If this is the first attempt, proceed immediately. Otherwise, delay by the current
+         * exponential-backoff delay interval, then apply the exponential backoff for the next
+         * interval (if it becomes necessary)
+         */
+        if (attemptCount == 0) {
+            nextRetryDelay = TABLECONNECT_RETRYDELAY_INIT_MS;
+        } else {
+            LOG.debug(logMethodName,
+                      ()->"Table '",
+                      ()->tableName.toString(),
+                      ()->"' connection attempt ",
+                      ()->Integer.toString(attemptCount),
+                      ()->"/",
+                      ()->Integer.toString(TABLECONNECT_ATTEMPTS_MAX),
+                      ()->" failed; retrying in ",
+                      ()->Long.toString(currentRetryDelay),
+                      ()->"ms...");
+            try {
+                Strand.sleep(currentRetryDelay);
+            } catch (InterruptedException iExc) {
+                // ignore
+            } catch (SuspendExecution quasarInstrumentationExcNeverThrown) {
+                throw new AssertionError(quasarInstrumentationExcNeverThrown);
+            }
+            nextRetryDelay = currentRetryDelay * TABLECONNECT_RETRYDELAY_MULTIPLIER;
+            nextRetryDelay = Math.min(TABLECONNECT_RETRYDELAY_MAX_MS, nextRetryDelay);
+        }
+        return nextRetryDelay;
+    }
+    
+    private HTable attemptConnect(final String logMethodName, final HBaseAdmin tableAdmin, final TableModel model, final Name tableName, final int attemptCount) throws IOException, IllegalArgumentException {
+        LOG.debug(logMethodName,
+                  ()->"Table '",
+                  ()->tableName.toString(),
+                  ()->"' connection attempt ",
+                  ()->Integer.toString(attemptCount),
+                  ()->"/",
+                  ()->Integer.toString(TABLECONNECT_ATTEMPTS_MAX),
+                  ()->" starting...");
+        
+        /*
+         * If a table with the name given by the model does not yet exist, then generate a
+         * descriptor corresponding to that table name, then create it. Then (regardless of
+         * whether or not table creation was necessary in the previous step), return an HTable
+         * handle for the table.
+         */
+        createTableFromModel(tableAdmin,
+                             model,
+                             tableName,
+                             getContext().getDefensiveCopyStrategy());
+        return
+            new HTable(context.getHBaseConfiguration(),
+                       tableName.getValue(this.context.getDefensiveCopyStrategy()));
+    }
+    
+    private void registerTableAsCloseableResource(final String logMethodName, final HTable tbl, final String tableNameStr) throws HBaseInitializationException {
+        final String logMsg;
+        final int closeableResourceCount;
+
+        try {
+            LOG.trace(logMethodName,
+                      ()->"Adding to list of all-thread closeable resources: ",
+                      ()->tbl.toString(),
+                      ()->"...");
+            addCloseableResource(tbl);
+            closeableResourceCount = countCloseableResources();
+            LOG.trace(logMethodName,
+                      ()->"Added to list of all-thread closeable resources: ",
+                      ()->tbl.toString(),
+                      ()->" (resource list size: ",
+                      ()->Integer.toString(closeableResourceCount),
+                      ()->")");
+        } catch (HBaseControllerLifecycleException vclExc) {
+            logMsg = "Failed to establish connection to table "
+                     + tableNameStr
+                     + "; controller is in a state of destruction/shutdown: "
+                     + vclExc.toString();
+            LOG.error(vclExc, logMethodName, ()->logMsg);
+            throw new HBaseInitializationException(logMsg, vclExc);
+        }
     }
     
     /**
@@ -346,7 +418,7 @@ public class HBaseControl extends ThreadLocalResourceAwareHBaseController {
      */
     private HTable connectToTable(final TableModel model) throws HBaseInitializationException {
         String logMsg;
-        String logMethodName = null;
+        final String logMethodName;
         final Name tableName;
         final String tableNameStr;
         final HBaseAdmin tableAdmin;
@@ -355,134 +427,53 @@ public class HBaseControl extends ThreadLocalResourceAwareHBaseController {
         long retryDelay = -1;
         Exception lastException = null;
         
-        // >>>>> LOG >>>>>
-        if (LOG.isTraceEnabled()) {
-            logMethodName = "connectToTable(model=" + model + ")";
-            LOG.trace(">>> " + logMethodName);
-        }
-        // <<<<< log <<<<<
+        logMethodName
+            = LOG.enter(()-> "connectToTable(model=",
+                        ()->model.toString(),
+                        ()->")");
 
         tableName = this.context.getTableNamingStrategy().generate(model);
         tableNameStr = tableName.getStr();
-        // >>>>> LOG >>>>>
-        if (LOG.isTraceEnabled()) {
-            LOG.trace("[" + logMethodName + "] full table name: " + tableName);
-        }
-        // <<<<< log <<<<<
+
+        LOG.trace(logMethodName, ()->"full table name: ", ()->tableName.toString());
         
         attemptCount = 0;
         tableAdmin = admin.get();
+        retryDelay = -1;
         while ((tbl == null) && (attemptCount < TABLECONNECT_ATTEMPTS_MAX)) {
-            /*
-             * If this is the first attempt, proceed immediately. Otherwise, delay by the current
-             * exponential-backoff delay interval, then apply the exponential backoff for the next
-             * interval (if it becomes necessary)
-             */
-            if (attemptCount == 0) {
-                retryDelay = TABLECONNECT_RETRYDELAY_INIT_MS;
-            } else {
-                // >>>>> LOG >>>>>
-                if (LOG.isDebugEnabled()) {
-                    logMsg = "Table '" + tableName + "' connection attempt "
-                             + attemptCount + "/" + TABLECONNECT_ATTEMPTS_MAX
-                             + " failed; retrying in " + retryDelay + "ms...";
-                    Util.traceLog(LOG, logMethodName, logMsg);
-                }
-                // <<<<< log <<<<<
-                try {
-                    Strand.sleep(retryDelay);
-                } catch (InterruptedException iExc) {
-                    // ignore
-                } catch (SuspendExecution quasarInstrumentationExcNeverThrown) {
-                    throw new AssertionError(quasarInstrumentationExcNeverThrown);
-                }
-                retryDelay *= TABLECONNECT_RETRYDELAY_MULTIPLIER;
-                retryDelay = Math.min(TABLECONNECT_RETRYDELAY_MAX_MS, retryDelay);
-            }
+            retryDelay = sleepIfOnRetry(logMethodName, tableName, attemptCount, retryDelay);
             attemptCount++;
-            
-            // >>>>> LOG >>>>>
-            if (LOG.isDebugEnabled()) {
-                logMsg = "Table '" + tableName + "' connection attempt "
-                         + attemptCount + "/" + TABLECONNECT_ATTEMPTS_MAX
-                         + " starting...";
-                Util.traceLog(LOG, logMethodName, logMsg);
-            }
-            // <<<<< log <<<<<
-            
-            /*
-             * If a table with the name given by the model does not yet exist, then generate a
-             * descriptor corresponding to that table name, then create it. Then (regardless of
-             * whether or not table creation was necessary in the previous step), return an HTable
-             * handle for the table.
-             */
             try {
-                createTableFromModel(tableAdmin,
-                                     model,
-                                     tableName,
-                                     getContext().getDefensiveCopyStrategy());
-                tbl =
-                    new HTable(context.getHBaseConfiguration(),
-                               tableName.getValue(this.context.getDefensiveCopyStrategy()));
+                tbl = attemptConnect(logMethodName, tableAdmin, model, tableName, attemptCount);
             } catch (IOException | IllegalArgumentException exc) {
-                // >>>>> LOG >>>>>
-                if (LOG.isDebugEnabled()) {
-                    logMsg = 
-                        "Failed to establish connection to table "
-                        + tableName
-                        + "; "
-                        + exc.toString();
-                    Util.traceLog(LOG, logMethodName, logMsg, exc);
-                }
-                // <<<<< log <<<<<
+                LOG.debug(exc,
+                          logMethodName,
+                          ()->"Failed to establish connection to table '",
+                          ()->tableName.toString(),
+                          ()->"'");
                 lastException = exc;
             }
         }
+        
         if (tbl == null) {
             logMsg = "Failed to establish connection to table "
                      + tableNameStr
                      + "; retries exhausted. Last exception was: "
                      + lastException.toString();
-            LOG.error(logMsg);
+            LOG.error(lastException,
+                      logMethodName,
+                      ()->logMsg);
             throw new HBaseInitializationException(logMsg, lastException);
         } else {
-            if (LOG.isDebugEnabled()) {
-                logMsg = "Connected to table: '" + tableNameStr + "'";
-                Util.traceLog(LOG, logMethodName, logMsg);
-            }
+            LOG.debug(logMethodName,
+                      ()->"Connected to table: '",
+                      ()->tableNameStr,
+                      ()->"'");
         }
 
-        try {
-            // >>>>> LOG >>>>>
-            if (LOG.isTraceEnabled()) {
-                LOG.trace("[" + logMethodName + "] Adding to list of all-thread closeable resources: "
-                          + tbl
-                          + "...");
-            }
-            // <<<<< log <<<<<
-            addCloseableResource(tbl);
-            // >>>>> LOG >>>>>
-            if (LOG.isTraceEnabled()) {
-                LOG.trace("[" + logMethodName + "] Added to list of all-thread closeable resources: "
-                          + tbl
-                          + " (resource list size: "
-                          + countCloseableResources()
-                          + ")");
-            }
-            // <<<<< log <<<<<
-        } catch (HBaseControllerLifecycleException vclExc) {
-            logMsg = "Failed to establish connection to table "
-                     + tableNameStr
-                     + "; controller is in a state of destruction/shutdown: "
-                     + vclExc.toString();
-            LOG.error(logMsg, vclExc);
-            throw new HBaseInitializationException(logMsg, vclExc);
-        }
+        registerTableAsCloseableResource(logMethodName, tbl, tableNameStr);
         
-        // >>>>> LOG >>>>>
-        if (LOG.isTraceEnabled()) { LOG.trace("<<< " + logMethodName + ": " + tbl); }
-        // <<<<< log <<<<<
-        
+        LOG.leave(logMethodName);
         return tbl;
     }
     
