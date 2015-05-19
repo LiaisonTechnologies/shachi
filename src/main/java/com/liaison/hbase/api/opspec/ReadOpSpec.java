@@ -7,6 +7,7 @@ import java.util.List;
 
 import com.liaison.hbase.context.HBaseContext;
 import com.liaison.hbase.exception.SpecValidationException;
+import com.liaison.hbase.util.StringRepFormat;
 import com.liaison.hbase.util.Util;
 
 public final class ReadOpSpec extends TableRowOpSpec<ReadOpSpec> implements Serializable {
@@ -59,30 +60,51 @@ public final class ReadOpSpec extends TableRowOpSpec<ReadOpSpec> implements Seri
     }
     
     @Override
-    protected void prepareStrRep(final StringBuilder strGen) {
+    protected void prepareStrRep(final StringBuilder strGen, final StringRepFormat format) {
         final RowSpec<ReadOpSpec> tableRow;
-        tableRow = getTableRow(); 
-        if (tableRow != null) {
-            Util.appendIndented(strGen,
-                                getDepth() + 1,
-                                "from table/row: ",
-                                "\n",
-                                tableRow,
-                                "\n");
-        }
-        if (this.atTime != null) {
-            Util.appendIndented(strGen,
-                                getDepth() + 1,
-                                "at (timestamp range): ",
-                                "\n",
-                                this.atTime,
-                                "\n");
-        }
-        if (this.withColumn.size() > 0) {
-            Util.appendIndented(strGen, getDepth() + 1, "with column(s): ", "\n");
-            for (ColSpecRead<ReadOpSpec> colSpec : this.withColumn) {
-                Util.appendIndented(strGen, getDepth() + 1, colSpec);
+        tableRow = getTableRow();
+        
+        if (format == StringRepFormat.STRUCTURED) {
+            if (tableRow != null) {
+                Util.appendIndented(strGen,
+                                    getDepth() + 1,
+                                    "from table/row: ",
+                                    "\n",
+                                    tableRow,
+                                    "\n");
             }
+            if (this.atTime != null) {
+                Util.appendIndented(strGen,
+                                    getDepth() + 1,
+                                    "at (timestamp range): ",
+                                    "\n",
+                                    this.atTime,
+                                    "\n");
+            }
+            if (this.withColumn.size() > 0) {
+                Util.appendIndented(strGen, getDepth() + 1, "with column(s): ", "\n");
+                for (ColSpecRead<ReadOpSpec> colSpec : this.withColumn) {
+                    Util.appendIndented(strGen, getDepth() + 1, colSpec);
+                }
+            }
+        } else if (format == StringRepFormat.INLINE) {
+            strGen.append("{");
+            if (tableRow != null) {
+                Util.append(strGen, "from=", tableRow);
+                if ((this.atTime != null) && (this.withColumn.size() > 0)) {
+                    strGen.append(",");
+                }
+            }
+            if (this.atTime != null) {
+                Util.append(strGen, "@ts=", this.atTime);
+                if (this.withColumn.size() > 0) {
+                    strGen.append(",");
+                }
+            }
+            if (this.withColumn.size() > 0) {
+                Util.append(strGen, "col=", this.withColumn);
+            }
+            strGen.append("}");
         }
     }
     

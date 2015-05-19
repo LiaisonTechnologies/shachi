@@ -6,6 +6,7 @@ import com.liaison.hbase.dto.Value;
 import com.liaison.hbase.exception.SpecValidationException;
 import com.liaison.hbase.model.FamilyModel;
 import com.liaison.hbase.model.QualModel;
+import com.liaison.hbase.util.StringRepFormat;
 import com.liaison.hbase.util.Util;
 
 public final class ColSpecWrite<P extends OperationSpec<P>> extends ColSpec<ColSpecWrite<P>, P> implements Serializable {
@@ -49,12 +50,26 @@ public final class ColSpecWrite<P extends OperationSpec<P>> extends ColSpec<ColS
         return "[to-column]";
     }
     @Override
-    protected void prepareStrRepAdditional(final StringBuilder strGen) {
-        if (this.value != null) {
-            Util.appendIndented(strGen, getDepth() + 1, "value: ", this.value, "\n");
-        }
-        if (this.ts != null) {
-            Util.appendIndented(strGen, getDepth() + 1, "ts: ", this.ts, "\n");
+    protected void prepareStrRepAdditional(final StringBuilder strGen, final StringRepFormat format) {
+        if (format == StringRepFormat.STRUCTURED) {
+            if (this.value != null) {
+                Util.appendIndented(strGen, getDepth() + 1, "value: ", this.value, "\n");
+            }
+            if (this.ts != null) {
+                Util.appendIndented(strGen, getDepth() + 1, "ts: ", this.ts, "\n");
+            }
+        } else if (format == StringRepFormat.INLINE) {
+            strGen.append("{");
+            if (this.value != null) {
+                Util.append(strGen, "value=", this.value);
+                if (this.ts != null) {
+                    strGen.append(",");
+                }
+            }
+            if (this.ts != null) {
+                Util.append(strGen, "ts=", this.ts);
+            }
+            strGen.append("}");
         }
     }
 

@@ -7,6 +7,7 @@ import java.util.List;
 
 import com.liaison.hbase.context.HBaseContext;
 import com.liaison.hbase.exception.SpecValidationException;
+import com.liaison.hbase.util.StringRepFormat;
 import com.liaison.hbase.util.Util;
 
 public final class WriteOpSpec extends TableRowOpSpec<WriteOpSpec> implements Serializable {
@@ -58,30 +59,50 @@ public final class WriteOpSpec extends TableRowOpSpec<WriteOpSpec> implements Se
     }
     
     @Override
-    protected void prepareStrRep(final StringBuilder strGen) {
+    protected void prepareStrRep(final StringBuilder strGen, final StringRepFormat format) {
         final RowSpec<WriteOpSpec> tableRow;
-        tableRow = getTableRow(); 
-        if (tableRow != null) {
-            Util.appendIndented(strGen,
-                                getDepth() + 1,
-                                "on table/row: ",
-                                "\n",
-                                tableRow,
-                                "\n");
-        }
-        if (this.givenCondition != null) {
-            Util.appendIndented(strGen,
-                                getDepth() + 1,
-                                "given condition: ",
-                                "\n",
-                                this.givenCondition,
-                                "\n");
-        }
-        if (this.withColumn.size() > 0) {
-            Util.appendIndented(strGen, getDepth() + 1, "with column(s): ", "\n");
-            for (ColSpecWrite<WriteOpSpec> colSpec : this.withColumn) {
-                Util.appendIndented(strGen, getDepth() + 1, colSpec);
+        tableRow = getTableRow();
+        if (format == StringRepFormat.STRUCTURED) {
+            if (tableRow != null) {
+                Util.appendIndented(strGen,
+                                    getDepth() + 1,
+                                    "on table/row: ",
+                                    "\n",
+                                    tableRow,
+                                    "\n");
             }
+            if (this.givenCondition != null) {
+                Util.appendIndented(strGen,
+                                    getDepth() + 1,
+                                    "given condition: ",
+                                    "\n",
+                                    this.givenCondition,
+                                    "\n");
+            }
+            if (this.withColumn.size() > 0) {
+                Util.appendIndented(strGen, getDepth() + 1, "with column(s): ", "\n");
+                for (ColSpecWrite<WriteOpSpec> colSpec : this.withColumn) {
+                    Util.appendIndented(strGen, getDepth() + 1, colSpec);
+                }
+            }
+        } else if (format == StringRepFormat.INLINE) {
+            strGen.append("{");
+            if (tableRow != null) {
+                Util.append(strGen, "on=", tableRow);
+                if ((this.givenCondition != null) && (this.withColumn.size() > 0)) {
+                    strGen.append(",");
+                }
+            }
+            if (this.givenCondition != null) {
+                Util.append(strGen, "if=", this.givenCondition);
+                if (this.withColumn.size() > 0) {
+                    strGen.append(",");
+                }
+            }
+            if (this.withColumn.size() > 0) {
+                Util.append(strGen, "col=", this.withColumn);
+            }
+            strGen.append("}");
         }
     }
     

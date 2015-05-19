@@ -5,6 +5,7 @@ import java.io.Serializable;
 import com.liaison.hbase.dto.RowKey;
 import com.liaison.hbase.exception.SpecValidationException;
 import com.liaison.hbase.model.TableModel;
+import com.liaison.hbase.util.StringRepFormat;
 import com.liaison.hbase.util.Util;
 
 public final class RowSpec<P extends OperationSpec<P>> extends CriteriaSpec<RowSpec<P>, P> implements Serializable {
@@ -50,12 +51,26 @@ public final class RowSpec<P extends OperationSpec<P>> extends CriteriaSpec<RowS
     }
     
     @Override
-    protected void prepareStrRep(final StringBuilder strGen) {
-        if (this.table != null) {
-            Util.appendIndented(strGen, getDepth() + 1, "table: ", this.table, "\n");
-        }
-        if (this.rowKey != null) {
-            Util.appendIndented(strGen, getDepth() + 1, "rowKey: ", this.rowKey, "\n");
+    protected void prepareStrRep(final StringBuilder strGen, final StringRepFormat format) {
+        if (format == StringRepFormat.STRUCTURED) {
+            if (this.table != null) {
+                Util.appendIndented(strGen, getDepth() + 1, "table: ", this.table, "\n");
+            }
+            if (this.rowKey != null) {
+                Util.appendIndented(strGen, getDepth() + 1, "rowKey: ", this.rowKey, "\n");
+            }
+        } else if (format == StringRepFormat.INLINE) {
+            strGen.append("{");
+            if (this.table != null) {
+                Util.append(strGen, "table=", this.table);
+                if (this.rowKey != null) {
+                    strGen.append(",");
+                }
+            }
+            if (this.rowKey != null) {
+                Util.append(strGen, "row=", this.rowKey);
+            }
+            strGen.append("}");
         }
     }
     

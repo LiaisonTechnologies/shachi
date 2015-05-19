@@ -291,7 +291,9 @@ public final class Util extends Uninstantiable {
     }
     public static void appendIndented(final Appendable strGen, final int indentCount, final Object... objListForLine) throws IllegalStateException {
         if (objListForLine != null) {
-            indent(strGen, indentCount);
+            if (indentCount > 0) {
+                indent(strGen, indentCount);
+            }
             for (Object obj : objListForLine) {
                 if (obj != null) {
                     try {
@@ -302,6 +304,9 @@ public final class Util extends Uninstantiable {
                 }
             }
         }
+    }
+    public static void append(final Appendable strGen, final Object... objListForLine) throws IllegalStateException {
+        appendIndented(strGen, -1, objListForLine);
     }
     
     public static <X> void validateRequired(final X specValue, final StatefulSpec<?, ?> spec, final String fieldName, final Class<? super X> fieldType) throws SpecValidationException {

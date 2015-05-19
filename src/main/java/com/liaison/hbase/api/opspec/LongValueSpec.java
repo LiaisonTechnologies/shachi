@@ -3,6 +3,7 @@ package com.liaison.hbase.api.opspec;
 import java.io.Serializable;
 import java.util.function.BiPredicate;
 
+import com.liaison.hbase.util.StringRepFormat;
 import com.liaison.hbase.util.Util;
 
 public final class LongValueSpec<P extends OperationSpec<P>> extends CriteriaSpec<LongValueSpec<P>, P> implements Serializable {
@@ -212,32 +213,48 @@ public final class LongValueSpec<P extends OperationSpec<P>> extends CriteriaSpe
         return "[long-value]";
     }
     @Override
-    protected void prepareStrRep(final StringBuilder strGen) {
-        if (this.lowerBoundInclusive != null) {
-            Util.appendIndented(strGen,
-                                getDepth() + 1,
-                                "lower bound (inclusive): ",
-                                this.lowerBoundInclusive,
-                                "\n");
-        } else {
-            Util.appendIndented(strGen,
-                                getDepth() + 1,
-                                "lower bound (inclusive): -INFINITY (type min: ",
-                                Long.valueOf(this.typeMin),
-                                ")\n");
-        }
-        if (this.upperBoundExclusive != null) {
-            Util.appendIndented(strGen,
-                                getDepth() + 1,
-                                "upper bound (exclusive): ",
-                                this.upperBoundExclusive,
-                                "\n");
-        } else {
-            Util.appendIndented(strGen,
-                                getDepth() + 1,
-                                "upper bound (exclusive): +INFINITY (type max: ",
-                                Long.valueOf(this.typeMax),
-                                ")\n");
+    protected void prepareStrRep(final StringBuilder strGen, final StringRepFormat format) {
+        if (format == StringRepFormat.STRUCTURED) {
+            if (this.lowerBoundInclusive != null) {
+                Util.appendIndented(strGen,
+                                    getDepth() + 1,
+                                    "lower bound (inclusive): ",
+                                    this.lowerBoundInclusive,
+                                    "\n");
+            } else {
+                Util.appendIndented(strGen,
+                                    getDepth() + 1,
+                                    "lower bound (inclusive): -INFINITY (type min: ",
+                                    Long.valueOf(this.typeMin),
+                                    ")\n");
+            }
+            if (this.upperBoundExclusive != null) {
+                Util.appendIndented(strGen,
+                                    getDepth() + 1,
+                                    "upper bound (exclusive): ",
+                                    this.upperBoundExclusive,
+                                    "\n");
+            } else {
+                Util.appendIndented(strGen,
+                                    getDepth() + 1,
+                                    "upper bound (exclusive): +INFINITY (type max: ",
+                                    Long.valueOf(this.typeMax),
+                                    ")\n");
+            }
+        } else if (format == StringRepFormat.INLINE) {
+            strGen.append("[");
+            if (this.lowerBoundInclusive != null) {
+                strGen.append(this.lowerBoundInclusive);
+            } else {
+                Util.append(strGen, "-INF:type-min=", Long.valueOf(this.typeMin), ")");
+            }
+            strGen.append(",");
+            if (this.upperBoundExclusive != null) {
+                strGen.append(this.upperBoundExclusive);
+            } else {
+                Util.append(strGen, "+INF:type-max=", Long.valueOf(this.typeMax), ")");
+            }
+            strGen.append(")");
         }
     }
     @Override

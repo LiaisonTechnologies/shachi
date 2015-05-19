@@ -93,8 +93,6 @@ public abstract class NullableValue implements Serializable {
         return this.strRep;
     }
     
-    // TODO equals, toString, hashCode, etc.
-    
     protected NullableValue(final AbstractValueBuilder<?,?> build) throws IllegalArgumentException {
         this.value = build.value;
     }

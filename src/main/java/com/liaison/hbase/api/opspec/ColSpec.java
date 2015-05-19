@@ -4,6 +4,7 @@ import java.io.Serializable;
 
 import com.liaison.hbase.model.FamilyModel;
 import com.liaison.hbase.model.QualModel;
+import com.liaison.hbase.util.StringRepFormat;
 import com.liaison.hbase.util.Util;
 
 public abstract class ColSpec<C extends ColSpec<C, P>, P extends OperationSpec<P>> extends CriteriaSpec<C, P> implements Serializable {
@@ -33,18 +34,33 @@ public abstract class ColSpec<C extends ColSpec<C, P>, P extends OperationSpec<P
         return self();
     }
     
-    protected void prepareStrRepAdditional(final StringBuilder strGen) {
+    protected void prepareStrRepAdditional(final StringBuilder strGen, final StringRepFormat format) {
         // provide a default implementation which does nothing
     }
     @Override
-    public final void prepareStrRep(final StringBuilder strGen) {
-        if (this.family != null) {
-            Util.appendIndented(strGen, getDepth() + 1, "family: ", this.family, "\n");
+    public final void prepareStrRep(final StringBuilder strGen, final StringRepFormat format) {
+        if (format == StringRepFormat.STRUCTURED) {
+            if (this.family != null) {
+                Util.appendIndented(strGen, getDepth() + 1, "family: ", this.family, "\n");
+            }
+            if (this.column != null) {
+                Util.appendIndented(strGen, getDepth() + 1, "qual: ", this.column, "\n");
+            }
+            prepareStrRepAdditional(strGen, format);
+        } else if (format == StringRepFormat.INLINE) {
+            strGen.append("{");
+            if (this.family != null) {
+                Util.append(strGen, "family=", this.family);
+                if (column != null) {
+                    strGen.append(",");
+                }
+            }
+            if (this.column != null) {
+                Util.append(strGen, "qual=", this.column);
+            }
+            prepareStrRepAdditional(strGen, format);
+            strGen.append("}");
         }
-        if (this.column != null) {
-            Util.appendIndented(strGen, getDepth() + 1, "qual: ", this.column, "\n");
-        }
-        prepareStrRepAdditional(strGen);
     }
     
     protected abstract int deepHashCode();

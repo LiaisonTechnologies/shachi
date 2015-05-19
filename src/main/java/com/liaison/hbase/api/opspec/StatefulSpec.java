@@ -2,8 +2,10 @@ package com.liaison.hbase.api.opspec;
 
 import java.io.Serializable;
 import java.util.LinkedList;
+import java.util.concurrent.ConcurrentHashMap;
 
 import com.liaison.hbase.exception.SpecValidationException;
+import com.liaison.hbase.util.StringRepFormat;
 import com.liaison.hbase.util.TreeNode;
 import com.liaison.hbase.util.TreeNodeNonRoot;
 import com.liaison.hbase.util.Util;
@@ -14,7 +16,7 @@ public abstract class StatefulSpec<A extends StatefulSpec<A, P>, P extends TreeN
 
     private SpecState state;
     private final LinkedList<StatefulSpec<?,?>> subordSpecList;
-    private String strRep;
+    private final ConcurrentHashMap<StringRepFormat, String> strRep;
     private Integer hc;
     
     public final SpecState getState() {
@@ -31,7 +33,7 @@ public abstract class StatefulSpec<A extends StatefulSpec<A, P>, P extends TreeN
          * reset generated string representation and int value, as the core properties from which
          * they were generated are changing
          */
-        this.strRep = null;
+        this.strRep.clear();
         this.hc = null;
     }
     
@@ -62,21 +64,37 @@ public abstract class StatefulSpec<A extends StatefulSpec<A, P>, P extends TreeN
     }
     
     protected abstract String prepareStrRepHeadline();
-    protected void prepareStrRep(final StringBuilder strGen) {
+    
+    protected void prepareStrRep(final StringBuilder strGen, final StringRepFormat format) {
         // provide a default implementation which does nothing
     }
+    
+    public final String toString(final StringRepFormat format) {
+        final StringBuilder strGen;
+        String returnString;
+        
+        returnString = this.strRep.get(format);
+        if (returnString == null) {
+            strGen = new StringBuilder();
+            if (format == StringRepFormat.STRUCTURED) {
+                Util.appendIndented(strGen, getDepth(), prepareStrRepHeadline(), "\n");
+            } else if (format == StringRepFormat.INLINE) {
+                Util.append(strGen, prepareStrRepHeadline());
+            }
+            prepareStrRep(strGen, format);
+            returnString = strGen.toString();
+            this.strRep.putIfAbsent(format, returnString);
+        }
+        return returnString;
+    }
+    
     @Override
     public final String toString() {
-        final StringBuilder strGen;
-        if (this.strRep == null) {
-            strGen = new StringBuilder();
-            Util.appendIndented(strGen, getDepth(), prepareStrRepHeadline(), "\n");
-            prepareStrRep(strGen);
-            this.strRep = strGen.toString();
-        }
-        return this.strRep;
+        return toString(StringRepFormat.INLINE);
     }
+    
     protected abstract int prepareHashCode();
+    
     @Override
     public final int hashCode() {
         if (this.hc == null) {
@@ -84,6 +102,7 @@ public abstract class StatefulSpec<A extends StatefulSpec<A, P>, P extends TreeN
         }
         return this.hc.intValue();
     }
+    
     @Override
     public abstract boolean equals(final Object otherObj);
 
@@ -91,5 +110,6 @@ public abstract class StatefulSpec<A extends StatefulSpec<A, P>, P extends TreeN
         super(parent);
         this.state = SpecState.FLUID;
         this.subordSpecList = new LinkedList<>();
+        this.strRep = new ConcurrentHashMap<>();
     }
 }

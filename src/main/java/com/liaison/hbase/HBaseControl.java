@@ -27,6 +27,7 @@ import com.liaison.hbase.api.opspec.WriteOpSpec;
 import com.liaison.hbase.context.HBaseContext;
 import com.liaison.hbase.dto.NullableValue;
 import com.liaison.hbase.dto.RowKey;
+import com.liaison.hbase.dto.Value;
 import com.liaison.hbase.exception.HBaseControllerLifecycleException;
 import com.liaison.hbase.exception.HBaseEmptyResultSetException;
 import com.liaison.hbase.exception.HBaseException;
@@ -72,6 +73,98 @@ public class HBaseControl extends ThreadLocalResourceAwareHBaseController {
                     }
                 }
             }
+        }
+        
+        private void addColumn(final String logMethodName, final DefensiveCopyStrategy dcs, final Put writePut, final ColSpecWrite<WriteOpSpec> colSpec) {
+            final Long writeTS;
+            final FamilyModel colFam;
+            final QualModel colQual;
+            final Value colValue;
+            
+            writeTS = colSpec.getTs();
+            colFam = colSpec.getFamily();
+            colQual = colSpec.getColumn();
+            colValue = colSpec.getValue();
+            
+            if (writeTS == null) {
+                writePut.add(colFam.getName().getValue(dcs),
+                             colQual.getName().getValue(dcs),
+                             colValue.getValue(dcs));
+                LOG.trace(logMethodName,
+                          ()->"adding to PUT: family=",
+                          ()->colFam,
+                          ()->", qual=",
+                          ()->colQual,
+                          ()->", value='",
+                          ()->colValue,
+                          ()->"'");
+            } else {
+                writePut.add(colFam.getName().getValue(dcs),
+                             colQual.getName().getValue(dcs),
+                             writeTS.longValue(),
+                             colValue.getValue(dcs));
+                LOG.trace(logMethodName,
+                          ()->"adding to PUT: family=",
+                          ()->colFam,
+                          ()->", qual=",
+                          ()->colQual,
+                          ()->", value='",
+                          ()->colValue,
+                          ()->"', ts=",
+                          ()->writeTS);
+            }
+        }
+        
+        private boolean performWrite(final String logMethodName, final HTable writeToTable, final RowSpec<WriteOpSpec> tableRowSpec, final List<ColSpecWrite<WriteOpSpec>> colWriteList, final CondSpec<?> condition, final Put writePut, final DefensiveCopyStrategy dcs) throws HBaseMultiColumnException {
+            final String logMsg;
+            final NullableValue condPossibleValue;
+            final RowKey rowKey;
+            final FamilyModel fam;
+            final QualModel qual;
+            final boolean writeCompleted;
+            
+            try {
+                if (condition != null) {
+                    LOG.trace(logMethodName,
+                              ()->"on-condition: ",
+                              ()->condition);
+                    condPossibleValue = condition.getValue();
+                    rowKey = condition.getRowKey();
+                    fam = condition.getFamily();
+                    qual = condition.getColumn();
+                    
+                    LOG.trace(logMethodName, ()->"performing write...");
+                    /*
+                     * It's okay to use NullableValue#getValue here without disambiguating Value vs.
+                     * Empty, as both are immutable, and the constructor for the former enforces that
+                     * getValue must return NON-NULL, and the constructor for the latter enforces that
+                     * getValue must return NULL. Thus, getValue returns what checkAndPut needs in
+                     * either case.
+                     */
+                    writeCompleted =
+                        writeToTable.checkAndPut(rowKey.getValue(dcs),
+                                                 fam.getName().getValue(dcs),
+                                                 qual.getName().getValue(dcs),
+                                                 condPossibleValue.getValue(dcs),
+                                                 writePut);
+                } else {
+                    LOG.trace(logMethodName, ()->"performing write...");
+                    writeToTable.put(writePut);
+                    writeCompleted = true;
+                }
+                LOG.trace(logMethodName,
+                          ()->"write operation response: ",
+                          ()->Boolean.toString(writeCompleted));
+            } catch (IOException ioExc) {
+                logMsg = ("WRITE failure"
+                          + ((condition == null)
+                             ?"; "
+                             :" (with condition: " + condition + "); ")
+                          + ioExc);
+                LOG.error(logMethodName, logMsg, ioExc);
+                throw new HBaseMultiColumnException(tableRowSpec, colWriteList, logMsg, ioExc);
+            }
+            return writeCompleted;
         }
         
         public Result exec(final ReadOpSpec readSpec) throws IllegalArgumentException, HBaseException, HBaseRuntimeException {
@@ -128,7 +221,7 @@ public class HBaseControl extends ThreadLocalResourceAwareHBaseController {
                           ()->colReadList);
                 if (colReadList != null) {
                     for (ColSpecRead<ReadOpSpec> colSpec : colReadList) {
-                        this.addColumn(logMethodName, dcs, readGet, colSpec);
+                        addColumn(logMethodName, dcs, readGet, colSpec);
                     }
                 }
 
@@ -166,91 +259,71 @@ public class HBaseControl extends ThreadLocalResourceAwareHBaseController {
         }
         
         public boolean exec(final WriteOpSpec writeSpec) throws IllegalArgumentException, IllegalStateException, HBaseException, HBaseRuntimeException {
+            String logMsg;
+            final String logMethodName;
             final DefensiveCopyStrategy dcs;
             final RowSpec<WriteOpSpec> tableRowSpec;
             final HTable writeToTable;
             final List<ColSpecWrite<WriteOpSpec>> colWriteList;
-            Long writeTS;
             final CondSpec<?> condition;
-            final NullableValue condPossibleValue;
-            RowKey rowKey;
-            FamilyModel fam;
-            QualModel qual;
             final Put writePut;
             boolean writeCompleted;
             
+            Util.ensureNotNull(writeSpec, this, "writeSpec", WriteOpSpec.class);
+            
+            logMethodName =
+                LOG.enter(()->"exec(WRITE:",
+                          ()->String.valueOf(writeSpec.getHandle()),
+                          ()->")");
             writeCompleted = false;
             
-            // Ensure that the spec contains all required attributes for a READ operation
+            // Ensure that the spec contains all required attributes for a WRITE operation
             verifyStateForExec(writeSpec);
             
             dcs = HBaseControl.this.context.getDefensiveCopyStrategy();
+            LOG.trace(logMethodName,
+                      ()->"defensive-copying: ",
+                      ()->String.valueOf(dcs));
             
             try {
                 tableRowSpec = writeSpec.getTableRow();
+                LOG.trace(logMethodName,
+                        ()->"table-row: ",
+                        ()->tableRowSpec);
+                
                 writeToTable = obtainTable(tableRowSpec.getTable());
+                LOG.trace(logMethodName, ()->"table obtained");
+                
                 writePut = new Put(tableRowSpec.getRowKey().getValue(dcs));
                 
                 colWriteList = writeSpec.getWithColumn();
+                LOG.trace(logMethodName,
+                          ()->"columns: ",
+                          ()->colWriteList);
                 if (colWriteList != null) {
                     for (ColSpecWrite<WriteOpSpec> colWrite : colWriteList) {
-                        writeTS = colWrite.getTs();
-                        if (writeTS == null) {
-                            writePut.add(colWrite.getFamily().getName().getValue(dcs),
-                                         colWrite.getColumn().getName().getValue(dcs),
-                                         colWrite.getValue().getValue(dcs));
-                        } else {
-                            writePut.add(colWrite.getFamily().getName().getValue(dcs),
-                                         colWrite.getColumn().getName().getValue(dcs),
-                                         writeTS.longValue(),
-                                         colWrite.getValue().getValue(dcs));
-                        }
+                        addColumn(logMethodName, dcs, writePut, colWrite);
                     }
                 }
                 
                 condition = writeSpec.getGivenCondition();
-                try {
-                    if (condition != null) {
-                        condPossibleValue = condition.getValue();
-                        rowKey = condition.getRowKey();
-                        fam = condition.getFamily();
-                        qual = condition.getColumn();
-                        
-                        /*
-                         * It's okay to use NullableValue#getValue here without disambiguating Value vs.
-                         * Empty, as both are immutable, and the constructor for the former enforces that
-                         * getValue must return NON-NULL, and the constructor for the latter enforces that
-                         * getValue must return NULL. Thus, getValue returns what checkAndPut needs in
-                         * either case.
-                         */
-                        writeCompleted =
-                            writeToTable.checkAndPut(rowKey.getValue(dcs),
-                                                     fam.getName().getValue(dcs),
-                                                     qual.getName().getValue(dcs),
-                                                     condPossibleValue.getValue(dcs),
-                                                     writePut);
-                    } else {
-                        writeToTable.put(writePut);
-                        writeCompleted = true;
-                    }
-                } catch (IOException ioExc) {
-                    throw new HBaseMultiColumnException(tableRowSpec,
-                                                        colWriteList,
-                                                        ("WRITE failure"
-                                                         + ((condition == null)
-                                                            ?"; "
-                                                            :" (with condition: " + condition + "); ")
-                                                         + ioExc),
-                                                        ioExc);
-                }
+                writeCompleted =
+                    this.performWrite(logMethodName,
+                                      writeToTable,
+                                      tableRowSpec,
+                                      colWriteList,
+                                      condition,
+                                      writePut,
+                                      dcs);
             } catch (HBaseException | HBaseRuntimeException exc) {
                 throw exc;
             } catch (Exception exc) {
-                throw new HBaseException("Unexpected failure during WRITE operation ("
-                                         + writeSpec
-                                         + "): "
-                                         + exc.toString(),
-                                         exc);
+                logMsg = "Unexpected failure during WRITE operation ("
+                         + writeSpec
+                         + "): "
+                         + exc.toString();
+                LOG.error(logMethodName, logMsg, exc);
+                throw new HBaseException(logMsg, exc);
             }
             return writeCompleted;
         }

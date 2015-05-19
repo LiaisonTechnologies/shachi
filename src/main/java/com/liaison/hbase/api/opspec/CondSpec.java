@@ -9,6 +9,7 @@ import com.liaison.hbase.dto.Value;
 import com.liaison.hbase.exception.SpecValidationException;
 import com.liaison.hbase.model.FamilyModel;
 import com.liaison.hbase.model.QualModel;
+import com.liaison.hbase.util.StringRepFormat;
 import com.liaison.hbase.util.Util;
 
 public final class CondSpec<P extends OperationSpec<P>> extends ColSpec<CondSpec<P>, P> implements Serializable {
@@ -58,12 +59,26 @@ public final class CondSpec<P extends OperationSpec<P>> extends ColSpec<CondSpec
         return "[given-condition]";
     }
     @Override
-    protected void prepareStrRepAdditional(final StringBuilder strGen) {
-        if (this.rowKey != null) {
-            Util.appendIndented(strGen, getDepth() + 1, "rowKey: ", this.rowKey, "\n");
-        }
-        if (this.value != null) {
-            Util.appendIndented(strGen, getDepth() + 1, "value: ", this.value, "\n");
+    protected void prepareStrRepAdditional(final StringBuilder strGen, final StringRepFormat format) {
+        if (format == StringRepFormat.STRUCTURED) {
+            if (this.rowKey != null) {
+                Util.appendIndented(strGen, getDepth() + 1, "rowKey: ", this.rowKey, "\n");
+            }
+            if (this.value != null) {
+                Util.appendIndented(strGen, getDepth() + 1, "value: ", this.value, "\n");
+            }
+        } else if (format == StringRepFormat.INLINE) {
+            strGen.append("{");
+            if (this.rowKey != null) {
+                Util.append(strGen, "rowKey=", this.rowKey);
+                if (this.value != null) {
+                    strGen.append(",");
+                }
+            }
+            if (this.value != null) {
+                Util.append(strGen, "value=", this.value);
+            }
+            strGen.append("}");
         }
     }
 

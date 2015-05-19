@@ -36,6 +36,7 @@ public abstract class NamedEntity implements Serializable {
     }
     
     protected abstract int deepHashCode();
+    
     @Override
     public final int hashCode() {
         if (this.hc == null) {
@@ -45,6 +46,7 @@ public abstract class NamedEntity implements Serializable {
     }
     
     protected abstract boolean deepEquals(final NamedEntity otherNE);
+    
     @Override
     public final boolean equals(final Object otherObj) {
         final NamedEntity otherNE;
