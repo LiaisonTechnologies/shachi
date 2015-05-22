@@ -9,6 +9,8 @@ import com.liaison.hbase.context.HBaseContext;
 import com.liaison.hbase.exception.HBaseResourceAcquisitionException;
 import com.liaison.hbase.exception.HBaseResourceReleaseException;
 import com.liaison.hbase.model.TableModel;
+import com.liaison.hbase.resmgr.res.ManagedAdmin;
+import com.liaison.hbase.resmgr.res.ManagedTable;
 import com.liaison.hbase.util.HBaseUtil;
 import com.liaison.hbase.util.LogMeMaybe;
 import com.liaison.hbase.util.Util;
@@ -19,10 +21,10 @@ public enum SimpleHBaseResourceManager implements HBaseResourceManager {
     private static LogMeMaybe LOG;
 
     @Override
-    public HTable borrow(final HBaseContext context, final TableModel model) throws HBaseResourceAcquisitionException, IllegalArgumentException {
+    public ManagedTable borrow(final HBaseContext context, final TableModel model) throws HBaseResourceAcquisitionException, IllegalArgumentException {
         final String logMethodName;
         String logMsg;
-        HBaseAdmin admin = null;
+        final HTable table;
         
         Util.ensureNotNull(context, this, "context", HBaseContext.class);
         Util.ensureNotNull(model, this, "model", TableModel.class);
@@ -30,30 +32,14 @@ public enum SimpleHBaseResourceManager implements HBaseResourceManager {
         logMethodName =
             LOG.enter(()->"borrow(context.id=", ()->context.getId(), ()->",model=", ()->model);
 
-        // ugh, this is so, so ugly... :(
-        try {
-            admin = borrowAdmin(context);
-            return HBaseUtil.connectToTable(context, admin, model);
+        try (ManagedAdmin admin = borrowAdmin(context)) {
+            table = HBaseUtil.connectToTable(context, admin.use(), model);
+            return new ManagedTable(this, context, model, table);
         } catch (Exception exc) {
             logMsg = "Failed to connect to table " + model + "; " + exc.toString();
             LOG.error(logMsg, exc);
             throw new HBaseResourceAcquisitionException(logMsg, exc);
         } finally {
-            if (admin != null) {
-                try {
-                    releaseAdmin(context, admin);
-                } catch (HBaseResourceReleaseException exc) {
-                    logMsg = "RESOURCE LEAK: Failed to close "
-                             + HBaseAdmin.class
-                             + " object acquired in order to connect (context="
-                             + context
-                             + ",model="
-                             + model
-                             + "); "
-                             + exc.toString();
-                    LOG.error(logMethodName, logMsg, exc);
-                }
-            }
             LOG.leave(logMethodName);
         }
     }
@@ -78,9 +64,11 @@ public enum SimpleHBaseResourceManager implements HBaseResourceManager {
     }
 
     @Override
-    public HBaseAdmin borrowAdmin(final HBaseContext context) throws HBaseResourceAcquisitionException, IllegalArgumentException {
+    public ManagedAdmin borrowAdmin(final HBaseContext context) throws HBaseResourceAcquisitionException, IllegalArgumentException {
+        final HBaseAdmin admin;
         Util.ensureNotNull(context, this, "context", HBaseContext.class);
-        return HBaseUtil.connectAdmin(context);
+        admin = HBaseUtil.connectAdmin(context);
+        return new ManagedAdmin(this, context, admin);
     }
 
     @Override

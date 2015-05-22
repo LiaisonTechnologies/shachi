@@ -28,6 +28,7 @@ import com.liaison.hbase.exception.HBaseTableRowException;
 import com.liaison.hbase.model.FamilyModel;
 import com.liaison.hbase.model.QualModel;
 import com.liaison.hbase.resmgr.HBaseResourceManager;
+import com.liaison.hbase.resmgr.res.ManagedTable;
 import com.liaison.hbase.util.DefensiveCopyStrategy;
 import com.liaison.hbase.util.LogMeMaybe;
 import com.liaison.hbase.util.ReadUtils;
@@ -160,7 +161,7 @@ public class HBaseControl implements HBaseStart {
             final String logMethodName;
             final DefensiveCopyStrategy dcs;
             final RowSpec<?> tableRowSpec;
-            final HTable readFromTable;
+            //final HTable readFromTable;
             final Get readGet;
             final List<ColSpecRead<ReadOpSpec>> colReadList;
             final Result res;
@@ -180,14 +181,15 @@ public class HBaseControl implements HBaseStart {
                       ()->"defensive-copying: ",
                       ()->String.valueOf(dcs));
             
+            tableRowSpec = readSpec.getTableRow();
+            LOG.trace(logMethodName,
+                      ()->"table-row: ",
+                      ()->tableRowSpec);
+            
             //TODO: major error handling, null-checking, etc.
-            try {
-                tableRowSpec = readSpec.getTableRow();
-                LOG.trace(logMethodName,
-                          ()->"table-row: ",
-                          ()->tableRowSpec);
+            try (ManagedTable readFromTable =
+                    resMgr.borrow(HBaseControl.this.context, tableRowSpec.getTable())) {
                 
-                readFromTable = resMgr.borrow(HBaseControl.this.context, tableRowSpec.getTable());
                 LOG.trace(logMethodName, ()->"table obtained");
                 
                 readGet = new Get(tableRowSpec.getRowKey().getValue(dcs));
@@ -215,7 +217,7 @@ public class HBaseControl implements HBaseStart {
 
                 LOG.trace(logMethodName, ()->"performing read...");
                 try {
-                    res = readFromTable.get(readGet);
+                    res = readFromTable.use().get(readGet);
                 } catch (IOException ioExc) {
                     logMsg = "READ failed; " + ioExc;
                     LOG.error(logMethodName, logMsg, ioExc);
@@ -251,7 +253,6 @@ public class HBaseControl implements HBaseStart {
             final String logMethodName;
             final DefensiveCopyStrategy dcs;
             final RowSpec<WriteOpSpec> tableRowSpec;
-            final HTable writeToTable;
             final List<ColSpecWrite<WriteOpSpec>> colWriteList;
             final CondSpec<?> condition;
             final Put writePut;
@@ -273,13 +274,13 @@ public class HBaseControl implements HBaseStart {
                       ()->"defensive-copying: ",
                       ()->String.valueOf(dcs));
             
-            try {
-                tableRowSpec = writeSpec.getTableRow();
-                LOG.trace(logMethodName,
-                        ()->"table-row: ",
-                        ()->tableRowSpec);
-                
-                writeToTable = resMgr.borrow(HBaseControl.this.context, tableRowSpec.getTable());
+            tableRowSpec = writeSpec.getTableRow();
+            LOG.trace(logMethodName,
+                    ()->"table-row: ",
+                    ()->tableRowSpec);
+
+            try (ManagedTable writeToTable =
+                    resMgr.borrow(HBaseControl.this.context, tableRowSpec.getTable())) {
                 LOG.trace(logMethodName, ()->"table obtained");
                 
                 writePut = new Put(tableRowSpec.getRowKey().getValue(dcs));
@@ -297,7 +298,7 @@ public class HBaseControl implements HBaseStart {
                 condition = writeSpec.getGivenCondition();
                 writeCompleted =
                     this.performWrite(logMethodName,
-                                      writeToTable,
+                                      writeToTable.use(),
                                       tableRowSpec,
                                       colWriteList,
                                       condition,

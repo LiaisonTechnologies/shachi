@@ -7,12 +7,14 @@ import com.liaison.hbase.context.HBaseContext;
 import com.liaison.hbase.exception.HBaseResourceAcquisitionException;
 import com.liaison.hbase.exception.HBaseResourceReleaseException;
 import com.liaison.hbase.model.TableModel;
+import com.liaison.hbase.resmgr.res.ManagedAdmin;
+import com.liaison.hbase.resmgr.res.ManagedTable;
 
 public enum PoolingHBaseResourceManager implements HBaseResourceManager {
     INSTANCE;
 
     @Override
-    public HTable borrow(final HBaseContext context, final TableModel model) throws HBaseResourceAcquisitionException, IllegalArgumentException {
+    public ManagedTable borrow(final HBaseContext context, final TableModel model) throws HBaseResourceAcquisitionException, IllegalArgumentException {
         // TODO Auto-generated method stub
         return null;
     }
@@ -23,7 +25,7 @@ public enum PoolingHBaseResourceManager implements HBaseResourceManager {
     }
 
     @Override
-    public HBaseAdmin borrowAdmin(final HBaseContext context) throws HBaseResourceAcquisitionException, IllegalArgumentException {
+    public ManagedAdmin borrowAdmin(final HBaseContext context) throws HBaseResourceAcquisitionException, IllegalArgumentException {
         // TODO
         return null;
     }
