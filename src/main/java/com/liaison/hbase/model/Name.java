@@ -83,7 +83,7 @@ public class Name extends Value implements Serializable {
         }
     }
     
-    private static final String ENTITY_PREFIX_FOR_TOSTRING = "n";
+    private static final String ENTITY_PREFIX_FOR_TOSTRING = "!";
     
     public static final Builder with(final byte[] name, final Charset decoding) {
         return new Builder().name(name, decoding);

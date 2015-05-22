@@ -65,9 +65,11 @@ public final class FamilyModel extends NamedEntity {
     
     @Override
     protected void deepToString(final StringBuilder strGen) {
+        /*
         strGen.append(":qual={");
         strGen.append(this.quals);
         strGen.append("}");
+        */
     }
     
     @Override

@@ -36,15 +36,14 @@ public abstract class NullableValue implements Serializable {
         }
     }
     
-    private static final String ENTITY_PREFIX_FOR_TOSTRING = "v";
+    private static final String ENTITY_PREFIX_FOR_TOSTRING = "";
     
     protected static String buildStrRep(final String entityTypeIdentifier, final Consumer<StringBuilder> contentGenerator) {
         final StringBuilder strGen;
         strGen = new StringBuilder();
-        strGen.append("<HB:");
+        strGen.append("<");
         if (entityTypeIdentifier != null) {
             strGen.append(entityTypeIdentifier);
-            strGen.append(":");
         }
         contentGenerator.accept(strGen);
         strGen.append(">");

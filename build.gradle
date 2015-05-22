@@ -1,5 +1,16 @@
 apply plugin: 'java'
 apply plugin: 'eclipse'
+apply plugin: 'java-library-distribution'
+
+configurations {
+    provided
+}
+
+sourceSets {
+    main.compileClasspath += configurations.provided
+    test.compileClasspath += configurations.provided
+    test.runtimeClasspath += configurations.provided
+}
 
 allprojects {
     repositories {
@@ -11,6 +22,7 @@ allprojects {
 group = 'com.liaison'
 version = '0.0.1-SNAPSHOT'
 
+ext.libraryName = "liaison-hbase-${version}"
 ext.verMockito = '1.10.19'
 ext.verQuasar  = '0.6.2'
 ext.verTestNG  = '6.8.21'
@@ -24,10 +36,12 @@ if (project.hasProperty('env') && project.getProperty('env') == 'mapr') {
             url "http://repository.mapr.com/maven/"
         }
     }
-    ext.verHBase = '0.98.7-mapr-1501'
+    // ext.verHBase = '0.98.7-mapr-1501'
+    ext.verHBase = '0.98.9-mapr-1503-m7-4.1.0'
     ext.verZookeeper = '3.4.5-mapr-1406'
 } else {
-    ext.verHBase = '0.98.7-hadoop2'
+    // ext.verHBase = '0.98.7-hadoop2'
+    ext.verHBase = '0.98.9-hadoop2'
     ext.verZookeeper = '3.4.5'
 }
 
@@ -43,8 +57,8 @@ repositories {
 
 dependencies {
     compile "co.paralleluniverse:quasar-core:${verQuasar}${classifier}"
-    compile "org.apache.hbase:hbase-client:${verHBase}"
-    compile "org.apache.hbase:hbase-common:${verHBase}"
+    provided "org.apache.hbase:hbase-client:${verHBase}"
+    provided "org.apache.hbase:hbase-common:${verHBase}"
     testCompile "org.testng:testng:${verTestNG}"
     testCompile "org.mockito:mockito-all:${verMockito}"
 }
@@ -62,6 +76,12 @@ task fatJar(type: Jar) {
 
 test {
     useTestNG()
+}
+
+distributions {
+    main {
+        baseName = "${libraryName}"
+    }
 }
 
 uploadArchives {

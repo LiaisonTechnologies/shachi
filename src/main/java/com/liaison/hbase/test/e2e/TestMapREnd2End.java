@@ -1,6 +1,5 @@
 package com.liaison.hbase.test.e2e;
 
-import java.io.IOException;
 import java.util.UUID;
 
 import org.apache.hadoop.hbase.HBaseConfiguration;
@@ -17,6 +16,7 @@ import com.liaison.hbase.model.FamilyModel;
 import com.liaison.hbase.model.Name;
 import com.liaison.hbase.model.QualModel;
 import com.liaison.hbase.model.TableModel;
+import com.liaison.hbase.resmgr.SimpleHBaseResourceManager;
 
 public class TestMapREnd2End {
 
@@ -61,7 +61,8 @@ public class TestMapREnd2End {
                     MapRHBaseContext
                         .getBuilder()
                         .configProvider(() -> HBaseConfiguration.create())
-                        .build());
+                        .build(),
+                    SimpleHBaseResourceManager.INSTANCE);
             
 
             LOG.info(testPrefix + "control: " + control);
@@ -81,7 +82,7 @@ public class TestMapREnd2End {
                         .with()
                             .fam(FAM_MODEL_a)
                             .qual(QUAL_MODEL_Z)
-                            .ts(0)
+                            .ts(TS_SAMPLE_1)
                             .value(Value.of(randomData))
                         .and()
                         .then()
@@ -115,14 +116,6 @@ public class TestMapREnd2End {
             LOG.info(testPrefix + "read results: " + opResSet.getResultsByHandle());
         } catch (HBaseException hbExc) {
             hbExc.printStackTrace();
-        } finally {
-            try {
-                if (control != null) {
-                    control.close();
-                }
-            } catch (IOException ioExc) {
-                ioExc.printStackTrace();
-            }
         }
     }
     

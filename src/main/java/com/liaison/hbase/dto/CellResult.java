@@ -49,7 +49,7 @@ public class CellResult implements Serializable {
         final StringBuilder strGen;
         if (this.strRep == null) {
             strGen = new StringBuilder();
-            strGen.append("{@");
+            strGen.append("{=");
             if (this.datum != null) {
                 strGen.append(this.datum);
             } else if (this.exc != null) {

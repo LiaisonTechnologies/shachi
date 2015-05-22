@@ -17,7 +17,7 @@ public final class Datum extends Value implements Serializable {
     
     private static final long serialVersionUID = 8100342808865479731L;
     
-    private static final String ENTITY_PREFIX_FOR_TOSTRING = "d";
+    private static final String ENTITY_PREFIX_FOR_TOSTRING = "#";
 
     public static final class Builder extends AbstractValueBuilder<Datum, Builder> {
         private Long tsObj;

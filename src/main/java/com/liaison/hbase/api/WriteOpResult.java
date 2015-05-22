@@ -30,6 +30,8 @@ public class WriteOpResult extends OpResult<WriteOpSpec> {
         }
     }
     
+    private static final String OPRESULT_TYPE_STR = "WRITE";
+    
     public static WriteOpResultBuilder getBuilder() {
         return new WriteOpResultBuilder();
     }
@@ -38,6 +40,28 @@ public class WriteOpResult extends OpResult<WriteOpSpec> {
     
     public boolean isMutationPerformed() {
         return this.mutationPerformed;
+    }
+    
+    @Override
+    protected boolean deepEquals(OpResult<?> otherOpResult) {
+        final WriteOpResult otherWriteOpResult;
+        if (otherOpResult instanceof ReadOpResult) {
+            otherWriteOpResult = (WriteOpResult) otherOpResult;
+            return (this.mutationPerformed == otherWriteOpResult.mutationPerformed);
+        }
+        return false;
+    }
+    
+    @Override
+    protected String getOpResultTypeStr() {
+        return OPRESULT_TYPE_STR;
+    }
+    
+    @Override
+    protected void prepareStrRepAdditional(StringBuilder strGen) {
+        strGen.append("{written=");
+        strGen.append(this.mutationPerformed);
+        strGen.append("}");
     }
     
     private WriteOpResult(final WriteOpResultBuilder build) {

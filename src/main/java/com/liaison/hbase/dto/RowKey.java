@@ -18,7 +18,7 @@ public final class RowKey extends Value implements Serializable {
 
     private static final long serialVersionUID = 7786225976018409474L;
     
-    private static final String ENTITY_PREFIX_FOR_TOSTRING = "r";
+    private static final String ENTITY_PREFIX_FOR_TOSTRING = "*";
 
     public static final class Builder extends AbstractValueBuilder<RowKey, Builder> {
         @Override

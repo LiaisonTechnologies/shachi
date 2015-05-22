@@ -1,6 +1,7 @@
 package com.liaison.hbase.api;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 
 import com.liaison.hbase.api.opspec.ColSpecRead;
@@ -54,8 +55,11 @@ public class ReadOpResult extends OpResult<ReadOpSpec> {
         
         private ReadOpResultBuilder() {
             super();
+            this.data = new HashMap<>();
         }
     }
+    
+    private static final String OPRESULT_TYPE_STR = "READ";
     
     public static ReadOpResultBuilder getBuilder() {
         return new ReadOpResultBuilder();
@@ -80,6 +84,28 @@ public class ReadOpResult extends OpResult<ReadOpSpec> {
             result = cellRes.getDatum();
         }
         return result;
+    }
+    
+    @Override
+    protected boolean deepEquals(OpResult<?> otherOpResult) {
+        final ReadOpResult otherReadOpResult;
+        if (otherOpResult instanceof ReadOpResult) {
+            otherReadOpResult = (ReadOpResult) otherOpResult;
+            return Util.refEquals(this.data, otherReadOpResult.data);
+        }
+        return false;
+    }
+    
+    @Override
+    protected String getOpResultTypeStr() {
+        return OPRESULT_TYPE_STR;
+    }
+    
+    @Override
+    protected void prepareStrRepAdditional(StringBuilder strGen) {
+        strGen.append("{data=");
+        strGen.append(this.data);
+        strGen.append("}");
     }
     
     private ReadOpResult(final ReadOpResultBuilder build) {

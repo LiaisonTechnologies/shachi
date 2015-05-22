@@ -58,9 +58,11 @@ public final class TableModel extends NamedEntity {
     
     @Override
     protected void deepToString(final StringBuilder strGen) {
+        /*
         strGen.append(":fam={");
         strGen.append(this.families);
         strGen.append("}");
+        */
     }
     
     @Override
