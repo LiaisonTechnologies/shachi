@@ -1,3 +1,11 @@
+/**
+ * Copyright 2015 Liaison Technologies, Inc.
+ * This software is the confidential and proprietary information of
+ * Liaison Technologies, Inc. ("Confidential Information").  You shall
+ * not disclose such Confidential Information and shall use it only in
+ * accordance with the terms of the license agreement you entered into
+ * with Liaison Technologies.
+ */
 package com.liaison.hbase.test.e2e;
 
 import java.util.UUID;
@@ -22,6 +30,7 @@ public class TestMapREnd2End {
 
     private static final Logger LOG;
     
+    private static final String CONTEXT_ID_1 = "CONTEXT-1";
     private static final String HANDLE_TESTWRITE_1 = "TEST-WRITE-1";
     private static final String HANDLE_TESTREAD_1 = "TEST-READ-1";
     private static final String TABLENAME_A = TestMapREnd2End.class.getSimpleName() + "_A";
@@ -60,6 +69,7 @@ public class TestMapREnd2End {
                 new HBaseControl(
                     MapRHBaseContext
                         .getBuilder()
+                        .id(CONTEXT_ID_1)
                         .configProvider(() -> HBaseConfiguration.create())
                         .build(),
                     SimpleHBaseResourceManager.INSTANCE);
