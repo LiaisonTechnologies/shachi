@@ -186,7 +186,6 @@ public class HBaseControl implements HBaseStart {
                       ()->"table-row: ",
                       ()->tableRowSpec);
             
-            //TODO: major error handling, null-checking, etc.
             try (ManagedTable readFromTable =
                     resMgr.borrow(HBaseControl.this.context, tableRowSpec.getTable())) {
                 
