@@ -14,7 +14,7 @@ import com.liaison.hbase.context.HBaseContext;
 import com.liaison.hbase.exception.SpecValidationException;
 import com.liaison.hbase.util.Util;
 
-public abstract class OperationSpec<O extends OperationSpec<O>> extends StatefulSpec<O, OperationController> implements Serializable {
+public abstract class OperationSpec<O extends OperationSpec<O>> extends StatefulSpec<O, OperationControllerDefault> implements Serializable {
     
     private static final long serialVersionUID = 5533663131351737507L;
     
@@ -28,7 +28,7 @@ public abstract class OperationSpec<O extends OperationSpec<O>> extends Stateful
         return this.context;
     }
     
-    public final OperationController then() throws SpecValidationException {
+    public final OperationControllerDefault then() throws SpecValidationException {
         freezeRecursive();
         return getParent();
     }
@@ -50,7 +50,7 @@ public abstract class OperationSpec<O extends OperationSpec<O>> extends Stateful
         return false;
     }
     
-    public OperationSpec(final Object handle, final HBaseContext context, final OperationController parent) {
+    public OperationSpec(final Object handle, final HBaseContext context, final OperationControllerDefault parent) {
         super(parent);
         Util.ensureNotNull(handle, this, "handle", Object.class);
         this.handle = handle;

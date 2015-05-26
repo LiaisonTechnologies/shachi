@@ -18,12 +18,73 @@ import com.liaison.hbase.exception.SpecValidationException;
 import com.liaison.hbase.util.StringRepFormat;
 import com.liaison.hbase.util.Util;
 
-public final class ReadOpSpec extends TableRowOpSpec<ReadOpSpec> implements Serializable {
+/**
+ * 
+ * TODO
+ * @author Branden Smith; Liaison Technologies, Inc.
+ */
+public final class ReadOpSpec extends TableRowOpSpec<ReadOpSpec> implements ReadOpSpecFluid, ReadOpSpecFrozen, Serializable {
 
     private static final long serialVersionUID = 1602390434837826147L;
+
+    // ||========================================================================================||
+    // ||    INSTANCE PROPERTIES                                                                 ||
+    // ||----------------------------------------------------------------------------------------||
     
     private LongValueSpec<ReadOpSpec> atTime;
     private final List<ColSpecRead<ReadOpSpec>> withColumn;
+    
+    // ||----(instance properties)---------------------------------------------------------------||
+    
+    // ||========================================================================================||
+    // ||    INSTANCE METHODS: API: FLUID                                                        ||
+    // ||----------------------------------------------------------------------------------------||
+    
+    @Override
+    public LongValueSpec<ReadOpSpec> atTime() throws IllegalStateException {
+        prepMutation();
+        Util.validateExactlyOnce("atTime", LongValueSpec.class, this.atTime);
+        this.atTime = new LongValueSpec<>(this);
+        return this.atTime;
+    }
+    
+    @Override
+    public RowSpec<ReadOpSpec> from() throws IllegalArgumentException, IllegalStateException {
+        final RowSpec<ReadOpSpec> rowSpec;
+        rowSpec = new RowSpec<>(this);
+        setTableRow(rowSpec);
+        return rowSpec;
+    }
+    
+    @Override
+    public ColSpecRead<ReadOpSpec> with() throws IllegalStateException {
+        final ColSpecRead<ReadOpSpec> withCol;
+        prepMutation();
+        withCol = new ColSpecRead<>(this);
+        this.withColumn.add(withCol);
+        return withCol;
+    }
+    
+    // ||----(instance methods: API: fluid)------------------------------------------------------||
+    
+    // ||========================================================================================||
+    // ||    INSTANCE METHODS: API: FROZEN                                                       ||
+    // ||----------------------------------------------------------------------------------------||
+
+    @Override
+    public LongValueSpec<ReadOpSpec> getAtTime() {
+        return this.atTime;
+    }
+    @Override
+    public List<ColSpecRead<ReadOpSpec>> getWithColumn() {
+        return Collections.unmodifiableList(this.withColumn);
+    }
+    
+    // ||----(instance methods: API: frozen)-----------------------------------------------------||
+    
+    // ||========================================================================================||
+    // ||    INSTANCE METHODS: UTILITY                                                           ||
+    // ||----------------------------------------------------------------------------------------||
     
     @Override
     protected ReadOpSpec self() { return this; }
@@ -33,33 +94,6 @@ public final class ReadOpSpec extends TableRowOpSpec<ReadOpSpec> implements Seri
         super.validate();
         Util.validateRequired(getTableRow(), this, "from", RowSpec.class);
         Util.validateAtLeastOne(getWithColumn(), this, "with", ColSpecRead.class);
-    }
-
-    public LongValueSpec<ReadOpSpec> getAtTime() {
-        return this.atTime;
-    }
-    public List<ColSpecRead<ReadOpSpec>> getWithColumn() {
-        return Collections.unmodifiableList(this.withColumn);
-    }
-    
-    public LongValueSpec<ReadOpSpec> atTime() throws IllegalStateException {
-        prepMutation();
-        Util.validateExactlyOnce("atTime", LongValueSpec.class, this.atTime);
-        this.atTime = new LongValueSpec<>(this);
-        return this.atTime;
-    }
-    public RowSpec<ReadOpSpec> from() throws IllegalArgumentException, IllegalStateException {
-        final RowSpec<ReadOpSpec> rowSpec;
-        rowSpec = new RowSpec<>(this);
-        setTableRow(rowSpec);
-        return rowSpec;
-    }
-    public ColSpecRead<ReadOpSpec> with() {
-        final ColSpecRead<ReadOpSpec> withCol;
-        prepMutation();
-        withCol = new ColSpecRead<>(this);
-        this.withColumn.add(withCol);
-        return withCol;
     }
     
     @Override
@@ -133,9 +167,17 @@ public final class ReadOpSpec extends TableRowOpSpec<ReadOpSpec> implements Seri
         }
         return false;
     }
+    
+    // ||----(instance methods: utility)---------------------------------------------------------||
 
-    public ReadOpSpec(final Object handle, final HBaseContext context, final OperationController parent) {
+    // ||========================================================================================||
+    // ||    CONSTRUCTORS                                                                        ||
+    // ||----------------------------------------------------------------------------------------||
+
+    public ReadOpSpec(final Object handle, final HBaseContext context, final OperationControllerDefault parent) {
         super(handle, context, parent);
         this.withColumn = new LinkedList<>();
     }
+    
+    // ||----(constructors)----------------------------------------------------------------------||
 }

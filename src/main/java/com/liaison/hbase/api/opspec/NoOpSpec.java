@@ -29,7 +29,7 @@ public final class NoOpSpec extends OperationSpec<NoOpSpec> implements Serializa
         return (otherOpSpec instanceof NoOpSpec);
     }
     
-    public NoOpSpec(final Object handle, final HBaseContext context, final OperationController parent) {
+    public NoOpSpec(final Object handle, final HBaseContext context, final OperationControllerDefault parent) {
         super(handle, context, parent);
     }
 }

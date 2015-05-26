@@ -20,6 +20,7 @@ import com.liaison.hbase.api.opspec.ColSpecRead;
 import com.liaison.hbase.api.opspec.ColSpecWrite;
 import com.liaison.hbase.api.opspec.CondSpec;
 import com.liaison.hbase.api.opspec.OperationController;
+import com.liaison.hbase.api.opspec.OperationControllerDefault;
 import com.liaison.hbase.api.opspec.OperationSpec;
 import com.liaison.hbase.api.opspec.ReadOpSpec;
 import com.liaison.hbase.api.opspec.RowSpec;
@@ -42,10 +43,46 @@ import com.liaison.hbase.util.LogMeMaybe;
 import com.liaison.hbase.util.ReadUtils;
 import com.liaison.hbase.util.Util;
 
+/**
+ * HBaseControl is the main kernel of functionality for the HBase Client, and as the default
+ * implementation of HBaseStart, is the primary starting point for use of the fluent API.
+ * 
+ * Per the contract for {@link HBaseStart#begin()}, {@link HBaseControl#begin()} starts the API
+ * operation-specification generation process by which clients specify HBase read/write operations
+ * to execute. The {@link OperationControllerDefault} created when spec-generation begins is granted
+ * access to the private, singleton instance of the internal class {@link HBaseDelegate}, which is
+ * responsible for interpreting and executing the spec once the {@link OperationControllerDefault}
+ * indicates that spec-generation is complete.
+ * 
+ * @author Branden Smith; Liaison Technologies, Inc.
+ */
 public class HBaseControl implements HBaseStart {
+    
+    // ||========================================================================================||
+    // ||    INNER CLASSES (INSTANCE)                                                            ||
+    // ||----------------------------------------------------------------------------------------||
 
+    /**
+     * Internal class implementation owned and controlled by an {@link HBaseControl} instance, and
+     * responsible for interpreting and executing the HBase operation(s) indicated by an operation
+     * specification. HBaseDelegate maintains no internal state of its own, and only references the
+     * {@link HBaseContext} object governing the configuration of its controlling
+     * {@link HBaseControl}, so it should be safe for concurrent use by multiple threads;
+     * accordingly, a single instance of it is maintained within an HBaseControl object, and a
+     * reference to it is parceled out to {@link OperationControllerDefault} whenever an operation starts
+     * via {@link HBaseControl#begin()}.
+     * 
+     * @author Branden Smith; Liaison Technologies, Inc.
+     */
     public final class HBaseDelegate {
         
+        /**
+         * 
+         * @param logMethodName
+         * @param dcs
+         * @param readGet
+         * @param colSpec
+         */
         private void addColumn(final String logMethodName, final DefensiveCopyStrategy dcs, final Get readGet, final ColSpecRead<ReadOpSpec> colSpec) {
             final FamilyModel colFam;
             final QualModel colQual;
@@ -72,6 +109,13 @@ public class HBaseControl implements HBaseStart {
             }
         }
         
+        /**
+         * 
+         * @param logMethodName
+         * @param dcs
+         * @param writePut
+         * @param colSpec
+         */
         private void addColumn(final String logMethodName, final DefensiveCopyStrategy dcs, final Put writePut, final ColSpecWrite<WriteOpSpec> colSpec) {
             final Long writeTS;
             final FamilyModel colFam;
@@ -112,6 +156,18 @@ public class HBaseControl implements HBaseStart {
             }
         }
         
+        /**
+         * 
+         * @param logMethodName
+         * @param writeToTable
+         * @param tableRowSpec
+         * @param colWriteList
+         * @param condition
+         * @param writePut
+         * @param dcs
+         * @return
+         * @throws HBaseMultiColumnException
+         */
         private boolean performWrite(final String logMethodName, final HTable writeToTable, final RowSpec<WriteOpSpec> tableRowSpec, final List<ColSpecWrite<WriteOpSpec>> colWriteList, final CondSpec<?> condition, final Put writePut, final DefensiveCopyStrategy dcs) throws HBaseMultiColumnException {
             final String logMsg;
             final NullableValue condPossibleValue;
@@ -164,12 +220,19 @@ public class HBaseControl implements HBaseStart {
             return writeCompleted;
         }
         
+        /**
+         * 
+         * @param readSpec
+         * @return
+         * @throws IllegalArgumentException
+         * @throws HBaseException
+         * @throws HBaseRuntimeException
+         */
         public Result exec(final ReadOpSpec readSpec) throws IllegalArgumentException, HBaseException, HBaseRuntimeException {
             String logMsg;
             final String logMethodName;
             final DefensiveCopyStrategy dcs;
             final RowSpec<?> tableRowSpec;
-            //final HTable readFromTable;
             final Get readGet;
             final List<ColSpecRead<ReadOpSpec>> colReadList;
             final Result res;
@@ -255,6 +318,15 @@ public class HBaseControl implements HBaseStart {
             return res;
         }
         
+        /**
+         * 
+         * @param writeSpec
+         * @return
+         * @throws IllegalArgumentException
+         * @throws IllegalStateException
+         * @throws HBaseException
+         * @throws HBaseRuntimeException
+         */
         public boolean exec(final WriteOpSpec writeSpec) throws IllegalArgumentException, IllegalStateException, HBaseException, HBaseRuntimeException {
             String logMsg;
             final String logMethodName;
@@ -332,11 +404,19 @@ public class HBaseControl implements HBaseStart {
         private HBaseDelegate() { }
     }
     
+    // ||----(inner classes: instance)-----------------------------------------------------------||
+    
+    // ||========================================================================================||
+    // ||    CONSTANTS                                                                           ||
+    // ||----------------------------------------------------------------------------------------||
+    
     private static final LogMeMaybe LOG;
     
-    static {
-        LOG = new LogMeMaybe(HBaseControl.class);
-    }
+    // ||----(constants)-------------------------------------------------------------------------||
+    
+    // ||========================================================================================||
+    // ||    STATIC METHODS                                                                      ||
+    // ||----------------------------------------------------------------------------------------||
     
     private static void verifyStateForExec(final OperationSpec<?> opSpec) throws IllegalStateException {
         final String logMethodName;
@@ -352,17 +432,53 @@ public class HBaseControl implements HBaseStart {
         LOG.leave(logMethodName);
     }
     
+    // ||----(static methods)--------------------------------------------------------------------||
+    
+    // ||========================================================================================||
+    // ||    STATIC INITIALIZER                                                                  ||
+    // ||----------------------------------------------------------------------------------------||
+    
+    static {
+        LOG = new LogMeMaybe(HBaseControl.class);
+    }
+    
+    // ||----(static initializer)----------------------------------------------------------------||
+    
+    // ||========================================================================================||
+    // ||    INSTANCE PROPERTIES                                                                 ||
+    // ||----------------------------------------------------------------------------------------||
+    
     private final HBaseContext context;
     private final HBaseResourceManager resMgr;
     private final HBaseDelegate delegate;
     
+    // ||----(instance properties)---------------------------------------------------------------||
+    
+    // ||========================================================================================||
+    // ||    INSTANCE METHODS                                                                    ||
+    // ||----------------------------------------------------------------------------------------||
+    
+    /**
+     * 
+     * @return
+     */
     public HBaseContext getContext() {
         return this.context;
     }
     
+    /**
+     * {@inheritDoc}
+     * @see {@link HBaseStart#begin()}.
+     */
     public OperationController begin() {
-        return new OperationController(this.delegate, this.context);
+        return new OperationControllerDefault(this.delegate, this.context);
     }
+    
+    // ||----(instance methods)------------------------------------------------------------------||
+
+    // ||========================================================================================||
+    // ||    CONSTRUCTORS                                                                        ||
+    // ||----------------------------------------------------------------------------------------||
     
     public HBaseControl(final HBaseContext context, final HBaseResourceManager resMgr) {
         Util.ensureNotNull(context, this, "context", HBaseContext.class);
@@ -371,4 +487,6 @@ public class HBaseControl implements HBaseStart {
         this.resMgr = resMgr;
         this.delegate = new HBaseDelegate();
     }
+    
+    // ||----(constructors)----------------------------------------------------------------------||
 }

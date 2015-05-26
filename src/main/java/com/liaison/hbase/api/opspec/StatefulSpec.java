@@ -18,6 +18,16 @@ import com.liaison.hbase.util.TreeNode;
 import com.liaison.hbase.util.TreeNodeNonRoot;
 import com.liaison.hbase.util.Util;
 
+/**
+ * An element in an HBase operation specification tree which can be in one of two states:
+ * <ul>
+ * <li><strong>{@link SpecState#FLUID}</strong>: The specification node is still in a "generation"
+ * phase, wherein the client may execute operations </li>
+ * </ul>
+ * @author Branden Smith; Liaison Technologies, Inc.
+ * @param <A>
+ * @param <P>
+ */
 public abstract class StatefulSpec<A extends StatefulSpec<A, P>, P extends TreeNode<P>> extends TreeNodeNonRoot<A, P> implements Serializable {
     
     private static final long serialVersionUID = -6331552111315785761L;

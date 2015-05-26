@@ -26,7 +26,7 @@ public abstract class TableRowOpSpec<O extends TableRowOpSpec<O>> extends Operat
         this.tableRow = tableRow;
     }
 
-    public TableRowOpSpec(final Object handle, final HBaseContext context, final OperationController parent) {
+    public TableRowOpSpec(final Object handle, final HBaseContext context, final OperationControllerDefault parent) {
         super(handle, context, parent);
         this.tableRow = null;
     }

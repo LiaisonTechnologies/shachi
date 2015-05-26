@@ -8,6 +8,14 @@
  */
 package com.liaison.hbase.util;
 
+/**
+ * Specific case of {@link TreeNode} for root nodes, where the parent is null. Depth for TreeNodes
+ * of type TreeNodeRoot is always zero.
+ * 
+ * @author Branden Smith; Liaison Technologies, Inc.
+ * @param <A> Self-referential generic type representing the specific implementation to be returned
+ * by {@link #self()}. Maintained to carry on the type information from {@link AbstractSelfRef}.
+ */
 public abstract class TreeNodeRoot<A extends TreeNodeRoot<A>> extends TreeNode<A> {
     public TreeNodeRoot() {
         super(null);

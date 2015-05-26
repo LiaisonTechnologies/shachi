@@ -18,11 +18,69 @@ import com.liaison.hbase.exception.SpecValidationException;
 import com.liaison.hbase.util.StringRepFormat;
 import com.liaison.hbase.util.Util;
 
-public final class WriteOpSpec extends TableRowOpSpec<WriteOpSpec> implements Serializable {
+public final class WriteOpSpec extends TableRowOpSpec<WriteOpSpec> implements WriteOpSpecFluid, WriteOpSpecFrozen, Serializable {
 
     private static final long serialVersionUID = 2572256818666730468L;
+
+    // ||========================================================================================||
+    // ||    INSTANCE PROPERTIES                                                                 ||
+    // ||----------------------------------------------------------------------------------------||
+    
     private CondSpec<WriteOpSpec> givenCondition;
     private final List<ColSpecWrite<WriteOpSpec>> withColumn;
+    
+    // ||----(instance properties)---------------------------------------------------------------||
+    
+    // ||========================================================================================||
+    // ||    INSTANCE METHODS: API: FLUID                                                        ||
+    // ||----------------------------------------------------------------------------------------||
+
+    @Override
+    public RowSpec<WriteOpSpec> on() throws IllegalArgumentException, IllegalStateException {
+        final RowSpec<WriteOpSpec> rowSpec;
+        rowSpec = new RowSpec<>(this);
+        setTableRow(rowSpec);
+        return rowSpec;
+    }
+    
+    @Override
+    public CondSpec<WriteOpSpec> given() throws IllegalStateException {
+        prepMutation();
+        Util.validateExactlyOnce("givenCondition", CondSpec.class, this.givenCondition);
+        this.givenCondition = new CondSpec<>(this);
+        return this.givenCondition;
+    }
+    
+    @Override
+    public ColSpecWrite<WriteOpSpec> with() throws IllegalStateException {
+        final ColSpecWrite<WriteOpSpec> withCol;
+        prepMutation();
+        withCol = new ColSpecWrite<>(this);
+        this.withColumn.add(withCol);
+        return withCol;
+    }
+    
+    // ||----(instance methods: API: fluid)------------------------------------------------------||
+    
+    // ||========================================================================================||
+    // ||    INSTANCE METHODS: API: FROZEN                                                       ||
+    // ||----------------------------------------------------------------------------------------||
+    
+    @Override
+    public CondSpec<WriteOpSpec> getGivenCondition() {
+        return this.givenCondition;
+    }
+    
+    @Override
+    public List<ColSpecWrite<WriteOpSpec>> getWithColumn() {
+        return Collections.unmodifiableList(this.withColumn);
+    }
+    
+    // ||----(instance methods: API: frozen)-----------------------------------------------------||
+    
+    // ||========================================================================================||
+    // ||    INSTANCE METHODS: UTILITY                                                           ||
+    // ||----------------------------------------------------------------------------------------||
     
     @Override
     public WriteOpSpec self() { return this; }
@@ -32,33 +90,6 @@ public final class WriteOpSpec extends TableRowOpSpec<WriteOpSpec> implements Se
         super.validate();
         Util.validateRequired(getTableRow(), this, "from", RowSpec.class);
         Util.validateAtLeastOne(getWithColumn(), this, "with", ColSpecWrite.class);
-    }
-    
-    public CondSpec<WriteOpSpec> getGivenCondition() {
-        return this.givenCondition;
-    }
-    public List<ColSpecWrite<WriteOpSpec>> getWithColumn() {
-        return Collections.unmodifiableList(this.withColumn);
-    }
-
-    public RowSpec<WriteOpSpec> on() throws IllegalArgumentException, IllegalStateException {
-        final RowSpec<WriteOpSpec> rowSpec;
-        rowSpec = new RowSpec<>(this);
-        setTableRow(rowSpec);
-        return rowSpec;
-    }
-    public CondSpec<WriteOpSpec> given() throws IllegalStateException {
-        prepMutation();
-        Util.validateExactlyOnce("givenCondition", CondSpec.class, this.givenCondition);
-        this.givenCondition = new CondSpec<>(this);
-        return this.givenCondition;
-    }
-    public ColSpecWrite<WriteOpSpec> with() {
-        final ColSpecWrite<WriteOpSpec> withCol;
-        prepMutation();
-        withCol = new ColSpecWrite<>(this);
-        this.withColumn.add(withCol);
-        return withCol;
     }
     
     @Override
@@ -131,9 +162,17 @@ public final class WriteOpSpec extends TableRowOpSpec<WriteOpSpec> implements Se
         }
         return false;
     }
+    
+    // ||----(instance methods: utility)---------------------------------------------------------||
 
-    public WriteOpSpec(final Object handle, final HBaseContext context, final OperationController parent) {
+    // ||========================================================================================||
+    // ||    CONSTRUCTORS                                                                        ||
+    // ||----------------------------------------------------------------------------------------||
+
+    public WriteOpSpec(final Object handle, final HBaseContext context, final OperationControllerDefault parent) {
         super(handle, context, parent);
         this.withColumn = new LinkedList<>();
     }
+    
+    // ||----(constructors)----------------------------------------------------------------------||
 }
