@@ -17,13 +17,57 @@ import com.liaison.hbase.model.QualModel;
 import com.liaison.hbase.util.StringRepFormat;
 import com.liaison.hbase.util.Util;
 
-public final class ColSpecWrite<P extends OperationSpec<P>> extends ColSpec<ColSpecWrite<P>, P> implements Serializable {
+public class ColSpecWrite<P extends OperationSpec<P>> extends ColSpec<ColSpecWrite<P>, P> implements ColSpecWriteFluid<ColSpecWrite<P>>, ColSpecWriteFrozen, Serializable {
 
     private static final long serialVersionUID = -194106227851821468L;
+
+    // ||========================================================================================||
+    // ||    INSTANCE PROPERTIES                                                                 ||
+    // ||----------------------------------------------------------------------------------------||
     
     private Long ts;
     private Value value;
     
+    // ||----(instance properties)---------------------------------------------------------------||
+    
+    // ||========================================================================================||
+    // ||    INSTANCE METHODS: API: FLUID                                                        ||
+    // ||----------------------------------------------------------------------------------------||
+
+    @Override
+    public ColSpecWrite<P> ts(final long ts) throws IllegalStateException, IllegalArgumentException {
+        prepMutation();
+        this.ts = Util.validateExactlyOnceParam(Long.valueOf(ts), this, "ts", Long.class, this.ts);
+        return self();
+    }
+    @Override
+    public ColSpecWrite<P> value(final Value value) throws IllegalStateException, IllegalArgumentException {
+        prepMutation();
+        this.value = Util.validateExactlyOnceParam(value, this, "value", Value.class, this.value);
+        return self();
+    }
+    
+    // ||----(instance methods: API: fluid)------------------------------------------------------||
+    
+    // ||========================================================================================||
+    // ||    INSTANCE METHODS: API: FROZEN                                                       ||
+    // ||----------------------------------------------------------------------------------------||
+    
+    @Override
+    public Long getTS() {
+        return this.ts;
+    }
+    @Override
+    public Value getValue() {
+        return this.value;
+    }
+    
+    // ||----(instance methods: API: frozen)-----------------------------------------------------||
+    
+    // ||========================================================================================||
+    // ||    INSTANCE METHODS: UTILITY                                                           ||
+    // ||----------------------------------------------------------------------------------------||
+
     @Override
     protected ColSpecWrite<P> self() { return this; }
 
@@ -34,25 +78,7 @@ public final class ColSpecWrite<P extends OperationSpec<P>> extends ColSpec<ColS
         Util.validateRequired(getColumn(), this, "qual", QualModel.class);
         Util.validateRequired(getValue(), this, "value", Value.class);
     }
-
-    public Long getTs() {
-        return this.ts;
-    }
-    public Value getValue() {
-        return this.value;
-    }
-
-    public ColSpecWrite<P> ts(final long ts) throws IllegalStateException, IllegalArgumentException {
-        prepMutation();
-        this.ts = Util.validateExactlyOnceParam(Long.valueOf(ts), this, "ts", Long.class, this.ts);
-        return self();
-    }
-    public ColSpecWrite<P> value(final Value value) throws IllegalStateException, IllegalArgumentException {
-        prepMutation();
-        this.value = Util.validateExactlyOnceParam(value, this, "value", Value.class, this.value);
-        return self();
-    }
-
+    
     @Override
     protected String prepareStrRepHeadline() {
         return "[to-column]";
@@ -96,8 +122,14 @@ public final class ColSpecWrite<P extends OperationSpec<P>> extends ColSpec<ColS
         }
         return false;
     }
-    
+
+    // ||========================================================================================||
+    // ||    CONSTRUCTORS                                                                        ||
+    // ||----------------------------------------------------------------------------------------||
+
     public ColSpecWrite(final P parent) {
         super(parent);
     }
+    
+    // ||----(constructors)----------------------------------------------------------------------||
 }

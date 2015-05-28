@@ -21,6 +21,10 @@ import com.liaison.hbase.util.Util;
 public class Name extends Value implements Serializable {
     
     private static final long serialVersionUID = -290504940089138756L;
+    
+    // ||========================================================================================||
+    // ||    BUILDER (STATIC NESTED CLASS)                                                       ||
+    // ||----------------------------------------------------------------------------------------||
 
     public static final class Builder extends AbstractValueBuilder<Name, Builder> {
         private String str;
@@ -91,14 +95,34 @@ public class Name extends Value implements Serializable {
         }
     }
     
+    // ||----(builder)---------------------------------------------------------------------------||
+    
+    // ||========================================================================================||
+    // ||    CONSTANTS                                                                           ||
+    // ||----------------------------------------------------------------------------------------||
+    
     private static final String ENTITY_PREFIX_FOR_TOSTRING = "!";
     
+    // ||----(constants)-------------------------------------------------------------------------||
+    
+    // ||========================================================================================||
+    // ||    STATIC METHODS                                                                      ||
+    // ||----------------------------------------------------------------------------------------||
+    
+    public static final Builder with(final byte[] name, final Charset decoding, final DefensiveCopyStrategy dcs) {
+        return new Builder().name(name, decoding, dcs);
+    }
+    @Deprecated
     public static final Builder with(final byte[] name, final Charset decoding) {
         return new Builder().name(name, decoding);
     }
     public static final Builder with(final String nameStr, final Charset encoding) {
         return new Builder().name(nameStr, encoding);
     }
+    public static final Builder with(final byte[] name, final DefensiveCopyStrategy dcs) {
+        return new Builder().name(name, dcs);
+    }
+    @Deprecated
     public static final Builder with(final byte[] name) {
         return new Builder().name(name);
     }
@@ -106,12 +130,20 @@ public class Name extends Value implements Serializable {
         return new Builder().name(nameStr);
     }
     
+    public static final Name of(final byte[] name, final Charset decoding, final DefensiveCopyStrategy dcs) {
+        return with(name, decoding, dcs).build();
+    }
+    @Deprecated
     public static final Name of(final byte[] name, final Charset decoding) {
         return with(name, decoding).build();
     }
     public static final Name of(final String nameStr, final Charset encoding) {
         return with(nameStr, encoding).build();
     }
+    public static final Name of(final byte[] name, final DefensiveCopyStrategy dcs) {
+        return with(name, dcs).build();
+    }
+    @Deprecated
     public static final Name of(final byte[] name) {
         return with(name).build();
     }
@@ -119,11 +151,23 @@ public class Name extends Value implements Serializable {
         return with(nameStr).build();
     }
     
+    // ||----(static methods)--------------------------------------------------------------------||
+    
+    // ||========================================================================================||
+    // ||    INSTANCE PROPERTIES                                                                 ||
+    // ||----------------------------------------------------------------------------------------||
+    
     private final String str;
     private final Set<String> alias;
     
     private Integer hc;
     private String strRep;
+    
+    // ||----(instance properties)---------------------------------------------------------------||
+    
+    // ||========================================================================================||
+    // ||    INSTANCE METHODS: DATA ACCESS                                                       ||
+    // ||----------------------------------------------------------------------------------------||
     
     public String getStr() {
         return str;
@@ -131,6 +175,12 @@ public class Name extends Value implements Serializable {
     public Set<String> getAlias() {
         return alias;
     }
+    
+    // ||----(instance methods: data access)-----------------------------------------------------||
+    
+    // ||========================================================================================||
+    // ||    INSTANCE METHODS: UTILITY                                                           ||
+    // ||----------------------------------------------------------------------------------------||
     
     @Override
     public boolean equals(final Object otherObj) {
@@ -163,6 +213,12 @@ public class Name extends Value implements Serializable {
         return this.strRep;
     }
     
+    // ||----(instance methods: utility)---------------------------------------------------------||
+
+    // ||========================================================================================||
+    // ||    CONSTRUCTORS                                                                        ||
+    // ||----------------------------------------------------------------------------------------||
+    
     private Name(final Builder build) throws IllegalArgumentException {
         super(build);
         
@@ -177,4 +233,6 @@ public class Name extends Value implements Serializable {
         this.strRep = null;
         this.hc = null;
     }
+    
+    // ||----(constructors)----------------------------------------------------------------------||
 }

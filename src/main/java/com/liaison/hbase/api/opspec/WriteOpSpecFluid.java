@@ -8,6 +8,8 @@
  */
 package com.liaison.hbase.api.opspec;
 
+import java.util.function.BiConsumer;
+
 /**
  * TODO
  * @author Branden Smith; Liaison Technologies, Inc.
@@ -16,4 +18,5 @@ public interface WriteOpSpecFluid {
     RowSpec<WriteOpSpec> on() throws IllegalArgumentException, IllegalStateException;
     CondSpec<WriteOpSpec> given() throws IllegalStateException;
     ColSpecWrite<WriteOpSpec> with() throws IllegalStateException;
+    <X> WriteOpSpec withAllOf(Iterable<X> sourceData, BiConsumer<X, ColSpecWriteFluid<?>> dataToColumnGenerator);
 }

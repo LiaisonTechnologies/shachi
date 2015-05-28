@@ -22,6 +22,10 @@ import com.liaison.hbase.api.opspec.SpecState;
 import com.liaison.hbase.api.opspec.StatefulSpec;
 import com.liaison.hbase.exception.SpecValidationException;
 
+/**
+ * TODO
+ * @author Branden Smith; Liaison Technologies, Inc.
+ */
 public final class Util extends Uninstantiable {
 
     /**

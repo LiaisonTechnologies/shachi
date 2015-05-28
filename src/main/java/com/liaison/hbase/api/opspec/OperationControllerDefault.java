@@ -105,7 +105,7 @@ public class OperationControllerDefault extends TreeNodeRoot<OperationController
         ReadOpSpec readOpSpec;
         WriteOpSpec writeOpSpec;
         
-        opResSet = new OpResultSet(this.context.getDefensiveCopyStrategy());
+        opResSet = new OpResultSet();
         for (Map.Entry<Object, OperationSpec<?>> op : this.ops.entrySet()) {
             opSpec = op.getValue();
             if (opSpec instanceof ReadOpSpec) {

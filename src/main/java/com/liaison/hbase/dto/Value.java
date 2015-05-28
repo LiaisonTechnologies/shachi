@@ -14,9 +14,18 @@ import java.nio.charset.Charset;
 import com.liaison.hbase.util.DefensiveCopyStrategy;
 import com.liaison.hbase.util.Util;
 
+/**
+ * 
+ * TODO
+ * @author Branden Smith; Liaison Technologies, Inc.
+ */
 public class Value extends NullableValue implements Serializable {
     
     private static final long serialVersionUID = 8100342808865479731L;
+    
+    // ||========================================================================================||
+    // ||    BUILDER (STATIC NESTED CLASS)                                                       ||
+    // ||----------------------------------------------------------------------------------------||
     
     public static class Builder extends AbstractValueBuilder<Value, Builder> {
         @Override
@@ -35,6 +44,12 @@ public class Value extends NullableValue implements Serializable {
             super();
         }
     }
+    
+    // ||----(builder)---------------------------------------------------------------------------||
+    
+    // ||========================================================================================||
+    // ||    STATIC METHODS                                                                      ||
+    // ||----------------------------------------------------------------------------------------||
     
     public static Builder getValueBuilder() {
         return new Builder();
@@ -57,8 +72,16 @@ public class Value extends NullableValue implements Serializable {
             .build();
     }
     
+    // ||----(static methods)--------------------------------------------------------------------||
+
+    // ||========================================================================================||
+    // ||    CONSTRUCTORS                                                                        ||
+    // ||----------------------------------------------------------------------------------------||
+    
     protected Value(final AbstractValueBuilder<?,?> build) throws IllegalArgumentException {
         super(build);
         Util.ensureNotNull(build.value, this, "value", byte[].class);
     }
+    
+    // ||----(constructors)----------------------------------------------------------------------||
 }

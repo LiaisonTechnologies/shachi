@@ -33,7 +33,7 @@ public class DirectoryPrefixedTableNamingStrategy implements TableNamingStrategy
             finalName = new byte[nameLength];
             System.arraycopy(this.homeDir, 0, finalName, 0, this.homeDir.length);
             System.arraycopy(modelName, 0, finalName, this.homeDir.length, modelName.length);
-            return Name.of(finalName);
+            return Name.of(finalName, DefensiveCopyStrategy.NEVER);
         }
     }
 

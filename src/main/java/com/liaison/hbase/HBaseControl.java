@@ -122,7 +122,7 @@ public class HBaseControl implements HBaseStart {
             final QualModel colQual;
             final Value colValue;
             
-            writeTS = colSpec.getTs();
+            writeTS = colSpec.getTS();
             colFam = colSpec.getFamily();
             colQual = colSpec.getColumn();
             colValue = colSpec.getValue();

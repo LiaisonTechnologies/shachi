@@ -12,6 +12,7 @@ import java.io.Serializable;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.function.BiConsumer;
 
 import com.liaison.hbase.context.HBaseContext;
 import com.liaison.hbase.exception.SpecValidationException;
@@ -58,6 +59,19 @@ public final class WriteOpSpec extends TableRowOpSpec<WriteOpSpec> implements Wr
         withCol = new ColSpecWrite<>(this);
         this.withColumn.add(withCol);
         return withCol;
+    }
+    
+    public <X> WriteOpSpec withAllOf(final Iterable<X> sourceData, final BiConsumer<X, ColSpecWriteFluid<?>> dataToColumnGenerator) {
+        ColSpecWrite<WriteOpSpec> withCol;
+        prepMutation();
+        if (sourceData != null) {
+            for (X element : sourceData) {
+                withCol = new ColSpecWrite<>(this);
+                dataToColumnGenerator.accept(element, new ColSpecWriteConfined(withCol));
+                this.withColumn.add(withCol);
+            }
+        }
+        return self();
     }
     
     // ||----(instance methods: API: fluid)------------------------------------------------------||

@@ -8,15 +8,13 @@
  */
 package com.liaison.hbase.api.opspec;
 
-import java.util.function.BiConsumer;
+import com.liaison.hbase.dto.Value;
 
 /**
  * TODO
  * @author Branden Smith; Liaison Technologies, Inc.
  */
-public interface ReadOpSpecFluid {
-    LongValueSpec<ReadOpSpec> atTime() throws IllegalStateException;
-    RowSpec<ReadOpSpec> from() throws IllegalArgumentException, IllegalStateException;
-    ColSpecRead<ReadOpSpec> with();
-    <X> ReadOpSpec withAllOf(Iterable<X> sourceData, BiConsumer<X, ColSpecReadFluid<?>> dataToColumnGenerator);
+public interface ColSpecWriteFrozen {
+    Long getTS();
+    Value getValue();
 }

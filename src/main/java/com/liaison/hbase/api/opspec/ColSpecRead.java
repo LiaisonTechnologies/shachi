@@ -15,30 +15,57 @@ import com.liaison.hbase.exception.SpecValidationException;
 import com.liaison.hbase.model.FamilyModel;
 import com.liaison.hbase.util.Util;
 
-public final class ColSpecRead<P extends OperationSpec<P>> extends ColSpec<ColSpecRead<P>, P> implements Serializable {
+/**
+ * TODO
+ * @author Branden Smith; Liaison Technologies, Inc.
+ * @param <P>
+ */
+public final class ColSpecRead<P extends OperationSpec<P>> extends ColSpec<ColSpecRead<P>, P> implements ColSpecReadFluid<ColSpecRead<P>>, ColSpecReadFrozen, Serializable {
 
     private static final long serialVersionUID = -3480030817298140795L;
 
+    // ||========================================================================================||
+    // ||    INSTANCE PROPERTIES                                                                 ||
+    // ||----------------------------------------------------------------------------------------||
+    
     private boolean optional;
     
-    @Override
-    protected ColSpecRead<P> self() { return this; }
-
-    @Override
-    protected void validate() throws SpecValidationException {
-        super.validate();
-        Util.validateRequired(getFamily(), this, "fam", FamilyModel.class);
-    }
+    // ||----(instance properties)---------------------------------------------------------------||
     
-    public boolean isOptional() {
-        return this.optional;
-    }
+    // ||========================================================================================||
+    // ||    INSTANCE METHODS: API: FLUID                                                        ||
+    // ||----------------------------------------------------------------------------------------||
+    
+    @Override
     public ColSpecRead<P> optional() throws IllegalStateException {
         prepMutation();
         this.optional = true;
         return this;
     }
     
+    // ||----(instance methods: API: fluid)------------------------------------------------------||
+    
+    // ||========================================================================================||
+    // ||    INSTANCE METHODS: API: FROZEN                                                       ||
+    // ||----------------------------------------------------------------------------------------||
+
+    @Override
+    public boolean isOptional() {
+        return this.optional;
+    }
+    
+    // ||----(instance methods: API: frozen)-----------------------------------------------------||
+    
+    // ||========================================================================================||
+    // ||    INSTANCE METHODS: UTILITY                                                           ||
+    // ||----------------------------------------------------------------------------------------||
+    
+    /**
+     * 
+     * @param description
+     * @return
+     * @throws IllegalStateException
+     */
     public FamilyQualifierPair toFQP(final String description) throws IllegalStateException {
         final String logMsg;
         final FamilyQualifierPair.Builder fqpBuild;
@@ -62,6 +89,11 @@ public final class ColSpecRead<P extends OperationSpec<P>> extends ColSpec<ColSp
             throw new IllegalStateException(logMsg, iaExc);
         }
     }
+    
+    /**
+     * 
+     * @return
+     */
     public FamilyQualifierPair toFQP() {
         return toFQP(null);
     }
@@ -81,8 +113,25 @@ public final class ColSpecRead<P extends OperationSpec<P>> extends ColSpec<ColSp
         return (otherColSpec instanceof ColSpecRead);
     }
     
+    @Override
+    protected ColSpecRead<P> self() { return this; }
+
+    @Override
+    protected void validate() throws SpecValidationException {
+        super.validate();
+        Util.validateRequired(getFamily(), this, "fam", FamilyModel.class);
+    }
+    
+    // ||----(instance methods: utility)---------------------------------------------------------||
+
+    // ||========================================================================================||
+    // ||    CONSTRUCTORS                                                                        ||
+    // ||----------------------------------------------------------------------------------------||
+
     public ColSpecRead(final P parent) {
         super(parent);
         this.optional = false;
     }
+    
+    // ||----(constructors)----------------------------------------------------------------------||
 }

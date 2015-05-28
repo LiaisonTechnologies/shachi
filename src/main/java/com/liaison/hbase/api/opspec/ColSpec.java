@@ -15,32 +15,58 @@ import com.liaison.hbase.model.QualModel;
 import com.liaison.hbase.util.StringRepFormat;
 import com.liaison.hbase.util.Util;
 
-public abstract class ColSpec<C extends ColSpec<C, P>, P extends OperationSpec<P>> extends CriteriaSpec<C, P> implements Serializable {
+public abstract class ColSpec<C extends ColSpec<C, P>, P extends OperationSpec<P>> extends CriteriaSpec<C, P> implements ColSpecFluid<C>, ColSpecFrozen, Serializable {
     
     private static final long serialVersionUID = 1772684254524544307L;
+
+    // ||========================================================================================||
+    // ||    INSTANCE PROPERTIES                                                                 ||
+    // ||----------------------------------------------------------------------------------------||
     
     private FamilyModel family;
     private QualModel column;
     
-    public FamilyModel getFamily() {
-        return this.family;
-    }
-    public QualModel getColumn() {
-        return this.column;
-    }
+    // ||----(instance properties)---------------------------------------------------------------||
     
+    // ||========================================================================================||
+    // ||    INSTANCE METHODS: API: FLUID                                                        ||
+    // ||----------------------------------------------------------------------------------------||
+    
+    @Override
     public C fam(final FamilyModel family) throws IllegalStateException, IllegalArgumentException {
         prepMutation();
         this.family =
             Util.validateExactlyOnceParam(family, this, "family", FamilyModel.class, this.family);
         return self();
     }
+    @Override
     public C qual(final QualModel qual) throws IllegalStateException, IllegalArgumentException {
         prepMutation();
         this.column =
             Util.validateExactlyOnceParam(qual, this, "column", QualModel.class, this.column);
         return self();
     }
+    
+    // ||----(instance methods: API: fluid)------------------------------------------------------||
+    
+    // ||========================================================================================||
+    // ||    INSTANCE METHODS: API: FROZEN                                                       ||
+    // ||----------------------------------------------------------------------------------------||
+
+    @Override
+    public FamilyModel getFamily() {
+        return this.family;
+    }
+    @Override
+    public QualModel getColumn() {
+        return this.column;
+    }
+    
+    // ||----(instance methods: API: frozen)-----------------------------------------------------||
+    
+    // ||========================================================================================||
+    // ||    INSTANCE METHODS: UTILITY                                                           ||
+    // ||----------------------------------------------------------------------------------------||
     
     protected void prepareStrRepAdditional(final StringBuilder strGen, final StringRepFormat format) {
         // provide a default implementation which does nothing
@@ -91,7 +117,15 @@ public abstract class ColSpec<C extends ColSpec<C, P>, P extends OperationSpec<P
         return false;
     }
     
+    // ||----(instance methods: utility)---------------------------------------------------------||
+
+    // ||========================================================================================||
+    // ||    CONSTRUCTORS                                                                        ||
+    // ||----------------------------------------------------------------------------------------||
+
     public ColSpec(final P parent) {
         super(parent);
     }
+    
+    // ||----(constructors)----------------------------------------------------------------------||
 }

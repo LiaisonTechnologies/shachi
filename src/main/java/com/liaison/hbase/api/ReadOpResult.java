@@ -9,7 +9,7 @@
 package com.liaison.hbase.api;
 
 import java.util.Collections;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import com.liaison.hbase.api.opspec.ColSpecRead;
@@ -63,7 +63,11 @@ public class ReadOpResult extends OpResult<ReadOpSpec> {
         
         private ReadOpResultBuilder() {
             super();
-            this.data = new HashMap<>();
+            /*
+             * IMPORTANT: This *must* be a LinkedHashMap (rather than a simple HashMap) in order to
+             * preserve the order of data elements as retrieved by HBase.
+             */
+            this.data = new LinkedHashMap<>();
         }
     }
     

@@ -8,6 +8,9 @@
  */
 package com.liaison.hbase.test.e2e;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.UUID;
 
 import org.apache.hadoop.hbase.HBaseConfiguration;
@@ -30,6 +33,8 @@ public class TestMapREnd2End {
 
     private static final Logger LOG;
     
+    private static final String ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    
     private static final String CONTEXT_ID_1 = "CONTEXT-1";
     private static final String HANDLE_TESTWRITE_1 = "TEST-WRITE-1";
     private static final String HANDLE_TESTREAD_1 = "TEST-READ-1";
@@ -37,6 +42,12 @@ public class TestMapREnd2End {
     private static final String COLUMNFAMILY_a = "a";
     private static final String COLUMNQUAL_Z = "Z";
     private static final long TS_SAMPLE_1 = 1234567890;
+    
+    private static final String CONTEXT_ID_2 = "CONTEXT-2";
+    private static final String HANDLE_TESTWRITE_2 = "TEST-WRITE-2";
+    private static final String HANDLE_TESTREAD_2 = "TEST-READ-2";
+    private static final String TABLENAME_B = TestMapREnd2End.class.getSimpleName() + "_B";
+    private static final List<String> COLUMNQUALS_ABC;
     
     private static final QualModel QUAL_MODEL_Z =
         QualModel.with(Name.of(COLUMNQUAL_Z)).build();
@@ -50,9 +61,29 @@ public class TestMapREnd2End {
             .with(Name.of(TABLENAME_A))
             .family(FAM_MODEL_a)
             .build();
+    private static final TableModel TEST_MODEL_B =
+            TableModel
+                .with(Name.of(TABLENAME_B))
+                .family(FAM_MODEL_a)
+                .build();
     
     static {
+        final String[] alphabetArray;
+        final List<String> alphabetList;
         LOG = LoggerFactory.getLogger(TestMapREnd2End.class);
+        
+        alphabetArray = new String[ALPHABET.length()];
+        Arrays.setAll(alphabetArray,
+                      (index) -> {
+                          String str = "";
+                          for (int iter = 0; iter < 10; iter++) {
+                              str += ALPHABET.charAt(index);
+                          }
+                          return str;
+                      });
+        alphabetList = Arrays.asList(alphabetArray);
+        Collections.shuffle(alphabetList);
+        COLUMNQUALS_ABC = Collections.unmodifiableList(alphabetList);
     }
     
     public void test1() {
@@ -129,10 +160,83 @@ public class TestMapREnd2End {
         }
     }
     
+    public void test2() {
+        final String testPrefix;
+        HBaseControl control = null;
+        OpResultSet opResSet;
+        String rowKeyStr;
+        String randomData;
+        
+        testPrefix = "[test2] ";
+        try {
+            LOG.info(testPrefix + "starting...");
+            control =
+                new HBaseControl(
+                    MapRHBaseContext
+                        .getBuilder()
+                        .id(CONTEXT_ID_2)
+                        .configProvider(() -> HBaseConfiguration.create())
+                        .build(),
+                    SimpleHBaseResourceManager.INSTANCE);
+            
+
+            LOG.info(testPrefix + "control: " + control);
+            
+            rowKeyStr = Long.toString(System.currentTimeMillis());
+            randomData = UUID.randomUUID().toString();
+            
+            LOG.info(testPrefix + "starting write...");
+            opResSet = 
+                control
+                    .begin()
+                    .write(HANDLE_TESTWRITE_2)
+                        .on()
+                            .tbl(TEST_MODEL_B)
+                            .row(RowKey.of(rowKeyStr))
+                        .and()
+                        .withAllOf(COLUMNQUALS_ABC, (element, spec) -> {
+                            spec.fam(FAM_MODEL_a);
+                            spec.qual(QualModel.of(Name.of(element)));
+                            spec.ts(TS_SAMPLE_1);
+                            spec.value(Value.of(element + randomData));
+                        })
+                        .then()
+                        .exec();
+            LOG.info(testPrefix + "write complete!");
+            LOG.info(testPrefix + "write results: " + opResSet.getResultsByHandle());
+
+            LOG.info(testPrefix + "starting read...");
+            opResSet =
+                control
+                    .begin()
+                    .read(HANDLE_TESTREAD_2)
+                        .from()
+                            .tbl(TEST_MODEL_B)
+                            .row(RowKey.of(rowKeyStr))
+                        .and()
+                        .with()
+                            .fam(FAM_MODEL_a)
+                        .and()
+                        .atTime()
+                            .gt(TS_SAMPLE_1 - 10)
+                            .lt(TS_SAMPLE_1 + 10)
+                        .and()
+                        .then()
+                        .exec();
+            
+            LOG.info(testPrefix + "read complete!");
+            
+            LOG.info(testPrefix + "read results: " + opResSet.getResultsByHandle());
+        } catch (HBaseException hbExc) {
+            hbExc.printStackTrace();
+        }
+    }
+    
     public static void main(final String[] arguments) {
         final TestMapREnd2End test;
         
         test = new TestMapREnd2End();
         test.test1();
+        test.test2();
     }
 }

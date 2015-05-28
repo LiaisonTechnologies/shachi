@@ -12,6 +12,7 @@ import java.io.Serializable;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.function.BiConsumer;
 
 import com.liaison.hbase.context.HBaseContext;
 import com.liaison.hbase.exception.SpecValidationException;
@@ -63,6 +64,20 @@ public final class ReadOpSpec extends TableRowOpSpec<ReadOpSpec> implements Read
         withCol = new ColSpecRead<>(this);
         this.withColumn.add(withCol);
         return withCol;
+    }
+    
+    @Override
+    public <X> ReadOpSpec withAllOf(final Iterable<X> sourceData, final BiConsumer<X, ColSpecReadFluid<?>> dataToColumnGenerator) {
+        ColSpecRead<ReadOpSpec> withCol;
+        prepMutation();
+        if (sourceData != null) {
+            for (X element : sourceData) {
+                withCol = new ColSpecRead<>(this);
+                dataToColumnGenerator.accept(element, new ColSpecReadConfined(withCol));
+                this.withColumn.add(withCol);
+            }
+        }
+        return self();
     }
     
     // ||----(instance methods: API: fluid)------------------------------------------------------||

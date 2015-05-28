@@ -20,24 +20,55 @@ import com.liaison.hbase.model.QualModel;
 import com.liaison.hbase.util.StringRepFormat;
 import com.liaison.hbase.util.Util;
 
-public final class CondSpec<P extends OperationSpec<P>> extends ColSpec<CondSpec<P>, P> implements Serializable {
+/**
+ * 
+ * TODO
+ * @author Branden Smith; Liaison Technologies, Inc.
+ * @param <P>
+ */
+public final class CondSpec<P extends OperationSpec<P>> extends ColSpec<CondSpec<P>, P> implements CondSpecFluid<CondSpec<P>>, CondSpecFrozen, Serializable {
 
     private static final long serialVersionUID = 328263884139551395L;
+
+    // ||========================================================================================||
+    // ||    INSTANCE PROPERTIES                                                                 ||
+    // ||----------------------------------------------------------------------------------------||
     
     private RowKey rowKey;
     private NullableValue value;
-
+    
+    // ||----(instance properties)---------------------------------------------------------------||
+    
+    // ||========================================================================================||
+    // ||    INSTANCE METHODS: API: FLUID                                                        ||
+    // ||----------------------------------------------------------------------------------------||
+    
     @Override
-    protected CondSpec<P> self() { return this; }
-
-    @Override
-    protected void validate() throws SpecValidationException {
-        super.validate();
-        Util.validateRequired(getRowKey(), this, "row", RowKey.class);
-        Util.validateRequired(getFamily(), this, "fam", FamilyModel.class);
-        Util.validateRequired(getColumn(), this, "qual", QualModel.class);
-        Util.validateRequired(getValue(), this, "value/empty", NullableValue.class);
+    public CondSpec<P> row(final RowKey rowKey) throws IllegalStateException, IllegalArgumentException {
+        prepMutation();
+        this.rowKey = Util.validateExactlyOnceParam(rowKey, this, "rowKey", RowKey.class, this.rowKey);
+        return self();
     }
+    
+    @Override
+    public CondSpec<P> value(final Value value) throws IllegalStateException, IllegalArgumentException {
+        prepMutation();
+        this.value = Util.validateExactlyOnceParam(value, this, "value", Value.class, this.value);
+        return self();
+    }
+    
+    @Override
+    public CondSpec<P> empty(final Empty empty) throws IllegalStateException, IllegalArgumentException {
+        prepMutation();
+        this.value = Util.validateExactlyOnceParam(empty, this, "empty", Empty.class, this.value);
+        return self();
+    }
+    
+    // ||----(instance methods: API: fluid)------------------------------------------------------||
+    
+    // ||========================================================================================||
+    // ||    INSTANCE METHODS: API: FROZEN                                                       ||
+    // ||----------------------------------------------------------------------------------------||
 
     public RowKey getRowKey() {
         return this.rowKey;
@@ -45,23 +76,13 @@ public final class CondSpec<P extends OperationSpec<P>> extends ColSpec<CondSpec
     public NullableValue getValue() {
         return this.value;
     }
-
-    public CondSpec<P> row(final RowKey rowKey) throws IllegalStateException, IllegalArgumentException {
-        prepMutation();
-        this.rowKey = Util.validateExactlyOnceParam(rowKey, this, "rowKey", RowKey.class, this.rowKey);
-        return self();
-    }
-    public CondSpec<P> value(final Value value) throws IllegalStateException, IllegalArgumentException {
-        prepMutation();
-        this.value = Util.validateExactlyOnceParam(value, this, "value", Value.class, this.value);
-        return self();
-    }
-    public CondSpec<P> empty(final Empty empty) throws IllegalStateException, IllegalArgumentException {
-        prepMutation();
-        this.value = Util.validateExactlyOnceParam(empty, this, "empty", Empty.class, this.value);
-        return self();
-    }
-
+    
+    // ||----(instance methods: API: frozen)-----------------------------------------------------||
+    
+    // ||========================================================================================||
+    // ||    INSTANCE METHODS: UTILITY                                                           ||
+    // ||----------------------------------------------------------------------------------------||
+    
     @Override
     protected String prepareStrRepHeadline() {
         return "[given-condition]";
@@ -106,7 +127,27 @@ public final class CondSpec<P extends OperationSpec<P>> extends ColSpec<CondSpec
         return false;
     }
 
+    @Override
+    protected CondSpec<P> self() { return this; }
+
+    @Override
+    protected void validate() throws SpecValidationException {
+        super.validate();
+        Util.validateRequired(getRowKey(), this, "row", RowKey.class);
+        Util.validateRequired(getFamily(), this, "fam", FamilyModel.class);
+        Util.validateRequired(getColumn(), this, "qual", QualModel.class);
+        Util.validateRequired(getValue(), this, "value/empty", NullableValue.class);
+    }
+    
+    // ||----(instance methods: utility)---------------------------------------------------------||
+
+    // ||========================================================================================||
+    // ||    CONSTRUCTORS                                                                        ||
+    // ||----------------------------------------------------------------------------------------||
+
     public CondSpec(final P parent) {
         super(parent);
     }
+    
+    // ||----(constructors)----------------------------------------------------------------------||
 }
