@@ -8,8 +8,8 @@
  */
 package com.liaison.hbase.exception;
 
-import com.liaison.hbase.api.opspec.SpecState;
-import com.liaison.hbase.api.opspec.StatefulSpec;
+import com.liaison.hbase.api.request.impl.SpecState;
+import com.liaison.hbase.api.request.impl.StatefulSpec;
 
 public class SpecValidationException extends IllegalStateException {
 

@@ -14,6 +14,9 @@ import org.mockito.Mockito;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
+import com.liaison.hbase.api.request.impl.LongValueSpec;
+import com.liaison.hbase.api.request.impl.NoOpSpec;
+
 public class TestLongValueSpec {
 
     private static final long NONBOUNDARY_LONG_LOW = 5;

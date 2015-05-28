@@ -16,15 +16,15 @@ import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.client.Result;
 
-import com.liaison.hbase.api.opspec.ColSpecRead;
-import com.liaison.hbase.api.opspec.ColSpecWrite;
-import com.liaison.hbase.api.opspec.CondSpec;
-import com.liaison.hbase.api.opspec.OperationController;
-import com.liaison.hbase.api.opspec.OperationControllerDefault;
-import com.liaison.hbase.api.opspec.OperationSpec;
-import com.liaison.hbase.api.opspec.ReadOpSpec;
-import com.liaison.hbase.api.opspec.RowSpec;
-import com.liaison.hbase.api.opspec.WriteOpSpec;
+import com.liaison.hbase.api.request.OperationController;
+import com.liaison.hbase.api.request.frozen.ColSpecWriteFrozen;
+import com.liaison.hbase.api.request.impl.ColSpecRead;
+import com.liaison.hbase.api.request.impl.CondSpec;
+import com.liaison.hbase.api.request.impl.OperationControllerDefault;
+import com.liaison.hbase.api.request.impl.OperationSpec;
+import com.liaison.hbase.api.request.impl.ReadOpSpec;
+import com.liaison.hbase.api.request.impl.RowSpec;
+import com.liaison.hbase.api.request.impl.WriteOpSpec;
 import com.liaison.hbase.context.HBaseContext;
 import com.liaison.hbase.dto.NullableValue;
 import com.liaison.hbase.dto.RowKey;
@@ -116,7 +116,7 @@ public class HBaseControl implements HBaseStart {
          * @param writePut
          * @param colSpec
          */
-        private void addColumn(final String logMethodName, final DefensiveCopyStrategy dcs, final Put writePut, final ColSpecWrite<WriteOpSpec> colSpec) {
+        private void addColumn(final String logMethodName, final DefensiveCopyStrategy dcs, final Put writePut, final ColSpecWriteFrozen colSpec) {
             final Long writeTS;
             final FamilyModel colFam;
             final QualModel colQual;
@@ -168,7 +168,7 @@ public class HBaseControl implements HBaseStart {
          * @return
          * @throws HBaseMultiColumnException
          */
-        private boolean performWrite(final String logMethodName, final HTable writeToTable, final RowSpec<WriteOpSpec> tableRowSpec, final List<ColSpecWrite<WriteOpSpec>> colWriteList, final CondSpec<?> condition, final Put writePut, final DefensiveCopyStrategy dcs) throws HBaseMultiColumnException {
+        private boolean performWrite(final String logMethodName, final HTable writeToTable, final RowSpec<WriteOpSpec> tableRowSpec, final List<ColSpecWriteFrozen> colWriteList, final CondSpec<?> condition, final Put writePut, final DefensiveCopyStrategy dcs) throws HBaseMultiColumnException {
             final String logMsg;
             final NullableValue condPossibleValue;
             final RowKey rowKey;
@@ -332,7 +332,7 @@ public class HBaseControl implements HBaseStart {
             final String logMethodName;
             final DefensiveCopyStrategy dcs;
             final RowSpec<WriteOpSpec> tableRowSpec;
-            final List<ColSpecWrite<WriteOpSpec>> colWriteList;
+            final List<ColSpecWriteFrozen> colWriteList;
             final CondSpec<?> condition;
             final Put writePut;
             boolean writeCompleted;
@@ -369,7 +369,7 @@ public class HBaseControl implements HBaseStart {
                           ()->"columns: ",
                           ()->colWriteList);
                 if (colWriteList != null) {
-                    for (ColSpecWrite<WriteOpSpec> colWrite : colWriteList) {
+                    for (ColSpecWriteFrozen colWrite : colWriteList) {
                         addColumn(logMethodName, dcs, writePut, colWrite);
                     }
                 }

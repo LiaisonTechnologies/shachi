@@ -12,8 +12,8 @@ import java.io.IOException;
 
 import org.apache.hadoop.hbase.client.Get;
 
-import com.liaison.hbase.api.opspec.LongValueSpec;
-import com.liaison.hbase.api.opspec.ReadOpSpec;
+import com.liaison.hbase.api.request.impl.LongValueSpec;
+import com.liaison.hbase.api.request.impl.ReadOpSpec;
 
 public final class ReadUtils {
 

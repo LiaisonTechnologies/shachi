@@ -8,8 +8,8 @@
  */
 package com.liaison.hbase;
 
-import com.liaison.hbase.api.opspec.OperationController;
-import com.liaison.hbase.api.opspec.OperationControllerDefault;
+import com.liaison.hbase.api.request.OperationController;
+import com.liaison.hbase.api.request.impl.OperationControllerDefault;
 
 /**
  * 

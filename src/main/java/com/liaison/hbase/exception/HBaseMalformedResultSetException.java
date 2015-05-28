@@ -8,8 +8,8 @@
  */
 package com.liaison.hbase.exception;
 
-import com.liaison.hbase.api.opspec.ColSpec;
-import com.liaison.hbase.api.opspec.RowSpec;
+import com.liaison.hbase.api.request.impl.ColSpec;
+import com.liaison.hbase.api.request.impl.RowSpec;
 
 /**
  * TODO

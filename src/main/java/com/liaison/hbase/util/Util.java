@@ -18,8 +18,8 @@ import java.util.function.BiPredicate;
 
 import org.slf4j.Logger;
 
-import com.liaison.hbase.api.opspec.SpecState;
-import com.liaison.hbase.api.opspec.StatefulSpec;
+import com.liaison.hbase.api.request.impl.SpecState;
+import com.liaison.hbase.api.request.impl.StatefulSpec;
 import com.liaison.hbase.exception.SpecValidationException;
 
 /**

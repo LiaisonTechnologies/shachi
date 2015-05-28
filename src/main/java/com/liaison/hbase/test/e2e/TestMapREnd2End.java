@@ -18,7 +18,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.liaison.hbase.HBaseControl;
-import com.liaison.hbase.api.OpResultSet;
+import com.liaison.hbase.api.response.OpResultSet;
 import com.liaison.hbase.context.MapRHBaseContext;
 import com.liaison.hbase.dto.RowKey;
 import com.liaison.hbase.dto.Value;
@@ -110,6 +110,8 @@ public class TestMapREnd2End {
             
             rowKeyStr = Long.toString(System.currentTimeMillis());
             randomData = UUID.randomUUID().toString();
+            
+            
             
             LOG.info(testPrefix + "starting write...");
             opResSet = 

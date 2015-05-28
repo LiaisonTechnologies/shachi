@@ -8,7 +8,7 @@
  */
 package com.liaison.hbase.exception;
 
-import com.liaison.hbase.api.opspec.RowSpec;
+import com.liaison.hbase.api.request.impl.RowSpec;
 
 public class HBaseTableRowException extends HBaseException {
 
