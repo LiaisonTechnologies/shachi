@@ -24,6 +24,7 @@ version = '0.0.1-SNAPSHOT'
 
 ext.libraryName = "liaison-hbase-${version}"
 ext.verMockito = '1.10.19'
+ext.verPool = '2.3'
 ext.verQuasar  = '0.6.2'
 ext.verTestNG  = '6.8.21'
 
@@ -59,6 +60,7 @@ dependencies {
     compile "co.paralleluniverse:quasar-core:${verQuasar}${classifier}"
     provided "org.apache.hbase:hbase-client:${verHBase}"
     provided "org.apache.hbase:hbase-common:${verHBase}"
+    compile "org.apache.commons:commons-pool2:${verPool}"
     testCompile "org.testng:testng:${verTestNG}"
     testCompile "org.mockito:mockito-all:${verMockito}"
 }
@@ -91,3 +93,4 @@ uploadArchives {
        }
     }
 }
+eclipse.classpath.plusConfigurations += configurations.provided
