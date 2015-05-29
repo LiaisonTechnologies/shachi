@@ -25,9 +25,9 @@ public class ManagedAdmin extends Managed<HBaseAdmin> {
     @Override
     public void close() throws IOException {
         try {
-            getOwner().releaseAdmin(getContext(), getResource());
+            getOwner().releaseAdmin(this);
         } catch (HBaseResourceReleaseException exc) {
-            // sigh... wrap in an IOException because Closeable requires it
+            // wrap in an IOException because Closeable requires it
             throw new IOException(exc);
         }
     }

@@ -24,16 +24,26 @@ import com.liaison.hbase.util.Util;
  */
 public class ManagedTable extends Managed<HTable> {
     
-    private TableModel model;
+    private final TableModel model;
 
+    public TableModel getModel() {
+        return this.model;
+    }
+    
     @Override
     public void close() throws IOException {
         try {
-            getOwner().release(getContext(), this.model, getResource());
+            getOwner().release(this);
         } catch (HBaseResourceReleaseException exc) {
-            // sigh... wrap in an IOException because Closeable requires it
+            // wrap in an IOException because Closeable requires it
             throw new IOException(exc);
         }
+    }
+    
+    @Override
+    protected void addToStrRep(final StringBuilder strGen) {
+        strGen.append("model=");
+        strGen.append(this.model);
     }
 
     public ManagedTable(final HBaseResourceManager owner, final HBaseContext context, final TableModel model, final HTable table) {
