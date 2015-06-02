@@ -14,16 +14,16 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.function.BiConsumer;
 
+import com.liaison.hbase.api.request.WriteOpSpec;
 import com.liaison.hbase.api.request.fluid.ColSpecWriteFluid;
-import com.liaison.hbase.api.request.fluid.WriteOpSpecFluid;
 import com.liaison.hbase.api.request.frozen.ColSpecWriteFrozen;
-import com.liaison.hbase.api.request.frozen.WriteOpSpecFrozen;
+import com.liaison.hbase.api.response.OpResultSet;
 import com.liaison.hbase.context.HBaseContext;
 import com.liaison.hbase.exception.SpecValidationException;
 import com.liaison.hbase.util.StringRepFormat;
 import com.liaison.hbase.util.Util;
 
-public final class WriteOpSpec extends TableRowOpSpec<WriteOpSpec> implements WriteOpSpecFluid, WriteOpSpecFrozen, Serializable {
+public final class WriteOpSpecDefault extends TableRowOpSpec<WriteOpSpecDefault> implements WriteOpSpec<OpResultSet>, Serializable {
 
     private static final long serialVersionUID = 2572256818666730468L;
 
@@ -31,8 +31,8 @@ public final class WriteOpSpec extends TableRowOpSpec<WriteOpSpec> implements Wr
     // ||    INSTANCE PROPERTIES                                                                 ||
     // ||----------------------------------------------------------------------------------------||
     
-    private CondSpec<WriteOpSpec> givenCondition;
-    private final List<ColSpecWrite<WriteOpSpec>> withColumn;
+    private CondSpec<WriteOpSpecDefault> givenCondition;
+    private final List<ColSpecWrite<WriteOpSpecDefault>> withColumn;
     
     // ||----(instance properties)---------------------------------------------------------------||
     
@@ -41,15 +41,15 @@ public final class WriteOpSpec extends TableRowOpSpec<WriteOpSpec> implements Wr
     // ||----------------------------------------------------------------------------------------||
 
     @Override
-    public RowSpec<WriteOpSpec> on() throws IllegalArgumentException, IllegalStateException {
-        final RowSpec<WriteOpSpec> rowSpec;
+    public RowSpec<WriteOpSpecDefault> on() throws IllegalArgumentException, IllegalStateException {
+        final RowSpec<WriteOpSpecDefault> rowSpec;
         rowSpec = new RowSpec<>(this);
         setTableRow(rowSpec);
         return rowSpec;
     }
     
     @Override
-    public CondSpec<WriteOpSpec> given() throws IllegalStateException {
+    public CondSpec<WriteOpSpecDefault> given() throws IllegalStateException {
         prepMutation();
         Util.validateExactlyOnce("givenCondition", CondSpec.class, this.givenCondition);
         this.givenCondition = new CondSpec<>(this);
@@ -57,16 +57,16 @@ public final class WriteOpSpec extends TableRowOpSpec<WriteOpSpec> implements Wr
     }
     
     @Override
-    public ColSpecWrite<WriteOpSpec> with() throws IllegalStateException {
-        final ColSpecWrite<WriteOpSpec> withCol;
+    public ColSpecWrite<WriteOpSpecDefault> with() throws IllegalStateException {
+        final ColSpecWrite<WriteOpSpecDefault> withCol;
         prepMutation();
         withCol = new ColSpecWrite<>(this);
         this.withColumn.add(withCol);
         return withCol;
     }
     
-    public <X> WriteOpSpec withAllOf(final Iterable<X> sourceData, final BiConsumer<X, ColSpecWriteFluid<?>> dataToColumnGenerator) {
-        ColSpecWrite<WriteOpSpec> withCol;
+    public <X> WriteOpSpecDefault withAllOf(final Iterable<X> sourceData, final BiConsumer<X, ColSpecWriteFluid<?>> dataToColumnGenerator) {
+        ColSpecWrite<WriteOpSpecDefault> withCol;
         prepMutation();
         if (sourceData != null) {
             for (X element : sourceData) {
@@ -85,7 +85,7 @@ public final class WriteOpSpec extends TableRowOpSpec<WriteOpSpec> implements Wr
     // ||----------------------------------------------------------------------------------------||
     
     @Override
-    public CondSpec<WriteOpSpec> getGivenCondition() {
+    public CondSpec<WriteOpSpecDefault> getGivenCondition() {
         return this.givenCondition;
     }
     
@@ -101,7 +101,7 @@ public final class WriteOpSpec extends TableRowOpSpec<WriteOpSpec> implements Wr
     // ||----------------------------------------------------------------------------------------||
     
     @Override
-    public WriteOpSpec self() { return this; }
+    public WriteOpSpecDefault self() { return this; }
 
     @Override
     protected void validate() throws SpecValidationException {
@@ -117,7 +117,7 @@ public final class WriteOpSpec extends TableRowOpSpec<WriteOpSpec> implements Wr
     
     @Override
     protected void prepareStrRep(final StringBuilder strGen, final StringRepFormat format) {
-        final RowSpec<WriteOpSpec> tableRow;
+        final RowSpec<WriteOpSpecDefault> tableRow;
         tableRow = getTableRow();
         if (format == StringRepFormat.STRUCTURED) {
             if (tableRow != null) {
@@ -138,7 +138,7 @@ public final class WriteOpSpec extends TableRowOpSpec<WriteOpSpec> implements Wr
             }
             if (this.withColumn.size() > 0) {
                 Util.appendIndented(strGen, getDepth() + 1, "with column(s): ", "\n");
-                for (ColSpecWrite<WriteOpSpec> colSpec : this.withColumn) {
+                for (ColSpecWrite<WriteOpSpecDefault> colSpec : this.withColumn) {
                     Util.appendIndented(strGen, getDepth() + 1, colSpec);
                 }
             }
@@ -165,9 +165,9 @@ public final class WriteOpSpec extends TableRowOpSpec<WriteOpSpec> implements Wr
     
     @Override
     protected boolean deepEquals(final OperationSpec<?> otherOpSpec) {
-        final WriteOpSpec otherWriteSpec;
-        if (otherOpSpec instanceof WriteOpSpec) {
-            otherWriteSpec = (WriteOpSpec) otherOpSpec;
+        final WriteOpSpecDefault otherWriteSpec;
+        if (otherOpSpec instanceof WriteOpSpecDefault) {
+            otherWriteSpec = (WriteOpSpecDefault) otherOpSpec;
             /*
              * Equality checks ordered from least to most expensive, to allow for relatively quick
              * short-circuiting
@@ -187,7 +187,7 @@ public final class WriteOpSpec extends TableRowOpSpec<WriteOpSpec> implements Wr
     // ||    CONSTRUCTORS                                                                        ||
     // ||----------------------------------------------------------------------------------------||
 
-    public WriteOpSpec(final Object handle, final HBaseContext context, final OperationControllerDefault parent) {
+    public WriteOpSpecDefault(final Object handle, final HBaseContext context, final OperationControllerDefault parent) {
         super(handle, context, parent);
         this.withColumn = new LinkedList<>();
     }

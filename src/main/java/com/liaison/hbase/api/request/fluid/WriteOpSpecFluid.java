@@ -19,10 +19,10 @@ import com.liaison.hbase.api.request.fluid.fluent.RowSpecFluent;
  * TODO
  * @author Branden Smith; Liaison Technologies, Inc.
  */
-public interface WriteOpSpecFluid {
-    RowSpecFluent<?, ? extends WriteOpSpecFluid> on() throws IllegalArgumentException, IllegalStateException;
-    CondSpecFluent<?, ? extends WriteOpSpecFluid> given() throws IllegalStateException;
-    ColSpecWriteFluent<?, ? extends WriteOpSpecFluid> with() throws IllegalStateException;
-    <X> WriteOpSpecFluid withAllOf(Iterable<X> sourceData, BiConsumer<X, ColSpecWriteFluid<?>> dataToColumnGenerator);
-    OperationController then();
+public interface WriteOpSpecFluid<Z> {
+    RowSpecFluent<?, ? extends WriteOpSpecFluid<Z>> on() throws IllegalArgumentException, IllegalStateException;
+    CondSpecFluent<?, ? extends WriteOpSpecFluid<Z>> given() throws IllegalStateException;
+    ColSpecWriteFluent<?, ? extends WriteOpSpecFluid<Z>> with() throws IllegalStateException;
+    <X> WriteOpSpecFluid<Z> withAllOf(Iterable<X> sourceData, BiConsumer<X, ColSpecWriteFluid<?>> dataToColumnGenerator);
+    OperationController<Z> then();
 }

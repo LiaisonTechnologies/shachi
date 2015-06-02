@@ -6,17 +6,15 @@
  * accordance with the terms of the license agreement you entered into
  * with Liaison Technologies.
  */
-package com.liaison.hbase.api.request.frozen;
+package com.liaison.hbase.api.request;
 
-import java.util.List;
-
-import com.liaison.hbase.api.request.impl.WriteOpSpecDefault;
+import com.liaison.hbase.api.request.fluid.WriteOpSpecFluid;
+import com.liaison.hbase.api.request.frozen.WriteOpSpecFrozen;
 
 /**
  * TODO
  * @author Branden Smith; Liaison Technologies, Inc.
  */
-public interface WriteOpSpecFrozen extends TableRowOpSpecFrozen<WriteOpSpecDefault> {
-    CondSpecFrozen getGivenCondition();
-    List<? extends ColSpecWriteFrozen> getWithColumn();
+public interface WriteOpSpec<Z> extends WriteOpSpecFluid<Z>, WriteOpSpecFrozen {
+
 }

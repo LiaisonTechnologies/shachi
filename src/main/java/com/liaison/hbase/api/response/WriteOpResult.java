@@ -8,13 +8,13 @@
  */
 package com.liaison.hbase.api.response;
 
-import com.liaison.hbase.api.request.impl.WriteOpSpec;
+import com.liaison.hbase.api.request.impl.WriteOpSpecDefault;
 
-public class WriteOpResult extends OpResult<WriteOpSpec> {
+public class WriteOpResult extends OpResult<WriteOpSpecDefault> {
 
     private static final long serialVersionUID = -3656532804527415828L;
 
-    public static class WriteOpResultBuilder extends OpResultBuilder<WriteOpSpec, WriteOpResult, WriteOpResultBuilder> {
+    public static class WriteOpResultBuilder extends OpResultBuilder<WriteOpSpecDefault, WriteOpResult, WriteOpResultBuilder> {
         private boolean mutationPerformed;
         
         @Override

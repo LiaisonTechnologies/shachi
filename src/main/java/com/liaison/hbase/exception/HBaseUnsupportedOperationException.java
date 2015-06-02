@@ -8,7 +8,7 @@
  */
 package com.liaison.hbase.exception;
 
-public class HBaseUnsupportedOperationException extends HBaseException {
+public class HBaseUnsupportedOperationException extends HBaseRuntimeException {
 
     private static final long serialVersionUID = -7243882672508779618L;
     

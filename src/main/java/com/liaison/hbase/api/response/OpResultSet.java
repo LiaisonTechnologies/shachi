@@ -20,10 +20,10 @@ import org.apache.hadoop.hbase.client.Result;
 
 import com.liaison.hbase.api.request.impl.ColSpecRead;
 import com.liaison.hbase.api.request.impl.OperationSpec;
-import com.liaison.hbase.api.request.impl.ReadOpSpec;
+import com.liaison.hbase.api.request.impl.ReadOpSpecDefault;
 import com.liaison.hbase.api.request.impl.RowSpec;
 import com.liaison.hbase.api.request.impl.TableRowOpSpec;
-import com.liaison.hbase.api.request.impl.WriteOpSpec;
+import com.liaison.hbase.api.request.impl.WriteOpSpecDefault;
 import com.liaison.hbase.api.response.ReadOpResult.ReadOpResultBuilder;
 import com.liaison.hbase.dto.Datum;
 import com.liaison.hbase.dto.FamilyQualifierPair;
@@ -70,7 +70,7 @@ public class OpResultSet implements Serializable {
         return FamilyQualifierPair.of(family, qual);
     }
     
-    private void populateContent(final ReadOpResultBuilder readResBuild, final ReadOpSpec readSpec, final Result res, final RowSpec<ReadOpSpec> rowSpec, final ColSpecRead<ReadOpSpec> readColSpec) throws HBaseNoCellException, HBaseEmptyCellValueException {
+    private void populateContent(final ReadOpResultBuilder readResBuild, final ReadOpSpecDefault readSpec, final Result res, final RowSpec<ReadOpSpecDefault> rowSpec, final ColSpecRead<ReadOpSpecDefault> readColSpec) throws HBaseNoCellException, HBaseEmptyCellValueException {
         Datum datum = null;
         byte[] content = null;
         Long contentTS = null;
@@ -161,16 +161,16 @@ public class OpResultSet implements Serializable {
      * @param res
      * @throws HBaseTableRowException
      */
-    public void assimilate(final ReadOpSpec readSpec, final Result res) throws HBaseTableRowException {
+    public void assimilate(final ReadOpSpecDefault readSpec, final Result res) throws HBaseTableRowException {
         final ReadOpResultBuilder opResBuild;
-        final RowSpec<ReadOpSpec> rowSpec;
-        final List<ColSpecRead<ReadOpSpec>> colSpecList;
+        final RowSpec<ReadOpSpecDefault> rowSpec;
+        final List<ColSpecRead<ReadOpSpecDefault>> colSpecList;
 
         rowSpec = readSpec.getTableRow();
         try {
             opResBuild = ReadOpResult.getBuilder().origin(readSpec);
             colSpecList = readSpec.getWithColumn();
-            for (ColSpecRead<ReadOpSpec> readColSpec : colSpecList) {
+            for (ColSpecRead<ReadOpSpecDefault> readColSpec : colSpecList) {
                 try {
                     populateContent(opResBuild, readSpec, res, rowSpec, readColSpec);
                 } catch (HBaseNoCellException | HBaseEmptyCellValueException exc) {
@@ -194,7 +194,7 @@ public class OpResultSet implements Serializable {
      * @param writePerformed
      * @throws HBaseTableRowException
      */
-    public void assimilate(final WriteOpSpec writeSpec, final boolean writePerformed) throws HBaseTableRowException {
+    public void assimilate(final WriteOpSpecDefault writeSpec, final boolean writePerformed) throws HBaseTableRowException {
         try {
             storeResult(writeSpec,
                         WriteOpResult

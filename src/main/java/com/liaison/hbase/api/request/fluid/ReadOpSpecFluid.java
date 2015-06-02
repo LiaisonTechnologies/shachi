@@ -19,10 +19,10 @@ import com.liaison.hbase.api.request.fluid.fluent.RowSpecFluent;
  * TODO
  * @author Branden Smith; Liaison Technologies, Inc.
  */
-public interface ReadOpSpecFluid {
-    LongValueSpecFluent<? extends ReadOpSpecFluid> atTime() throws IllegalStateException;
-    RowSpecFluent<?, ? extends ReadOpSpecFluid> from() throws IllegalArgumentException, IllegalStateException;
-    ColSpecReadFluent<?, ? extends ReadOpSpecFluid> with();
-    <X> ReadOpSpecFluid withAllOf(Iterable<X> sourceData, BiConsumer<X, ColSpecReadFluid<?>> dataToColumnGenerator);
-    OperationController then();
+public interface ReadOpSpecFluid<Z> {
+    LongValueSpecFluent<? extends ReadOpSpecFluid<Z>> atTime() throws IllegalStateException;
+    RowSpecFluent<?, ? extends ReadOpSpecFluid<Z>> from() throws IllegalArgumentException, IllegalStateException;
+    ColSpecReadFluent<?, ? extends ReadOpSpecFluid<Z>> with();
+    <X> ReadOpSpecFluid<Z> withAllOf(Iterable<X> sourceData, BiConsumer<X, ColSpecReadFluid<?>> dataToColumnGenerator);
+    OperationController<Z> then();
 }

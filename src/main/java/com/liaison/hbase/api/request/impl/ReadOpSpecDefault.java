@@ -14,9 +14,9 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.function.BiConsumer;
 
+import com.liaison.hbase.api.request.ReadOpSpec;
 import com.liaison.hbase.api.request.fluid.ColSpecReadFluid;
-import com.liaison.hbase.api.request.fluid.ReadOpSpecFluid;
-import com.liaison.hbase.api.request.frozen.ReadOpSpecFrozen;
+import com.liaison.hbase.api.response.OpResultSet;
 import com.liaison.hbase.context.HBaseContext;
 import com.liaison.hbase.exception.SpecValidationException;
 import com.liaison.hbase.util.StringRepFormat;
@@ -27,7 +27,7 @@ import com.liaison.hbase.util.Util;
  * TODO
  * @author Branden Smith; Liaison Technologies, Inc.
  */
-public final class ReadOpSpec extends TableRowOpSpec<ReadOpSpec> implements ReadOpSpecFluid, ReadOpSpecFrozen, Serializable {
+public final class ReadOpSpecDefault extends TableRowOpSpec<ReadOpSpecDefault> implements ReadOpSpec<OpResultSet>, Serializable {
 
     private static final long serialVersionUID = 1602390434837826147L;
 
@@ -35,8 +35,8 @@ public final class ReadOpSpec extends TableRowOpSpec<ReadOpSpec> implements Read
     // ||    INSTANCE PROPERTIES                                                                 ||
     // ||----------------------------------------------------------------------------------------||
     
-    private LongValueSpec<ReadOpSpec> atTime;
-    private final List<ColSpecRead<ReadOpSpec>> withColumn;
+    private LongValueSpec<ReadOpSpecDefault> atTime;
+    private final List<ColSpecRead<ReadOpSpecDefault>> withColumn;
     
     // ||----(instance properties)---------------------------------------------------------------||
     
@@ -45,7 +45,7 @@ public final class ReadOpSpec extends TableRowOpSpec<ReadOpSpec> implements Read
     // ||----------------------------------------------------------------------------------------||
     
     @Override
-    public LongValueSpec<ReadOpSpec> atTime() throws IllegalStateException {
+    public LongValueSpec<ReadOpSpecDefault> atTime() throws IllegalStateException {
         prepMutation();
         Util.validateExactlyOnce("atTime", LongValueSpec.class, this.atTime);
         this.atTime = new LongValueSpec<>(this);
@@ -53,16 +53,16 @@ public final class ReadOpSpec extends TableRowOpSpec<ReadOpSpec> implements Read
     }
     
     @Override
-    public RowSpec<ReadOpSpec> from() throws IllegalArgumentException, IllegalStateException {
-        final RowSpec<ReadOpSpec> rowSpec;
+    public RowSpec<ReadOpSpecDefault> from() throws IllegalArgumentException, IllegalStateException {
+        final RowSpec<ReadOpSpecDefault> rowSpec;
         rowSpec = new RowSpec<>(this);
         setTableRow(rowSpec);
         return rowSpec;
     }
     
     @Override
-    public ColSpecRead<ReadOpSpec> with() throws IllegalStateException {
-        final ColSpecRead<ReadOpSpec> withCol;
+    public ColSpecRead<ReadOpSpecDefault> with() throws IllegalStateException {
+        final ColSpecRead<ReadOpSpecDefault> withCol;
         prepMutation();
         withCol = new ColSpecRead<>(this);
         this.withColumn.add(withCol);
@@ -70,8 +70,8 @@ public final class ReadOpSpec extends TableRowOpSpec<ReadOpSpec> implements Read
     }
     
     @Override
-    public <X> ReadOpSpec withAllOf(final Iterable<X> sourceData, final BiConsumer<X, ColSpecReadFluid<?>> dataToColumnGenerator) {
-        ColSpecRead<ReadOpSpec> withCol;
+    public <X> ReadOpSpecDefault withAllOf(final Iterable<X> sourceData, final BiConsumer<X, ColSpecReadFluid<?>> dataToColumnGenerator) {
+        ColSpecRead<ReadOpSpecDefault> withCol;
         prepMutation();
         if (sourceData != null) {
             for (X element : sourceData) {
@@ -90,11 +90,11 @@ public final class ReadOpSpec extends TableRowOpSpec<ReadOpSpec> implements Read
     // ||----------------------------------------------------------------------------------------||
 
     @Override
-    public LongValueSpec<ReadOpSpec> getAtTime() {
+    public LongValueSpec<ReadOpSpecDefault> getAtTime() {
         return this.atTime;
     }
     @Override
-    public List<ColSpecRead<ReadOpSpec>> getWithColumn() {
+    public List<ColSpecRead<ReadOpSpecDefault>> getWithColumn() {
         return Collections.unmodifiableList(this.withColumn);
     }
     
@@ -105,7 +105,7 @@ public final class ReadOpSpec extends TableRowOpSpec<ReadOpSpec> implements Read
     // ||----------------------------------------------------------------------------------------||
     
     @Override
-    protected ReadOpSpec self() { return this; }
+    protected ReadOpSpecDefault self() { return this; }
 
     @Override
     protected void validate() throws SpecValidationException {
@@ -121,7 +121,7 @@ public final class ReadOpSpec extends TableRowOpSpec<ReadOpSpec> implements Read
     
     @Override
     protected void prepareStrRep(final StringBuilder strGen, final StringRepFormat format) {
-        final RowSpec<ReadOpSpec> tableRow;
+        final RowSpec<ReadOpSpecDefault> tableRow;
         tableRow = getTableRow();
         
         if (format == StringRepFormat.STRUCTURED) {
@@ -143,7 +143,7 @@ public final class ReadOpSpec extends TableRowOpSpec<ReadOpSpec> implements Read
             }
             if (this.withColumn.size() > 0) {
                 Util.appendIndented(strGen, getDepth() + 1, "with column(s): ", "\n");
-                for (ColSpecRead<ReadOpSpec> colSpec : this.withColumn) {
+                for (ColSpecRead<ReadOpSpecDefault> colSpec : this.withColumn) {
                     Util.appendIndented(strGen, getDepth() + 1, colSpec);
                 }
             }
@@ -170,9 +170,9 @@ public final class ReadOpSpec extends TableRowOpSpec<ReadOpSpec> implements Read
     
     @Override
     protected boolean deepEquals(final OperationSpec<?> otherOpSpec) {
-        final ReadOpSpec otherReadSpec;
-        if (otherOpSpec instanceof ReadOpSpec) {
-            otherReadSpec = (ReadOpSpec) otherOpSpec;
+        final ReadOpSpecDefault otherReadSpec;
+        if (otherOpSpec instanceof ReadOpSpecDefault) {
+            otherReadSpec = (ReadOpSpecDefault) otherOpSpec;
             /*
              * Equality checks ordered from least to most expensive, to allow for relatively quick
              * short-circuiting
@@ -192,7 +192,7 @@ public final class ReadOpSpec extends TableRowOpSpec<ReadOpSpec> implements Read
     // ||    CONSTRUCTORS                                                                        ||
     // ||----------------------------------------------------------------------------------------||
 
-    public ReadOpSpec(final Object handle, final HBaseContext context, final OperationControllerDefault parent) {
+    public ReadOpSpecDefault(final Object handle, final HBaseContext context, final OperationControllerDefault parent) {
         super(handle, context, parent);
         this.withColumn = new LinkedList<>();
     }

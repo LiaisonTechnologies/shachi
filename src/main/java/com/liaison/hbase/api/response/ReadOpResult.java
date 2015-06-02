@@ -13,18 +13,18 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 import com.liaison.hbase.api.request.impl.ColSpecRead;
-import com.liaison.hbase.api.request.impl.ReadOpSpec;
+import com.liaison.hbase.api.request.impl.ReadOpSpecDefault;
 import com.liaison.hbase.dto.CellResult;
 import com.liaison.hbase.dto.Datum;
 import com.liaison.hbase.dto.FamilyQualifierPair;
 import com.liaison.hbase.exception.HBaseException;
 import com.liaison.hbase.util.Util;
 
-public class ReadOpResult extends OpResult<ReadOpSpec> {
+public class ReadOpResult extends OpResult<ReadOpSpecDefault> {
 
     private static final long serialVersionUID = 8027722441667395989L;
 
-    public static class ReadOpResultBuilder extends OpResultBuilder<ReadOpSpec, ReadOpResult, ReadOpResultBuilder> {
+    public static class ReadOpResultBuilder extends OpResultBuilder<ReadOpSpecDefault, ReadOpResult, ReadOpResultBuilder> {
         private static final String CLOSURENAME_ADD = ReadOpResultBuilder.class.getSimpleName() + "#add";
         
         private Map<FamilyQualifierPair, CellResult> data;
@@ -40,7 +40,7 @@ public class ReadOpResult extends OpResult<ReadOpSpec> {
             this.data.put(fqp, new CellResult(exc));
             return self();
         }
-        public ReadOpResultBuilder add(final ColSpecRead<ReadOpSpec> colSpec, final HBaseException exc) throws IllegalArgumentException, IllegalStateException {
+        public ReadOpResultBuilder add(final ColSpecRead<ReadOpSpecDefault> colSpec, final HBaseException exc) throws IllegalArgumentException, IllegalStateException {
             Util.ensureNotNull(colSpec, CLOSURENAME_ADD, "colSpec", ColSpecRead.class);
             return add(colSpec.toFQP(), exc);
         }
@@ -51,7 +51,7 @@ public class ReadOpResult extends OpResult<ReadOpSpec> {
             this.data.put(fqp, new CellResult(datum));
             return this;
         }
-        public ReadOpResultBuilder add(final ColSpecRead<ReadOpSpec> colSpec, final Datum datum) throws IllegalArgumentException, IllegalStateException {
+        public ReadOpResultBuilder add(final ColSpecRead<ReadOpSpecDefault> colSpec, final Datum datum) throws IllegalArgumentException, IllegalStateException {
             Util.ensureNotNull(colSpec, CLOSURENAME_ADD, "colSpec", ColSpecRead.class);
             return add(colSpec.toFQP(), datum);
         }

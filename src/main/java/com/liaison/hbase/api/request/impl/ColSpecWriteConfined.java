@@ -20,7 +20,7 @@ import com.liaison.hbase.util.Util;
  */
 public class ColSpecWriteConfined implements ColSpecWriteFluid<ColSpecWriteConfined> {
 
-    private final ColSpecWrite<WriteOpSpec> colSpecWrite;
+    private final ColSpecWrite<WriteOpSpecDefault> colSpecWrite;
     
     public ColSpecWriteConfined fam(final FamilyModel family) throws IllegalStateException, IllegalArgumentException {
         colSpecWrite.fam(family);
@@ -39,7 +39,7 @@ public class ColSpecWriteConfined implements ColSpecWriteFluid<ColSpecWriteConfi
         return this;
     }
     
-    public ColSpecWriteConfined(final ColSpecWrite<WriteOpSpec> colSpecWrite) {
+    public ColSpecWriteConfined(final ColSpecWrite<WriteOpSpecDefault> colSpecWrite) {
         Util.ensureNotNull(colSpecWrite, this, "colSpecWrite", ColSpecWrite.class);
         this.colSpecWrite = colSpecWrite;
     }

@@ -19,7 +19,7 @@ import com.liaison.hbase.util.Util;
  */
 public class ColSpecReadConfined implements ColSpecReadFluid<ColSpecReadConfined> {
 
-    private final ColSpecRead<ReadOpSpec> colSpecRead;
+    private final ColSpecRead<ReadOpSpecDefault> colSpecRead;
     
     public ColSpecReadConfined fam(final FamilyModel family) throws IllegalStateException, IllegalArgumentException {
         colSpecRead.fam(family);
@@ -34,7 +34,7 @@ public class ColSpecReadConfined implements ColSpecReadFluid<ColSpecReadConfined
         return this;
     }
     
-    public ColSpecReadConfined(final ColSpecRead<ReadOpSpec> colSpecRead) {
+    public ColSpecReadConfined(final ColSpecRead<ReadOpSpecDefault> colSpecRead) {
         Util.ensureNotNull(colSpecRead, this, "colSpecRead", ColSpecRead.class);
         this.colSpecRead = colSpecRead;
     }

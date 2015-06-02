@@ -16,7 +16,7 @@ import com.liaison.hbase.api.request.impl.OperationControllerDefault;
  * TODO
  * @author Branden Smith; Liaison Technologies, Inc.
  */
-public interface HBaseStart {
+public interface HBaseStart<X> {
     /**
      * Begin the chain of fluent API invocations which will construct the specification of one or
      * more HBase operations to be executed. The {@link OperationControllerDefault} returned by this
@@ -24,5 +24,5 @@ public interface HBaseStart {
      * executed) upon invocation of 
      * @return
      */
-    public OperationController begin();
+    public OperationController<X> begin();
 }

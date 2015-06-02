@@ -23,6 +23,7 @@ group = 'com.liaison'
 version = '0.0.1-SNAPSHOT'
 
 ext.libraryName = "liaison-hbase-${version}"
+ext.verGuava = '18.0'
 ext.verMockito = '1.10.19'
 ext.verPool = '2.3'
 ext.verQuasar  = '0.6.2'
@@ -57,6 +58,7 @@ repositories {
 }
 
 dependencies {
+    compile "com.google.guava:guava:${verGuava}"
     compile "co.paralleluniverse:quasar-core:${verQuasar}${classifier}"
     provided "org.apache.hbase:hbase-client:${verHBase}"
     provided "org.apache.hbase:hbase-common:${verHBase}"

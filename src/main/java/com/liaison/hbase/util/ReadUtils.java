@@ -13,11 +13,11 @@ import java.io.IOException;
 import org.apache.hadoop.hbase.client.Get;
 
 import com.liaison.hbase.api.request.impl.LongValueSpec;
-import com.liaison.hbase.api.request.impl.ReadOpSpec;
+import com.liaison.hbase.api.request.impl.ReadOpSpecDefault;
 
 public final class ReadUtils {
 
-    public static void applyTS(final Get get, final ReadOpSpec readSpec) throws IOException {
+    public static void applyTS(final Get get, final ReadOpSpecDefault readSpec) throws IOException {
         final LongValueSpec<?> atTime;
         final Long lowerIncObj;
         final Long upperExcObj;

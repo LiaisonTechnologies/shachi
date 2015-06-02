@@ -12,6 +12,8 @@ import java.util.function.Supplier;
 
 import org.apache.hadoop.conf.Configuration;
 
+import com.liaison.hbase.context.async.AsyncConfig;
+import com.liaison.hbase.context.async.AsyncConfigDefault;
 import com.liaison.hbase.resmgr.ResourceConnectTolerance;
 import com.liaison.hbase.util.AbstractSelfRefBuilder;
 import com.liaison.hbase.util.DefensiveCopyStrategy;
@@ -21,14 +23,19 @@ public abstract class CommonHBaseContext implements HBaseContext {
 
     protected abstract static class AbstractHBaseContextBuilder<T, B extends AbstractSelfRefBuilder<T, B>> extends AbstractSelfRefBuilder<T, B> {
         private Object id;
+        private AsyncConfig asyncConfig;
         private ResourceConnectTolerance resConnTol;
         private DefensiveCopyStrategy defensiveCopyStrategy;
         private Boolean createAbsentTables;
         private TableNamingStrategy tableNamingStrategy;
         private Supplier<Configuration> configProvider;
-        
+
         public B id(final Object id) {
             this.id = id;
+            return self();
+        }
+        public B asyncConfig(final AsyncConfig asyncConfig) {
+            this.asyncConfig = asyncConfig;
             return self();
         }
         public B resourceConnectTolerance(final ResourceConnectTolerance resConnTol) {
@@ -53,6 +60,7 @@ public abstract class CommonHBaseContext implements HBaseContext {
         }
         protected AbstractHBaseContextBuilder() {
             this.id = null;
+            this.asyncConfig = null;
             this.resConnTol = null;
             this.defensiveCopyStrategy = null;
             this.createAbsentTables = null;
@@ -66,6 +74,7 @@ public abstract class CommonHBaseContext implements HBaseContext {
     public static final boolean DEFAULT_CREATE_ABSENT_TABLES = true;
     
     private final Object id;
+    private final AsyncConfig asyncConfig;
     private final ResourceConnectTolerance resConnTol;
     private final DefensiveCopyStrategy defensiveCopyStrategy;
     private final boolean createAbsentTables;
@@ -77,6 +86,10 @@ public abstract class CommonHBaseContext implements HBaseContext {
     @Override
     public final Object getId() {
         return this.id;
+    }
+    @Override
+    public AsyncConfig getAsyncConfig() {
+        return this.asyncConfig;
     }
     @Override
     public ResourceConnectTolerance getResourceConnectTolerance() {
@@ -104,6 +117,13 @@ public abstract class CommonHBaseContext implements HBaseContext {
         this.id = build.id;
         Util.ensureNotNull(build.configProvider, this, "configProvider", Supplier.class);
         this.configProvider = build.configProvider;
+        
+        // Asynchronous execution is disabled by default
+        if (build.asyncConfig == null) {
+            this.asyncConfig = AsyncConfigDefault.getBuilder().disabled().build();
+        } else {
+            this.asyncConfig = build.asyncConfig;
+        }
         
         if (build.resConnTol == null) {
             this.resConnTol = ResourceConnectTolerance.DEFAULT;

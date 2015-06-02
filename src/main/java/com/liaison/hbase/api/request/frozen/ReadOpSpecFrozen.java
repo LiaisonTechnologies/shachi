@@ -10,13 +10,13 @@ package com.liaison.hbase.api.request.frozen;
 
 import java.util.List;
 
-import com.liaison.hbase.api.request.impl.ReadOpSpec;
+import com.liaison.hbase.api.request.impl.ReadOpSpecDefault;
 
 /**
  * TODO
  * @author Branden Smith; Liaison Technologies, Inc.
  */
-public interface ReadOpSpecFrozen extends TableRowOpSpecFrozen<ReadOpSpec> {
+public interface ReadOpSpecFrozen extends TableRowOpSpecFrozen<ReadOpSpecDefault> {
     LongValueSpecFrozen getAtTime();
     List<? extends ColSpecReadFrozen> getWithColumn();
 }

@@ -12,8 +12,10 @@ import java.io.Serializable;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import com.google.common.util.concurrent.ListenableFuture;
 import com.liaison.hbase.HBaseControl;
 import com.liaison.hbase.api.request.OperationController;
+import com.liaison.hbase.api.request.OperationExecutor;
 import com.liaison.hbase.api.response.OpResultSet;
 import com.liaison.hbase.context.HBaseContext;
 import com.liaison.hbase.exception.HBaseException;
@@ -27,7 +29,7 @@ import com.liaison.hbase.util.Util;
  * TODO
  * @author Branden Smith; Liaison Technologies, Inc.
  */
-public class OperationControllerDefault extends TreeNodeRoot<OperationControllerDefault> implements OperationController, Serializable {
+public class OperationControllerDefault extends TreeNodeRoot<OperationControllerDefault> implements OperationController<OpResultSet>, Serializable {
     
     private static final long serialVersionUID = -6620685078075615195L;
 
@@ -75,10 +77,10 @@ public class OperationControllerDefault extends TreeNodeRoot<OperationController
      * {@inheritDoc}
      */
     @Override
-    public ReadOpSpec read(final Object handle) throws IllegalStateException, IllegalArgumentException {
-        final ReadOpSpec nextReadOp;
+    public ReadOpSpecDefault read(final Object handle) throws IllegalStateException, IllegalArgumentException {
+        final ReadOpSpecDefault nextReadOp;
         verifyStateForAddingOps();
-        nextReadOp = new ReadOpSpec(handle, this.context, this);
+        nextReadOp = new ReadOpSpecDefault(handle, this.context, this);
         putOpWithNewHandle(handle, nextReadOp);
         return nextReadOp;
     }
@@ -87,10 +89,10 @@ public class OperationControllerDefault extends TreeNodeRoot<OperationController
      * {@inheritDoc}
      */
     @Override
-    public WriteOpSpec write(final Object handle) throws IllegalStateException, IllegalArgumentException {
-        final WriteOpSpec nextCreateOp;
+    public WriteOpSpecDefault write(final Object handle) throws IllegalStateException, IllegalArgumentException {
+        final WriteOpSpecDefault nextCreateOp;
         verifyStateForAddingOps();
-        nextCreateOp = new WriteOpSpec(handle, this.context, this);
+        nextCreateOp = new WriteOpSpecDefault(handle, this.context, this);
         putOpWithNewHandle(handle, nextCreateOp);
         return nextCreateOp;
     }
@@ -103,17 +105,17 @@ public class OperationControllerDefault extends TreeNodeRoot<OperationController
         String logMsg;
         final OpResultSet opResSet;
         OperationSpec<?> opSpec;
-        ReadOpSpec readOpSpec;
-        WriteOpSpec writeOpSpec;
+        ReadOpSpecDefault readOpSpec;
+        WriteOpSpecDefault writeOpSpec;
         
         opResSet = new OpResultSet();
         for (Map.Entry<Object, OperationSpec<?>> op : this.ops.entrySet()) {
             opSpec = op.getValue();
-            if (opSpec instanceof ReadOpSpec) {
-                readOpSpec = (ReadOpSpec) opSpec;
+            if (opSpec instanceof ReadOpSpecDefault) {
+                readOpSpec = (ReadOpSpecDefault) opSpec;
                 opResSet.assimilate(readOpSpec, this.delegate.exec(readOpSpec));
-            } else if (opSpec instanceof WriteOpSpec) {
-                writeOpSpec = (WriteOpSpec) opSpec;
+            } else if (opSpec instanceof WriteOpSpecDefault) {
+                writeOpSpec = (WriteOpSpecDefault) opSpec;
                 opResSet.assimilate(writeOpSpec, this.delegate.exec(writeOpSpec));
             } else {
                 if (opSpec == null) {
@@ -128,6 +130,11 @@ public class OperationControllerDefault extends TreeNodeRoot<OperationController
             }
         }
         return opResSet;
+    }
+    
+    @Override
+    public OperationExecutor<ListenableFuture<OpResultSet>> async() {
+        return new OperationExecutorAsync(this.delegate, this);
     }
     
     /**

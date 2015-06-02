@@ -6,17 +6,16 @@
  * accordance with the terms of the license agreement you entered into
  * with Liaison Technologies.
  */
-package com.liaison.hbase.api.request.frozen;
+package com.liaison.hbase.api.request;
 
-import java.util.List;
-
-import com.liaison.hbase.api.request.impl.WriteOpSpecDefault;
+import com.liaison.hbase.exception.HBaseException;
+import com.liaison.hbase.exception.HBaseTableRowException;
+import com.liaison.hbase.exception.HBaseUnsupportedOperationException;
 
 /**
  * TODO
  * @author Branden Smith; Liaison Technologies, Inc.
  */
-public interface WriteOpSpecFrozen extends TableRowOpSpecFrozen<WriteOpSpecDefault> {
-    CondSpecFrozen getGivenCondition();
-    List<? extends ColSpecWriteFrozen> getWithColumn();
+public interface OperationExecutor<X> {
+    X exec() throws HBaseUnsupportedOperationException, HBaseTableRowException, HBaseException;
 }

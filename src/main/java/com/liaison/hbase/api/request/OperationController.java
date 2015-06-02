@@ -8,19 +8,47 @@
  */
 package com.liaison.hbase.api.request;
 
+import com.google.common.util.concurrent.ListenableFuture;
 import com.liaison.hbase.api.request.fluid.ReadOpSpecFluid;
 import com.liaison.hbase.api.request.fluid.WriteOpSpecFluid;
-import com.liaison.hbase.api.response.OpResultSet;
-import com.liaison.hbase.exception.HBaseException;
-import com.liaison.hbase.exception.HBaseTableRowException;
-import com.liaison.hbase.exception.HBaseUnsupportedOperationException;
 
 /**
  * TODO
  * @author Branden Smith; Liaison Technologies, Inc.
  */
-public interface OperationController {
-    ReadOpSpecFluid read(Object handle) throws IllegalStateException, IllegalArgumentException;
-    WriteOpSpecFluid write(Object handle) throws IllegalStateException, IllegalArgumentException;
-    OpResultSet exec() throws HBaseUnsupportedOperationException, HBaseTableRowException, HBaseException;
+public interface OperationController<X> extends OperationExecutor<X> {
+    /**
+     * Initiate a READ operation using the given handle.
+     * @param handle the ID used to identify the operation
+     * @return chaining/fluent API for specifying an HBase READ operation
+     * @throws IllegalStateException if the controller is no longer accepting new operation
+     * specifications to be executed
+     * @throws IllegalArgumentException if handle is null
+     */
+    ReadOpSpecFluid<X> read(Object handle) throws IllegalStateException, IllegalArgumentException;
+    /**
+     * Initiate a WRITE operation using the given handle.
+     * @param handle the ID used to identify the operation
+     * @return chaining/fluent API for specifying an HBase WRITE operation
+     * @throws IllegalStateException if the controller is no longer accepting new operation
+     * specifications to be executed
+     * @throws IllegalArgumentException if handle is null
+     */
+    WriteOpSpecFluid<X> write(Object handle) throws IllegalStateException, IllegalArgumentException;
+    /**
+     * Transfer control to an {@link OperationExecutor} identical to this one, except that the
+     * {@link OperationExecutor#exec()} operation is executed asynchronously in a thread pool
+     * managed by the {@link HBaseControl} instance which created this {@link OperationController},
+     * and the {@link #read(Object)} and {@link #write(Object)} methods which allow additional
+     * read/write operations to be added to this {@link OperationController} instance are no longer
+     * available.
+     * <br><br>
+     * In particular, any HBase operation specifications which have <em>already been specified</em>
+     * in this {@link OperationController} instance are carried over to the new, asynchronicity-
+     * supporting {@link OperationExecutor} proxy, and will be carried out (asynchronously) upon
+     * invoking {@link OperationExecutor#exec()} on that instance.
+     * @return an asynchronous {@link OperationExecutor} proxy for this controller, using a thread
+     * pool established by the original {@link HBaseControl} (if available).
+     */
+    OperationExecutor<ListenableFuture<X>> async();
 }

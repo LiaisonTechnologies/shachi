@@ -10,21 +10,29 @@ package com.liaison.hbase;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.hadoop.hbase.client.Get;
 import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.client.Result;
 
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.ListeningExecutorService;
+import com.google.common.util.concurrent.MoreExecutors;
 import com.liaison.hbase.api.request.OperationController;
 import com.liaison.hbase.api.request.frozen.ColSpecWriteFrozen;
 import com.liaison.hbase.api.request.impl.ColSpecRead;
 import com.liaison.hbase.api.request.impl.CondSpec;
 import com.liaison.hbase.api.request.impl.OperationControllerDefault;
 import com.liaison.hbase.api.request.impl.OperationSpec;
-import com.liaison.hbase.api.request.impl.ReadOpSpec;
+import com.liaison.hbase.api.request.impl.ReadOpSpecDefault;
 import com.liaison.hbase.api.request.impl.RowSpec;
-import com.liaison.hbase.api.request.impl.WriteOpSpec;
+import com.liaison.hbase.api.request.impl.WriteOpSpecDefault;
+import com.liaison.hbase.api.response.OpResultSet;
 import com.liaison.hbase.context.HBaseContext;
 import com.liaison.hbase.dto.NullableValue;
 import com.liaison.hbase.dto.RowKey;
@@ -56,7 +64,7 @@ import com.liaison.hbase.util.Util;
  * 
  * @author Branden Smith; Liaison Technologies, Inc.
  */
-public class HBaseControl implements HBaseStart {
+public class HBaseControl implements HBaseStart<OpResultSet> {
     
     // ||========================================================================================||
     // ||    INNER CLASSES (INSTANCE)                                                            ||
@@ -83,7 +91,7 @@ public class HBaseControl implements HBaseStart {
          * @param readGet
          * @param colSpec
          */
-        private void addColumn(final String logMethodName, final DefensiveCopyStrategy dcs, final Get readGet, final ColSpecRead<ReadOpSpec> colSpec) {
+        private void addColumn(final String logMethodName, final DefensiveCopyStrategy dcs, final Get readGet, final ColSpecRead<ReadOpSpecDefault> colSpec) {
             final FamilyModel colFam;
             final QualModel colQual;
             
@@ -168,7 +176,7 @@ public class HBaseControl implements HBaseStart {
          * @return
          * @throws HBaseMultiColumnException
          */
-        private boolean performWrite(final String logMethodName, final HTable writeToTable, final RowSpec<WriteOpSpec> tableRowSpec, final List<ColSpecWriteFrozen> colWriteList, final CondSpec<?> condition, final Put writePut, final DefensiveCopyStrategy dcs) throws HBaseMultiColumnException {
+        private boolean performWrite(final String logMethodName, final HTable writeToTable, final RowSpec<WriteOpSpecDefault> tableRowSpec, final List<ColSpecWriteFrozen> colWriteList, final CondSpec<?> condition, final Put writePut, final DefensiveCopyStrategy dcs) throws HBaseMultiColumnException {
             final String logMsg;
             final NullableValue condPossibleValue;
             final RowKey rowKey;
@@ -228,16 +236,16 @@ public class HBaseControl implements HBaseStart {
          * @throws HBaseException
          * @throws HBaseRuntimeException
          */
-        public Result exec(final ReadOpSpec readSpec) throws IllegalArgumentException, HBaseException, HBaseRuntimeException {
+        public Result exec(final ReadOpSpecDefault readSpec) throws IllegalArgumentException, HBaseException, HBaseRuntimeException {
             String logMsg;
             final String logMethodName;
             final DefensiveCopyStrategy dcs;
             final RowSpec<?> tableRowSpec;
             final Get readGet;
-            final List<ColSpecRead<ReadOpSpec>> colReadList;
+            final List<ColSpecRead<ReadOpSpecDefault>> colReadList;
             final Result res;
             
-            Util.ensureNotNull(readSpec, this, "readSpec", ReadOpSpec.class);
+            Util.ensureNotNull(readSpec, this, "readSpec", ReadOpSpecDefault.class);
             
             logMethodName =
                 LOG.enter(()->"exec(READ:",
@@ -280,7 +288,7 @@ public class HBaseControl implements HBaseStart {
                           ()->"columns: ",
                           ()->colReadList);
                 if (colReadList != null) {
-                    for (ColSpecRead<ReadOpSpec> colSpec : colReadList) {
+                    for (ColSpecRead<ReadOpSpecDefault> colSpec : colReadList) {
                         addColumn(logMethodName, dcs, readGet, colSpec);
                     }
                 }
@@ -327,17 +335,17 @@ public class HBaseControl implements HBaseStart {
          * @throws HBaseException
          * @throws HBaseRuntimeException
          */
-        public boolean exec(final WriteOpSpec writeSpec) throws IllegalArgumentException, IllegalStateException, HBaseException, HBaseRuntimeException {
+        public boolean exec(final WriteOpSpecDefault writeSpec) throws IllegalArgumentException, IllegalStateException, HBaseException, HBaseRuntimeException {
             String logMsg;
             final String logMethodName;
             final DefensiveCopyStrategy dcs;
-            final RowSpec<WriteOpSpec> tableRowSpec;
+            final RowSpec<WriteOpSpecDefault> tableRowSpec;
             final List<ColSpecWriteFrozen> colWriteList;
             final CondSpec<?> condition;
             final Put writePut;
             boolean writeCompleted;
             
-            Util.ensureNotNull(writeSpec, this, "writeSpec", WriteOpSpec.class);
+            Util.ensureNotNull(writeSpec, this, "writeSpec", WriteOpSpecDefault.class);
             
             logMethodName =
                 LOG.enter(()->"exec(WRITE:",
@@ -397,6 +405,29 @@ public class HBaseControl implements HBaseStart {
         }
         
         /**
+         * Tunnelling method so that OperationController with access to the delegate can use the
+         * execution thread pool established in the HBaseControl.
+         * @param operationExecutable
+         * @return
+         * @throws UnsupportedOperationException
+         */
+        public ListenableFuture<OpResultSet> execAsync(Callable<OpResultSet> operationExecutable) throws UnsupportedOperationException {
+            String logMsg;
+            final ListeningExecutorService asyncPool;
+            final ListenableFuture<OpResultSet> execTask;
+            asyncPool = HBaseControl.this.execPool;
+            if (asyncPool == null) {
+                logMsg = HBaseControl.class.getSimpleName()
+                         + " (context.id='"
+                         + HBaseControl.this.context.getId()
+                         + "') does not support asynchronous operations";
+                throw new UnsupportedOperationException(logMsg);
+            }
+            execTask = asyncPool.submit(operationExecutable);
+            return execTask;
+        }
+        
+        /**
          * Use a private constructor so that the enclosing HBaseControl instance can control who
          * has access to the delegate (and, consequently, who can execute HBase operations based
          * upon specifications).
@@ -409,6 +440,9 @@ public class HBaseControl implements HBaseStart {
     // ||========================================================================================||
     // ||    CONSTANTS                                                                           ||
     // ||----------------------------------------------------------------------------------------||
+    
+    private static final long DEFAULT_THREADPOOL_IDLEEXPIRE = 60L * 1000L; // 60s
+    private static final TimeUnit DEFAULT_THREADPOOL_IDLEEXPIRE_UNIT = TimeUnit.MILLISECONDS;
     
     private static final LogMeMaybe LOG;
     
@@ -451,6 +485,7 @@ public class HBaseControl implements HBaseStart {
     private final HBaseContext context;
     private final HBaseResourceManager resMgr;
     private final HBaseDelegate delegate;
+    private final ListeningExecutorService execPool;
     
     // ||----(instance properties)---------------------------------------------------------------||
     
@@ -470,7 +505,7 @@ public class HBaseControl implements HBaseStart {
      * {@inheritDoc}
      * @see {@link HBaseStart#begin()}.
      */
-    public OperationController begin() {
+    public OperationController<OpResultSet> begin() {
         return new OperationControllerDefault(this.delegate, this.context);
     }
     
@@ -486,6 +521,17 @@ public class HBaseControl implements HBaseStart {
         Util.ensureNotNull(resMgr, this, "resMgr", HBaseResourceManager.class);
         this.resMgr = resMgr;
         this.delegate = new HBaseDelegate();
+        if (context.getAsyncConfig().isAsyncEnabled()) {
+            this.execPool =
+                MoreExecutors.listeningDecorator(
+                    new ThreadPoolExecutor(context.getAsyncConfig().getMinSizeForThreadPool(),
+                                           context.getAsyncConfig().getMaxSizeForThreadPool(),
+                                           DEFAULT_THREADPOOL_IDLEEXPIRE,
+                                           DEFAULT_THREADPOOL_IDLEEXPIRE_UNIT,
+                                           new SynchronousQueue<Runnable>()));
+        } else {
+            this.execPool = null;
+        }
     }
     
     // ||----(constructors)----------------------------------------------------------------------||

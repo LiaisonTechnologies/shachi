@@ -105,6 +105,8 @@ public class TestMapREnd2End {
                         .build(),
                     SimpleHBaseResourceManager.INSTANCE);
             
+            
+            control.begin().write("a").then().exec();
 
             LOG.info(testPrefix + "control: " + control);
             
