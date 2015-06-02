@@ -8,6 +8,7 @@
  */
 package com.liaison.hbase;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -64,7 +65,7 @@ import com.liaison.hbase.util.Util;
  * 
  * @author Branden Smith; Liaison Technologies, Inc.
  */
-public class HBaseControl implements HBaseStart<OpResultSet> {
+public class HBaseControl implements HBaseStart<OpResultSet>, Closeable {
     
     // ||========================================================================================||
     // ||    INNER CLASSES (INSTANCE)                                                            ||
@@ -492,6 +493,17 @@ public class HBaseControl implements HBaseStart<OpResultSet> {
     // ||========================================================================================||
     // ||    INSTANCE METHODS                                                                    ||
     // ||----------------------------------------------------------------------------------------||
+    
+    /**
+     * Shut down the asynchronous execution pool, if one was created.
+     * @see java.io.Closeable#close()
+     */
+    @Override
+    public void close() {
+        if (this.execPool != null) {
+            this.execPool.shutdown();
+        }
+    }
     
     /**
      * 

@@ -17,9 +17,11 @@ import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.util.concurrent.ListenableFuture;
 import com.liaison.hbase.HBaseControl;
 import com.liaison.hbase.api.response.OpResultSet;
 import com.liaison.hbase.context.MapRHBaseContext;
+import com.liaison.hbase.context.async.AsyncConfigDefault;
 import com.liaison.hbase.dto.RowKey;
 import com.liaison.hbase.dto.Value;
 import com.liaison.hbase.exception.HBaseException;
@@ -27,6 +29,7 @@ import com.liaison.hbase.model.FamilyModel;
 import com.liaison.hbase.model.Name;
 import com.liaison.hbase.model.QualModel;
 import com.liaison.hbase.model.TableModel;
+import com.liaison.hbase.resmgr.PoolingHBaseResourceManager;
 import com.liaison.hbase.resmgr.SimpleHBaseResourceManager;
 
 public class TestMapREnd2End {
@@ -47,6 +50,12 @@ public class TestMapREnd2End {
     private static final String HANDLE_TESTWRITE_2 = "TEST-WRITE-2";
     private static final String HANDLE_TESTREAD_2 = "TEST-READ-2";
     private static final String TABLENAME_B = TestMapREnd2End.class.getSimpleName() + "_B";
+    
+    private static final String CONTEXT_ID_3 = "CONTEXT-3";
+    private static final String HANDLE_TESTWRITE_3 = "TEST-WRITE-3";
+    private static final String HANDLE_TESTREAD_3 = "TEST-READ-3";
+    private static final String TABLENAME_C = TestMapREnd2End.class.getSimpleName() + "_C";
+    
     private static final List<String> COLUMNQUALS_ABC;
     
     private static final QualModel QUAL_MODEL_Z =
@@ -56,16 +65,22 @@ public class TestMapREnd2End {
             .with(Name.of(COLUMNFAMILY_a))
             .qual(QUAL_MODEL_Z)
             .build();
+    
     private static final TableModel TEST_MODEL_A =
         TableModel
             .with(Name.of(TABLENAME_A))
             .family(FAM_MODEL_a)
             .build();
     private static final TableModel TEST_MODEL_B =
-            TableModel
-                .with(Name.of(TABLENAME_B))
-                .family(FAM_MODEL_a)
-                .build();
+        TableModel
+            .with(Name.of(TABLENAME_B))
+            .family(FAM_MODEL_a)
+            .build();
+    private static final TableModel TEST_MODEL_C =
+        TableModel
+            .with(Name.of(TABLENAME_C))
+            .family(FAM_MODEL_a)
+            .build();
     
     static {
         final String[] alphabetArray;
@@ -104,16 +119,11 @@ public class TestMapREnd2End {
                         .configProvider(() -> HBaseConfiguration.create())
                         .build(),
                     SimpleHBaseResourceManager.INSTANCE);
-            
-            
-            control.begin().write("a").then().exec();
 
             LOG.info(testPrefix + "control: " + control);
             
             rowKeyStr = Long.toString(System.currentTimeMillis());
             randomData = UUID.randomUUID().toString();
-            
-            
             
             LOG.info(testPrefix + "starting write...");
             opResSet = 
@@ -161,6 +171,10 @@ public class TestMapREnd2End {
             LOG.info(testPrefix + "read results: " + opResSet.getResultsByHandle());
         } catch (HBaseException hbExc) {
             hbExc.printStackTrace();
+        } finally {
+            if (control != null) {
+                control.close();
+            }
         }
     }
     
@@ -233,14 +247,98 @@ public class TestMapREnd2End {
             LOG.info(testPrefix + "read results: " + opResSet.getResultsByHandle());
         } catch (HBaseException hbExc) {
             hbExc.printStackTrace();
+        } finally {
+            if (control != null) {
+                control.close();
+            }
         }
     }
     
+    public void test3() {
+        final String testPrefix;
+        HBaseControl control = null;
+        ListenableFuture<OpResultSet> opResSetFuture;
+        OpResultSet opResSet;
+        String rowKeyStr;
+        String randomData;
+        
+        testPrefix = "[test3] ";
+        try {
+            LOG.info(testPrefix + "starting...");
+            control =
+                new HBaseControl(
+                    MapRHBaseContext
+                        .getBuilder()
+                        .id(CONTEXT_ID_3)
+                        .asyncConfig(AsyncConfigDefault.getBuilder().enabled().build())
+                        .configProvider(() -> HBaseConfiguration.create())
+                        .build(),
+                    PoolingHBaseResourceManager.INSTANCE);
+            
+
+            LOG.info(testPrefix + "control: " + control);
+            
+            rowKeyStr = Long.toString(System.currentTimeMillis());
+            randomData = UUID.randomUUID().toString();
+            
+            LOG.info(testPrefix + "starting write...");
+            opResSetFuture = 
+                control
+                    .begin()
+                    .write(HANDLE_TESTWRITE_3)
+                        .on()
+                            .tbl(TEST_MODEL_C)
+                            .row(RowKey.of(rowKeyStr))
+                        .and()
+                        .withAllOf(COLUMNQUALS_ABC, (element, spec) -> {
+                            spec.fam(FAM_MODEL_a);
+                            spec.qual(QualModel.of(Name.of(element)));
+                            spec.ts(TS_SAMPLE_1);
+                            spec.value(Value.of(element + randomData));
+                        })
+                        .then()
+                        .async()
+                        .exec();
+            LOG.info(testPrefix + "write started (async)!");
+            opResSet = opResSetFuture.get();
+            LOG.info(testPrefix + "write results: " + opResSet.getResultsByHandle());
+
+            LOG.info(testPrefix + "starting read...");
+            opResSet =
+                control
+                    .begin()
+                    .read(HANDLE_TESTREAD_3)
+                        .from()
+                            .tbl(TEST_MODEL_C)
+                            .row(RowKey.of(rowKeyStr))
+                        .and()
+                        .with()
+                            .fam(FAM_MODEL_a)
+                        .and()
+                        .atTime()
+                            .gt(TS_SAMPLE_1 - 10)
+                            .lt(TS_SAMPLE_1 + 10)
+                        .and()
+                        .then()
+                        .exec();
+            
+            LOG.info(testPrefix + "read complete!");
+            
+            LOG.info(testPrefix + "read results: " + opResSet.getResultsByHandle());
+        } catch (Exception exc) {
+            LOG.error(testPrefix + " was BAD! and you should feel bad! " + exc, exc);
+        } finally {
+            if (control != null) {
+                control.close();
+            }
+        }
+    }
     public static void main(final String[] arguments) {
         final TestMapREnd2End test;
         
         test = new TestMapREnd2End();
         test.test1();
         test.test2();
+        test.test3();
     }
 }
