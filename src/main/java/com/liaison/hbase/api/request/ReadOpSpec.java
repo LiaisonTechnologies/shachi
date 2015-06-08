@@ -10,11 +10,15 @@ package com.liaison.hbase.api.request;
 
 import com.liaison.hbase.api.request.fluid.ReadOpSpecFluid;
 import com.liaison.hbase.api.request.frozen.ReadOpSpecFrozen;
+import com.liaison.hbase.api.request.impl.SpecState;
 
 /**
- * TODO
+ * Specifies a <strong>READ</strong> operation, whose API consists of the union of ways in which
+ * it may be <em>specified</em> while in a <em>fluid<state> and the ways in which it may be
+ * <em>executed</em> (or referenced) while in a <em>frozen</em> state.
+ * @see {@link SpecState}
  * @author Branden Smith; Liaison Technologies, Inc.
+ * @param <Z> represents the implementation type, so that the typed instance may be returned in a
+ * fluent/chaining API
  */
-public interface ReadOpSpec<Z> extends ReadOpSpecFluid<Z>, ReadOpSpecFrozen {
-
-}
+public interface ReadOpSpec<Z> extends ReadOpSpecFluid<Z>, ReadOpSpecFrozen { }

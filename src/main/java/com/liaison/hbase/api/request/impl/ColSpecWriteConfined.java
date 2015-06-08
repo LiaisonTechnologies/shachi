@@ -9,6 +9,7 @@
 package com.liaison.hbase.api.request.impl;
 
 import com.liaison.hbase.api.request.fluid.ColSpecWriteFluid;
+import com.liaison.hbase.dto.Empty;
 import com.liaison.hbase.dto.Value;
 import com.liaison.hbase.model.FamilyModel;
 import com.liaison.hbase.model.QualModel;
@@ -36,6 +37,10 @@ public class ColSpecWriteConfined implements ColSpecWriteFluid<ColSpecWriteConfi
     }
     public ColSpecWriteConfined value(final Value value) throws IllegalStateException, IllegalArgumentException {
         colSpecWrite.value(value);
+        return this;
+    }
+    public ColSpecWriteConfined empty(final Empty empty) throws IllegalStateException, IllegalArgumentException {
+        colSpecWrite.empty(empty);
         return this;
     }
     

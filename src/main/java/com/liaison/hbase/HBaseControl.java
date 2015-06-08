@@ -37,7 +37,6 @@ import com.liaison.hbase.api.response.OpResultSet;
 import com.liaison.hbase.context.HBaseContext;
 import com.liaison.hbase.dto.NullableValue;
 import com.liaison.hbase.dto.RowKey;
-import com.liaison.hbase.dto.Value;
 import com.liaison.hbase.exception.HBaseEmptyResultSetException;
 import com.liaison.hbase.exception.HBaseException;
 import com.liaison.hbase.exception.HBaseMultiColumnException;
@@ -58,9 +57,9 @@ import com.liaison.hbase.util.Util;
  * 
  * Per the contract for {@link HBaseStart#begin()}, {@link HBaseControl#begin()} starts the API
  * operation-specification generation process by which clients specify HBase read/write operations
- * to execute. The {@link OperationControllerDefault} created when spec-generation begins is granted
+ * to execute. The {@link OperationController} created when spec-generation begins is granted
  * access to the private, singleton instance of the internal class {@link HBaseDelegate}, which is
- * responsible for interpreting and executing the spec once the {@link OperationControllerDefault}
+ * responsible for interpreting and executing the spec once the {@link OperationController}
  * indicates that spec-generation is complete.
  * 
  * @author Branden Smith; Liaison Technologies, Inc.
@@ -78,7 +77,7 @@ public class HBaseControl implements HBaseStart<OpResultSet>, Closeable {
      * {@link HBaseContext} object governing the configuration of its controlling
      * {@link HBaseControl}, so it should be safe for concurrent use by multiple threads;
      * accordingly, a single instance of it is maintained within an HBaseControl object, and a
-     * reference to it is parceled out to {@link OperationControllerDefault} whenever an operation starts
+     * reference to it is parceled out to {@link OperationController} whenever an operation starts
      * via {@link HBaseControl#begin()}.
      * 
      * @author Branden Smith; Liaison Technologies, Inc.
@@ -129,7 +128,7 @@ public class HBaseControl implements HBaseStart<OpResultSet>, Closeable {
             final Long writeTS;
             final FamilyModel colFam;
             final QualModel colQual;
-            final Value colValue;
+            final NullableValue colValue;
             
             writeTS = colSpec.getTS();
             colFam = colSpec.getFamily();

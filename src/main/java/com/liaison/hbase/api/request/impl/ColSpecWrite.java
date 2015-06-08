@@ -12,6 +12,8 @@ import java.io.Serializable;
 
 import com.liaison.hbase.api.request.fluid.fluent.ColSpecWriteFluent;
 import com.liaison.hbase.api.request.frozen.ColSpecWriteFrozen;
+import com.liaison.hbase.dto.Empty;
+import com.liaison.hbase.dto.NullableValue;
 import com.liaison.hbase.dto.Value;
 import com.liaison.hbase.exception.SpecValidationException;
 import com.liaison.hbase.model.FamilyModel;
@@ -28,7 +30,7 @@ public class ColSpecWrite<P extends OperationSpec<P>> extends ColSpec<ColSpecWri
     // ||----------------------------------------------------------------------------------------||
     
     private Long ts;
-    private Value value;
+    private NullableValue value;
     
     // ||----(instance properties)---------------------------------------------------------------||
     
@@ -48,6 +50,12 @@ public class ColSpecWrite<P extends OperationSpec<P>> extends ColSpec<ColSpecWri
         this.value = Util.validateExactlyOnceParam(value, this, "value", Value.class, this.value);
         return self();
     }
+    @Override
+    public ColSpecWrite<P> empty(final Empty empty) throws IllegalStateException, IllegalArgumentException {
+        prepMutation();
+        this.value = Util.validateExactlyOnceParam(empty, this, "empty", Empty.class, this.value);
+        return self();
+    }
     
     // ||----(instance methods: API: fluid)------------------------------------------------------||
     
@@ -60,7 +68,7 @@ public class ColSpecWrite<P extends OperationSpec<P>> extends ColSpec<ColSpecWri
         return this.ts;
     }
     @Override
-    public Value getValue() {
+    public NullableValue getValue() {
         return this.value;
     }
     
@@ -78,7 +86,7 @@ public class ColSpecWrite<P extends OperationSpec<P>> extends ColSpec<ColSpecWri
         super.validate();
         Util.validateRequired(getFamily(), this, "fam", FamilyModel.class);
         Util.validateRequired(getColumn(), this, "qual", QualModel.class);
-        Util.validateRequired(getValue(), this, "value", Value.class);
+        Util.validateRequired(getValue(), this, "value", NullableValue.class);
     }
     
     @Override

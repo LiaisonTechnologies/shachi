@@ -12,8 +12,11 @@ import com.liaison.hbase.api.request.fluid.CriteriaSpecFluid;
 import com.liaison.hbase.api.request.fluid.RowSpecFluid;
 
 /**
- * TODO
+ * Denotes an API implementation of {@link RowSpecFluid} which can be retraced to its parent in
+ * the API spec tree by calling {@link CriteriaSpecFluid#and()}.
  * @author Branden Smith; Liaison Technologies, Inc.
+ * @param <R> The type of the current element in the API/spec tree
+ * @param <P> The type of the parent/owning element in the API/spec tree
  */
 public interface RowSpecFluent<R extends RowSpecFluent<R, P>, P> extends RowSpecFluid<R>, CriteriaSpecFluid<P> {
 

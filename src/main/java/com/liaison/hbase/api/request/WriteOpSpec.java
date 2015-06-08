@@ -10,10 +10,16 @@ package com.liaison.hbase.api.request;
 
 import com.liaison.hbase.api.request.fluid.WriteOpSpecFluid;
 import com.liaison.hbase.api.request.frozen.WriteOpSpecFrozen;
+import com.liaison.hbase.api.request.impl.SpecState;
 
 /**
- * TODO
+ * Specifies a <strong>WRITE</strong> operation, whose API consists of the union of ways in which
+ * it may be <em>specified</em> while in a <em>fluid<state> and the ways in which it may be
+ * <em>executed</em> (or referenced) while in a <em>frozen</em> state.
+ * @see {@link SpecState}
  * @author Branden Smith; Liaison Technologies, Inc.
+ * @param <Z> represents the implementation type, so that the typed instance may be returned in a
+ * fluent/chaining API
  */
 public interface WriteOpSpec<Z> extends WriteOpSpecFluid<Z>, WriteOpSpecFrozen {
 

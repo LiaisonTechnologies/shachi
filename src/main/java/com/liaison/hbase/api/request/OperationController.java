@@ -9,12 +9,16 @@
 package com.liaison.hbase.api.request;
 
 import com.google.common.util.concurrent.ListenableFuture;
+import com.liaison.hbase.HBaseControl;
 import com.liaison.hbase.api.request.fluid.ReadOpSpecFluid;
 import com.liaison.hbase.api.request.fluid.WriteOpSpecFluid;
 
 /**
- * TODO
+ * Starting point during the HBase operation-spec generating process for individual read and write
+ * operations, as well as the transition point when the chain of operations encapsulated in the
+ * spec is to be executed to return a result.
  * @author Branden Smith; Liaison Technologies, Inc.
+ * @param <X> The type of the result to be returned when the operation specification is executed.
  */
 public interface OperationController<X> extends OperationExecutor<X> {
     /**

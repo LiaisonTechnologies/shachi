@@ -12,8 +12,11 @@ import com.liaison.hbase.api.request.fluid.ColSpecReadFluid;
 import com.liaison.hbase.api.request.fluid.CriteriaSpecFluid;
 
 /**
- * TODO
+ * Denotes an API implementation of {@link ColSpecReadFluid} which can be retraced to its parent in
+ * the API spec tree by calling {@link CriteriaSpecFluid#and()}.
  * @author Branden Smith; Liaison Technologies, Inc.
+ * @param <C> The type of the current element in the API/spec tree
+ * @param <P> The type of the parent/owning element in the API/spec tree
  */
 public interface ColSpecReadFluent<C extends ColSpecReadFluent<C, P>, P> extends ColSpecReadFluid<C>, CriteriaSpecFluid<P> {
 

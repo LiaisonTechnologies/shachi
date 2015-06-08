@@ -9,20 +9,22 @@
 package com.liaison.hbase;
 
 import com.liaison.hbase.api.request.OperationController;
-import com.liaison.hbase.api.request.impl.OperationControllerDefault;
+import com.liaison.hbase.api.request.OperationExecutor;
 
 /**
- * 
- * TODO
+ * Denotes the starting point of a chain of HBase API operations.
  * @author Branden Smith; Liaison Technologies, Inc.
+ * @param <X> The type of the result which will be returned once the chain of operations is
+ * executed.
  */
 public interface HBaseStart<X> {
     /**
      * Begin the chain of fluent API invocations which will construct the specification of one or
-     * more HBase operations to be executed. The {@link OperationControllerDefault} returned by this
-     * method The chain ends (and the operations specified are
-     * executed) upon invocation of 
-     * @return
+     * more HBase operations to be executed. The {@link OperationController} returned by this
+     * method will return an instance of the parameterized type upon invocation of
+     * {@link OperationExecutor#exec()} at the end of the specification chain. 
+     * @return an {@link OperationController} which will permit an HBase operation spec chain to be
+     * defined which will return an instance of the parameterized type upon execution.
      */
     public OperationController<X> begin();
 }

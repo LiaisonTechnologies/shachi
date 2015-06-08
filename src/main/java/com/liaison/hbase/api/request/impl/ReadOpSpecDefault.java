@@ -70,7 +70,7 @@ public final class ReadOpSpecDefault extends TableRowOpSpec<ReadOpSpecDefault> i
     }
     
     @Override
-    public <X> ReadOpSpecDefault withAllOf(final Iterable<X> sourceData, final BiConsumer<X, ColSpecReadFluid<?>> dataToColumnGenerator) {
+    public <X> ReadOpSpecDefault withAllOf(final Iterable<X> sourceData, final BiConsumer<? super X, ColSpecReadFluid<?>> dataToColumnGenerator) {
         ColSpecRead<ReadOpSpecDefault> withCol;
         prepMutation();
         if (sourceData != null) {

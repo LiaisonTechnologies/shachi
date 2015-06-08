@@ -9,9 +9,14 @@
 package com.liaison.hbase.api.request.fluid;
 
 /**
- * TODO
+ * An API specification-generating step which permits traceback to the parent/owning operation.
  * @author Branden Smith; Liaison Technologies, Inc.
+ * @param <P> Type of the parent/owning operation
  */
 public interface CriteriaSpecFluid<P> {
+    /**
+     * Return control to the parent/owning operation.
+     * @return The operation specification which owns this criteria spec.
+     */
     P and();
 }

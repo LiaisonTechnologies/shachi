@@ -10,19 +10,19 @@ package com.liaison.hbase.api.request.fluid;
 
 import java.util.function.BiConsumer;
 
-import com.liaison.hbase.api.request.OperationController;
 import com.liaison.hbase.api.request.fluid.fluent.ColSpecWriteFluent;
 import com.liaison.hbase.api.request.fluid.fluent.CondSpecFluent;
 import com.liaison.hbase.api.request.fluid.fluent.RowSpecFluent;
 
 /**
+ * 
  * TODO
  * @author Branden Smith; Liaison Technologies, Inc.
+ * @param <Z>
  */
-public interface WriteOpSpecFluid<Z> {
+public interface WriteOpSpecFluid<Z> extends OpSpecFluid<Z> {
     RowSpecFluent<?, ? extends WriteOpSpecFluid<Z>> on() throws IllegalArgumentException, IllegalStateException;
     CondSpecFluent<?, ? extends WriteOpSpecFluid<Z>> given() throws IllegalStateException;
     ColSpecWriteFluent<?, ? extends WriteOpSpecFluid<Z>> with() throws IllegalStateException;
     <X> WriteOpSpecFluid<Z> withAllOf(Iterable<X> sourceData, BiConsumer<X, ColSpecWriteFluid<?>> dataToColumnGenerator);
-    OperationController<Z> then();
 }
