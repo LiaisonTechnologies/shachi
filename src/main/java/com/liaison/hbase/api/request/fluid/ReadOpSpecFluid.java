@@ -32,7 +32,8 @@ public interface ReadOpSpecFluid<Z> extends OpSpecFluid<Z> {
      * this method.
      * @return a {@link LongValueSpecFluent} instance owned by this read operation specification,
      * whereby a range of timestamp values constricting the HBase read operation may be specified.
-     * @throws IllegalStateException if a timestamp range is already associated with this read
+     * @throws IllegalStateException if a timestamp range is already associated with this read, or
+     * if this operation is not in fluid state
      * operation specification
      */
     LongValueSpecFluent<? extends ReadOpSpecFluid<Z>> atTime() throws IllegalStateException;
@@ -48,6 +49,7 @@ public interface ReadOpSpecFluid<Z> extends OpSpecFluid<Z> {
      * @throws IllegalStateException if a table+row combination is already associated with this
      * read operation (e.g. by a previous invocation of this method, or if the operation spec is
      * not in a fluid state
+     * @see {@link WriteOpSpecFluid#on()} (equivalent operation on write)
      */
     RowSpecFluent<?, ? extends ReadOpSpecFluid<Z>> from() throws IllegalArgumentException, IllegalStateException;
     /**
@@ -59,6 +61,7 @@ public interface ReadOpSpecFluid<Z> extends OpSpecFluid<Z> {
      * which to read.
      * @return a {@link ColSpecReadFluent} instance owned by this read operation specification,
      * whereby the column family and qualifier from which to read may be specified.
+     * @see {@link WriteOpSpecFluid#with()} (equivalent operation on write)
      */
     ColSpecReadFluent<?, ? extends ReadOpSpecFluid<Z>> with();
     /**
@@ -71,10 +74,10 @@ public interface ReadOpSpecFluid<Z> extends OpSpecFluid<Z> {
      * implementation must iterate through the collection (in the default iteration order specified
      * by the {@link Iterable} implementation, then provide the collection element and a new
      * instance of {@link ColSpecReadFluid} owned by this read operation specification to the
-     * consumer. The consumer, then, is responsible for invoking the appropriate API methods on the
-     * {@link ColSpecReadFluid} instance to transform the collection element to a column
-     * specification to be added to the list of columns from which the HBase read operation
-     * specified by this spec will read.
+     * consumer. The client-specified consumer, then, is responsible for invoking the appropriate
+     * API methods on the {@link ColSpecReadFluid} instance to transform the collection element to
+     * a column specification to be added to the list of columns from which the HBase read
+     * operation specified by this spec will read.
      * <br><br>
      * This method is useful in order to internalize iteration over a collection of elements which
      * indicate the columns from which the read operation should read. For example, a client with a
@@ -92,7 +95,9 @@ public interface ReadOpSpecFluid<Z> extends OpSpecFluid<Z> {
      * an element from the sourceData collection and a new {@link ColSpecReadFluid} owned by this
      * read operation specification, then modifies the {@link ColSpecReadFluid} such that its
      * column family and qualifier are those indicated by the sourceData element
-     * @return
+     * @return this instance (for fluent/chaining API)
+     * @see {@link WriteOpSpecFluid#withAllOf(Iterable, BiConsumer)} (equivalent operation on
+     * write)
      */
     <X> ReadOpSpecFluid<Z> withAllOf(Iterable<X> sourceData, BiConsumer<? super X, ColSpecReadFluid<?>> dataToColumnGenerator);
 }

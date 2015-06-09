@@ -34,7 +34,7 @@ public interface RowSpecFluid<R extends RowSpecFluid<R>> {
      * reference refers.
      * @return this instance (for fluent/chaining API)
      * @throws IllegalStateException if a {@link TableModel} has already been assigned for this
-     * row/table reference
+     * row/table reference, or if this operation is not in fluid state
      * @throws IllegalArgumentException if the provided {@link TableModel} is null or otherwise
      * invalid
      */
@@ -49,7 +49,7 @@ public interface RowSpecFluid<R extends RowSpecFluid<R>> {
      * refers.
      * @return this instance (for fluent/chaining API)
      * @throws IllegalStateException if a {@link RowKey} has already been assigned for this
-     * row/table reference
+     * row/table reference, or if this operation is not in fluid state
      * @throws IllegalArgumentException if the provided {@link RowKey} is null or otherwise invalid
      */
     R row(final RowKey rowKey) throws IllegalStateException, IllegalArgumentException;

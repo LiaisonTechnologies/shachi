@@ -28,7 +28,8 @@ public interface ColSpecReadFluid<C extends ColSpecReadFluid<C>> extends ColSpec
      * required columns) or <strong>one time</strong> (for optional columns); implementations must
      * throw IllegalStateException upon repeated invocations.
      * @return this instance (for fluent/chaining API)
-     * @throws IllegalStateException if this method has already been invoked
+     * @throws IllegalStateException if this method has already been invoked, or if this operation
+     * is not in fluid state
      */
     C optional() throws IllegalStateException;
 }

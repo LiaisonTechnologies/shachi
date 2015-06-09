@@ -32,7 +32,7 @@ public interface ColSpecFluid<C extends ColSpecFluid<C>> {
      * reference refers.
      * @return this instance (for fluent/chaining API)
      * @throws IllegalStateException if a {@link FamilyModel} has already been assigned for this
-     * column reference
+     * column reference, or if this operation is not in fluid state
      * @throws IllegalArgumentException if the provided {@link FamilyModel} is null or otherwise
      * invalid
      */
@@ -47,7 +47,7 @@ public interface ColSpecFluid<C extends ColSpecFluid<C>> {
      * reference refers.
      * @return this instance (for fluent/chaining API)
      * @throws IllegalStateException if a {@link QualModel} has already been assigned for this
-     * column reference
+     * column reference, or if this operation is not in fluid state
      * @throws IllegalArgumentException if the provided {@link QualModel} is null or otherwise
      * invalid
      */

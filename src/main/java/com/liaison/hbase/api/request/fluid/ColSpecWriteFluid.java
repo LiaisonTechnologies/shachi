@@ -32,7 +32,8 @@ public interface ColSpecWriteFluid<C extends ColSpecWriteFluid<C>> extends ColSp
      * upon repeated invocations.
      * @param ts the timestamp value to assign to the value to be written
      * @return this instance (for fluent/chaining API)
-     * @throws IllegalStateException if a timestamp has already been assigned for this write
+     * @throws IllegalStateException if a timestamp has already been assigned for this write, or
+     * if this operation is not in fluid state
      * @throws IllegalArgumentException if the timestamp is somehow invalid according to the
      * underlying implementation
      */
@@ -48,7 +49,8 @@ public interface ColSpecWriteFluid<C extends ColSpecWriteFluid<C>> extends ColSp
      * @param value {@link Value} representing the non-null value to be written
      * @return this instance (for fluent/chaining API)
      * @throws IllegalStateException if either a non-null value ({@link Value}) or a null value
-     * ({@link Empty}) has already been assigned for this write
+     * ({@link Empty}) has already been assigned for this write, or if this operation is not in
+     * fluid state
      * @throws IllegalArgumentException if the provided {@link Value} is null or otherwise invalid
      */
     C value(final Value value) throws IllegalStateException, IllegalArgumentException;
@@ -63,7 +65,8 @@ public interface ColSpecWriteFluid<C extends ColSpecWriteFluid<C>> extends ColSp
      * @param empty {@link Empty} representing the null/empty value to be written
      * @return this instance (for fluent/chaining API)
      * @throws IllegalStateException if either a non-null value ({@link Value}) or a null value
-     * ({@link Empty}) has already been assigned for this write
+     * ({@link Empty}) has already been assigned for this write, or if this operation is not in
+     * fluid state
      * @throws IllegalArgumentException if the provided {@link Empty} is null or otherwise invalid
      */
     C empty(final Empty empty) throws IllegalStateException, IllegalArgumentException;

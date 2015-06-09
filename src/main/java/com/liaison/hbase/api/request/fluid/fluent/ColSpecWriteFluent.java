@@ -12,9 +12,10 @@ import com.liaison.hbase.api.request.fluid.ColSpecWriteFluid;
 import com.liaison.hbase.api.request.fluid.CriteriaSpecFluid;
 
 /**
- * TODO
+ * Denotes an API implementation of {@link ColSpecWriteFluid} which can be retraced to its parent in
+ * the API spec tree by calling {@link CriteriaSpecFluid#and()}.
  * @author Branden Smith; Liaison Technologies, Inc.
+ * @param <C> The type of the current element in the API/spec tree
+ * @param <P> The type of the parent/owning element in the API/spec tree
  */
-public interface ColSpecWriteFluent<C extends ColSpecWriteFluent<C, P>, P> extends ColSpecWriteFluid<C>, CriteriaSpecFluid<P> {
-
-}
+public interface ColSpecWriteFluent<C extends ColSpecWriteFluent<C, P>, P> extends ColSpecWriteFluid<C>, CriteriaSpecFluid<P> { }

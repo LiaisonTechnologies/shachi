@@ -40,7 +40,7 @@ public interface CondSpecFluid<C extends CondSpecFluid<C>> extends ColSpecFluid<
      * to be evaluated.
      * @return this instance (for fluent/chaining API)
      * @throws IllegalStateException if a {@link RowKey} has already been assigned for this
-     * condition
+     * condition, or if this operation is not in fluid state
      * @throws IllegalArgumentException if the provided {@link RowKey} is null or otherwise invalid
      */
     C row(RowKey rowKey) throws IllegalStateException, IllegalArgumentException;
@@ -55,7 +55,8 @@ public interface CondSpecFluid<C extends CondSpecFluid<C>> extends ColSpecFluid<
      * @param value {@link Value} representing the non-null value to which this condition refers.
      * @return this instance (for fluent/chaining API)
      * @throws IllegalStateException if either a non-null value ({@link Value}) or a null value
-     * ({@link Empty}) has already been assigned for this condition
+     * ({@link Empty}) has already been assigned for this condition, or if this operation is not in
+     * fluid state
      * @throws IllegalArgumentException if the provided {@link Value} is null or otherwise invalid
      */
     C value(Value value) throws IllegalStateException, IllegalArgumentException;
@@ -70,7 +71,8 @@ public interface CondSpecFluid<C extends CondSpecFluid<C>> extends ColSpecFluid<
      * @param empty {@link Empty} representing the null/empty value to which this condition refers.
      * @return this instance (for fluent/chaining API)
      * @throws IllegalStateException if either a null/empty value ({@link Empty}) or a non-null
-     * value ({@link Value}) has already been assigned for this condition
+     * value ({@link Value}) has already been assigned for this condition, or if this operation is
+     * not in fluid state
      * @throws IllegalArgumentException if the provided {@link Empty} is null or otherwise invalid
      */
     C empty(Empty empty) throws IllegalStateException, IllegalArgumentException;

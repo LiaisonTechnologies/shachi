@@ -18,6 +18,4 @@ import com.liaison.hbase.api.request.fluid.CriteriaSpecFluid;
  * @param <C> The type of the current element in the API/spec tree
  * @param <P> The type of the parent/owning element in the API/spec tree
  */
-public interface ColSpecReadFluent<C extends ColSpecReadFluent<C, P>, P> extends ColSpecReadFluid<C>, CriteriaSpecFluid<P> {
-
-}
+public interface ColSpecReadFluent<C extends ColSpecReadFluent<C, P>, P> extends ColSpecReadFluid<C>, CriteriaSpecFluid<P> { }

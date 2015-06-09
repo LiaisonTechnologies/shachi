@@ -12,8 +12,10 @@ import com.liaison.hbase.api.request.fluid.CriteriaSpecFluid;
 import com.liaison.hbase.api.request.fluid.LongValueSpecFluid;
 
 /**
- * TODO
+ * Denotes an API implementation of {@link LongValueSpecFluid} which can be retraced to its parent in
+ * the API spec tree by calling {@link CriteriaSpecFluid#and()}.
  * @author Branden Smith; Liaison Technologies, Inc.
+ * @param <P> The type of the parent/owning element in the API/spec tree
  */
 public interface LongValueSpecFluent<P> extends LongValueSpecFluid<P>, CriteriaSpecFluid<P> {
 
