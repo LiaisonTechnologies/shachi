@@ -8,14 +8,14 @@
  */
 package com.liaison.hbase.api.opspec;
 
-import java.util.function.BiConsumer;
-
+import com.liaison.hbase.api.request.impl.LongValueSpec;
+import com.liaison.hbase.api.request.impl.NoOpSpec;
+import com.liaison.hbase.api.request.impl.OperationSpec;
 import org.mockito.Mockito;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
-import com.liaison.hbase.api.request.impl.LongValueSpec;
-import com.liaison.hbase.api.request.impl.NoOpSpec;
+import java.util.function.BiConsumer;
 
 public class TestLongValueSpec {
 

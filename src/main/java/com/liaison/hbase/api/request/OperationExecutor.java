@@ -8,12 +8,12 @@
  */
 package com.liaison.hbase.api.request;
 
-import java.util.concurrent.Future;
-
 import com.liaison.hbase.HBaseStart;
 import com.liaison.hbase.exception.HBaseException;
 import com.liaison.hbase.exception.HBaseTableRowException;
 import com.liaison.hbase.exception.HBaseUnsupportedOperationException;
+
+import java.util.concurrent.Future;
 
 /**
  * The terminus of the chain of HBase operation-specification invocations, at which point the spec

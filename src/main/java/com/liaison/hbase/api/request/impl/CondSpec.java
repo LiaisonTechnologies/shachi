@@ -8,8 +8,7 @@
  */
 package com.liaison.hbase.api.request.impl;
 
-import java.io.Serializable;
-
+import com.liaison.commons.Util;
 import com.liaison.hbase.api.request.fluid.fluent.CondSpecFluent;
 import com.liaison.hbase.api.request.frozen.CondSpecFrozen;
 import com.liaison.hbase.dto.Empty;
@@ -19,8 +18,10 @@ import com.liaison.hbase.dto.Value;
 import com.liaison.hbase.exception.SpecValidationException;
 import com.liaison.hbase.model.FamilyModel;
 import com.liaison.hbase.model.QualModel;
+import com.liaison.hbase.util.SpecUtil;
 import com.liaison.hbase.util.StringRepFormat;
-import com.liaison.hbase.util.Util;
+
+import java.io.Serializable;
 
 /**
  * 
@@ -135,10 +136,10 @@ public final class CondSpec<P extends OperationSpec<P>> extends ColSpec<CondSpec
     @Override
     protected void validate() throws SpecValidationException {
         super.validate();
-        Util.validateRequired(getRowKey(), this, "row", RowKey.class);
-        Util.validateRequired(getFamily(), this, "fam", FamilyModel.class);
-        Util.validateRequired(getColumn(), this, "qual", QualModel.class);
-        Util.validateRequired(getValue(), this, "value/empty", NullableValue.class);
+        SpecUtil.validateRequired(getRowKey(), this, "row", RowKey.class);
+        SpecUtil.validateRequired(getFamily(), this, "fam", FamilyModel.class);
+        SpecUtil.validateRequired(getColumn(), this, "qual", QualModel.class);
+        SpecUtil.validateRequired(getValue(), this, "value/empty", NullableValue.class);
     }
     
     // ||----(instance methods: utility)---------------------------------------------------------||

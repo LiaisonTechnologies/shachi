@@ -8,22 +8,23 @@
  */
 package com.liaison.hbase.util;
 
-import java.io.IOException;
-
+import co.paralleluniverse.fibers.SuspendExecution;
+import co.paralleluniverse.strands.Strand;
+import com.liaison.commons.DefensiveCopyStrategy;
+import com.liaison.commons.Util;
+import com.liaison.commons.log.LogMeMaybe;
+import com.liaison.hbase.context.HBaseContext;
+import com.liaison.hbase.exception.HBaseInitializationException;
+import com.liaison.hbase.model.Name;
+import com.liaison.hbase.model.TableModel;
+import com.liaison.hbase.resmgr.ResourceConnectTolerance;
 import org.apache.hadoop.hbase.HColumnDescriptor;
 import org.apache.hadoop.hbase.HTableDescriptor;
 import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.client.HBaseAdmin;
 import org.apache.hadoop.hbase.client.HTable;
 
-import co.paralleluniverse.fibers.SuspendExecution;
-import co.paralleluniverse.strands.Strand;
-
-import com.liaison.hbase.context.HBaseContext;
-import com.liaison.hbase.exception.HBaseInitializationException;
-import com.liaison.hbase.model.Name;
-import com.liaison.hbase.model.TableModel;
-import com.liaison.hbase.resmgr.ResourceConnectTolerance;
+import java.io.IOException;
 
 public final class HBaseUtil {
     
@@ -143,9 +144,7 @@ public final class HBaseUtil {
      * Configuration,%20byte[],%20java.util.concurrent.ExecutorService%29 -OR- https://hbase.
      * apache.org/apidocs/org/apache/hadoop/hbase/client/Connection.html#getTable%28org.apache.
      * hadoop.hbase.TableName,%20java.util.concurrent.ExecutorService%29)
-     * 
-     * @param tableName
-     * @param columnFamilies String array indicating the column families which exist in the named table
+     *
      * @return
      * @throws HBaseInitializationException
      */
@@ -225,7 +224,7 @@ public final class HBaseUtil {
      * getAdmin%28%29)
      * 
      * @return HBaseAdmin instance representing the HBase instance referenced by the configuration
-     * @throws TokenManagerInitializationException If an {@link IOException} occurs during
+     * @throws HBaseInitializationException If an {@link IOException} occurs during
      * establishment of the HBaseAdmin connection.
      */
     public static HBaseAdmin connectAdmin(final HBaseContext context) throws HBaseInitializationException {

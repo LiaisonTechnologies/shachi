@@ -8,11 +8,11 @@
  */
 package com.liaison.hbase.dto;
 
-import java.io.Serializable;
-
+import com.liaison.commons.Util;
 import com.liaison.hbase.model.FamilyModel;
 import com.liaison.hbase.model.QualModel;
-import com.liaison.hbase.util.Util;
+
+import java.io.Serializable;
 
 public class FamilyQualifierPair implements Serializable {
 

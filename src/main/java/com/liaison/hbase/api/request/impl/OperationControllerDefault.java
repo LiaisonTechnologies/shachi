@@ -8,11 +8,8 @@
  */
 package com.liaison.hbase.api.request.impl;
 
-import java.io.Serializable;
-import java.util.LinkedHashMap;
-import java.util.Map;
-
 import com.google.common.util.concurrent.ListenableFuture;
+import com.liaison.commons.Util;
 import com.liaison.hbase.HBaseControl;
 import com.liaison.hbase.api.request.OperationController;
 import com.liaison.hbase.api.request.OperationExecutor;
@@ -22,7 +19,10 @@ import com.liaison.hbase.exception.HBaseException;
 import com.liaison.hbase.exception.HBaseTableRowException;
 import com.liaison.hbase.exception.HBaseUnsupportedOperationException;
 import com.liaison.hbase.util.TreeNodeRoot;
-import com.liaison.hbase.util.Util;
+
+import java.io.Serializable;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 /**
  * 

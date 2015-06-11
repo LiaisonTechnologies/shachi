@@ -8,6 +8,9 @@
  */
 package com.liaison.hbase.util;
 
+
+import com.liaison.commons.Util;
+
 /**
  * Extension of {@link TreeNode} for cases where the node is known not to be a root node, and
  * therefore to have a non-null parent. Also maintains a final reference to the parent node, which

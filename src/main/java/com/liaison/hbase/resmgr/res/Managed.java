@@ -8,12 +8,12 @@
  */
 package com.liaison.hbase.resmgr.res;
 
-import java.io.Closeable;
-import java.io.IOException;
-
+import com.liaison.commons.Util;
 import com.liaison.hbase.context.HBaseContext;
 import com.liaison.hbase.resmgr.HBaseResourceManager;
-import com.liaison.hbase.util.Util;
+
+import java.io.Closeable;
+import java.io.IOException;
 
 /**
  * TODO

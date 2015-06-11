@@ -8,6 +8,8 @@
  */
 package com.liaison.hbase.util;
 
+import com.liaison.commons.Uninstantiable;
+
 import java.nio.charset.Charset;
 
 public final class Constants extends Uninstantiable {

@@ -8,11 +8,10 @@
  */
 package com.liaison.hbase.context;
 
-import org.apache.hadoop.conf.Configuration;
-
+import com.liaison.commons.DefensiveCopyStrategy;
 import com.liaison.hbase.context.async.AsyncConfig;
 import com.liaison.hbase.resmgr.ResourceConnectTolerance;
-import com.liaison.hbase.util.DefensiveCopyStrategy;
+import org.apache.hadoop.conf.Configuration;
 
 public interface HBaseContext {
     Object getId();

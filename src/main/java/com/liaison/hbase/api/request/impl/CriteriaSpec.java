@@ -8,10 +8,10 @@
  */
 package com.liaison.hbase.api.request.impl;
 
-import java.io.Serializable;
-
 import com.liaison.hbase.api.request.fluid.CriteriaSpecFluid;
 import com.liaison.hbase.util.TreeNode;
+
+import java.io.Serializable;
 
 public abstract class CriteriaSpec<C extends CriteriaSpec<C, P>, P extends TreeNode<P>> extends StatefulSpec<C, P> implements CriteriaSpecFluid<P>, Serializable {
     

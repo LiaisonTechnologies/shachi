@@ -8,16 +8,15 @@
  */
 package com.liaison.hbase.context;
 
-import java.util.function.Supplier;
-
-import org.apache.hadoop.conf.Configuration;
-
+import com.liaison.commons.DefensiveCopyStrategy;
+import com.liaison.commons.Util;
 import com.liaison.hbase.context.async.AsyncConfig;
 import com.liaison.hbase.context.async.AsyncConfigDefault;
 import com.liaison.hbase.resmgr.ResourceConnectTolerance;
 import com.liaison.hbase.util.AbstractSelfRefBuilder;
-import com.liaison.hbase.util.DefensiveCopyStrategy;
-import com.liaison.hbase.util.Util;
+import org.apache.hadoop.conf.Configuration;
+
+import java.util.function.Supplier;
 
 public abstract class CommonHBaseContext implements HBaseContext {
 

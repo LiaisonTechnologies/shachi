@@ -8,12 +8,12 @@
  */
 package com.liaison.hbase.api.request.fluid;
 
-import java.util.function.BiConsumer;
-
 import com.liaison.hbase.api.request.OperationController;
 import com.liaison.hbase.api.request.fluid.fluent.ColSpecWriteFluent;
 import com.liaison.hbase.api.request.fluid.fluent.CondSpecFluent;
 import com.liaison.hbase.api.request.fluid.fluent.RowSpecFluent;
+
+import java.util.function.BiConsumer;
 
 /**
  * Specifies an <strong>HBase write operation</strong> while it is in a fluid state (i.e. wherein

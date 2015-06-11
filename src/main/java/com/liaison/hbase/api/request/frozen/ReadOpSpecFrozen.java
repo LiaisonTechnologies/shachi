@@ -8,9 +8,9 @@
  */
 package com.liaison.hbase.api.request.frozen;
 
-import java.util.List;
-
 import com.liaison.hbase.api.request.impl.ReadOpSpecDefault;
+
+import java.util.List;
 
 /**
  * TODO

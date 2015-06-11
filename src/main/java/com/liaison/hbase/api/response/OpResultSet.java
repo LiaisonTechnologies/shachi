@@ -8,16 +8,8 @@
  */
 package com.liaison.hbase.api.response;
 
-import java.io.Serializable;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-
-import org.apache.hadoop.hbase.Cell;
-import org.apache.hadoop.hbase.CellUtil;
-import org.apache.hadoop.hbase.client.Result;
-
+import com.liaison.commons.BytesUtil;
+import com.liaison.commons.DefensiveCopyStrategy;
 import com.liaison.hbase.api.request.impl.ColSpecRead;
 import com.liaison.hbase.api.request.impl.OperationSpec;
 import com.liaison.hbase.api.request.impl.ReadOpSpecDefault;
@@ -33,8 +25,15 @@ import com.liaison.hbase.exception.HBaseTableRowException;
 import com.liaison.hbase.model.FamilyModel;
 import com.liaison.hbase.model.Name;
 import com.liaison.hbase.model.QualModel;
-import com.liaison.hbase.util.DefensiveCopyStrategy;
-import com.liaison.hbase.util.Util;
+import org.apache.hadoop.hbase.Cell;
+import org.apache.hadoop.hbase.CellUtil;
+import org.apache.hadoop.hbase.client.Result;
+
+import java.io.Serializable;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 public class OpResultSet implements Serializable {
     
@@ -93,7 +92,7 @@ public class OpResultSet implements Serializable {
                  * zero length) and a null return value are equivalent; need to determine if
                  * that is a valid assumption, and change the logic, if not.
                  */
-                content = Util.simplify(content);
+                content = BytesUtil.simplify(content);
                 /*
                  * TODO
                  * As a follow-on to the previous to-do comment, the code as-is ignores any empty

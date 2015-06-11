@@ -8,15 +8,15 @@
  */
 package com.liaison.hbase.api.request.impl;
 
-import java.io.Serializable;
-import java.util.LinkedList;
-import java.util.concurrent.ConcurrentHashMap;
-
+import com.liaison.commons.Util;
 import com.liaison.hbase.exception.SpecValidationException;
 import com.liaison.hbase.util.StringRepFormat;
 import com.liaison.hbase.util.TreeNode;
 import com.liaison.hbase.util.TreeNodeNonRoot;
-import com.liaison.hbase.util.Util;
+
+import java.io.Serializable;
+import java.util.LinkedList;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * An element in an HBase operation specification tree which can be in one of two states:

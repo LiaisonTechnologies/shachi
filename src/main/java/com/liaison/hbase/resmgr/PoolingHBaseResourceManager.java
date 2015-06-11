@@ -8,15 +8,8 @@
  */
 package com.liaison.hbase.resmgr;
 
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Function;
-
-import org.apache.commons.pool2.BaseKeyedPooledObjectFactory;
-import org.apache.commons.pool2.BasePooledObjectFactory;
-import org.apache.commons.pool2.PooledObject;
-import org.apache.commons.pool2.impl.DefaultPooledObject;
-
+import com.liaison.commons.Util;
+import com.liaison.commons.log.LogMeMaybe;
 import com.liaison.hbase.context.HBaseContext;
 import com.liaison.hbase.exception.HBaseInitializationException;
 import com.liaison.hbase.exception.HBaseResourceAcquisitionException;
@@ -30,8 +23,14 @@ import com.liaison.hbase.resmgr.pool.StatsAwareKeyedResourcePool;
 import com.liaison.hbase.resmgr.pool.StatsAwareResourcePool;
 import com.liaison.hbase.resmgr.res.ManagedAdmin;
 import com.liaison.hbase.resmgr.res.ManagedTable;
-import com.liaison.hbase.util.LogMeMaybe;
-import com.liaison.hbase.util.Util;
+import org.apache.commons.pool2.BaseKeyedPooledObjectFactory;
+import org.apache.commons.pool2.BasePooledObjectFactory;
+import org.apache.commons.pool2.PooledObject;
+import org.apache.commons.pool2.impl.DefaultPooledObject;
+
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 
 
 /**

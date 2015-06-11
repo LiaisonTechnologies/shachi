@@ -8,20 +8,21 @@
  */
 package com.liaison.hbase.api.request.impl;
 
-import java.io.Serializable;
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.function.BiConsumer;
-
+import com.liaison.commons.Util;
 import com.liaison.hbase.api.request.WriteOpSpec;
 import com.liaison.hbase.api.request.fluid.ColSpecWriteFluid;
 import com.liaison.hbase.api.request.frozen.ColSpecWriteFrozen;
 import com.liaison.hbase.api.response.OpResultSet;
 import com.liaison.hbase.context.HBaseContext;
 import com.liaison.hbase.exception.SpecValidationException;
+import com.liaison.hbase.util.SpecUtil;
 import com.liaison.hbase.util.StringRepFormat;
-import com.liaison.hbase.util.Util;
+
+import java.io.Serializable;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.function.BiConsumer;
 
 public final class WriteOpSpecDefault extends TableRowOpSpec<WriteOpSpecDefault> implements WriteOpSpec<OpResultSet>, Serializable {
 
@@ -106,8 +107,8 @@ public final class WriteOpSpecDefault extends TableRowOpSpec<WriteOpSpecDefault>
     @Override
     protected void validate() throws SpecValidationException {
         super.validate();
-        Util.validateRequired(getTableRow(), this, "from", RowSpec.class);
-        Util.validateAtLeastOne(getWithColumn(), this, "with", ColSpecWrite.class);
+        SpecUtil.validateRequired(getTableRow(), this, "from", RowSpec.class);
+        SpecUtil.validateAtLeastOne(getWithColumn(), this, "with", ColSpecWrite.class);
     }
     
     @Override

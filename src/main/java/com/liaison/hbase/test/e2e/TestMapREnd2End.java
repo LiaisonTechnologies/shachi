@@ -8,15 +8,6 @@
  */
 package com.liaison.hbase.test.e2e;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.UUID;
-
-import org.apache.hadoop.hbase.HBaseConfiguration;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.google.common.util.concurrent.ListenableFuture;
 import com.liaison.hbase.HBaseControl;
 import com.liaison.hbase.api.response.OpResultSet;
@@ -31,6 +22,14 @@ import com.liaison.hbase.model.QualModel;
 import com.liaison.hbase.model.TableModel;
 import com.liaison.hbase.resmgr.PoolingHBaseResourceManager;
 import com.liaison.hbase.resmgr.SimpleHBaseResourceManager;
+import org.apache.hadoop.hbase.HBaseConfiguration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.UUID;
 
 public class TestMapREnd2End {
 

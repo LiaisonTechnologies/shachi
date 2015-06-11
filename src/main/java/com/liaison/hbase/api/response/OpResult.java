@@ -8,13 +8,13 @@
  */
 package com.liaison.hbase.api.response;
 
-import java.io.Serializable;
-
+import com.liaison.commons.Util;
 import com.liaison.hbase.api.request.impl.RowSpec;
 import com.liaison.hbase.api.request.impl.TableRowOpSpec;
 import com.liaison.hbase.exception.HBaseException;
 import com.liaison.hbase.util.AbstractSelfRefBuilder;
-import com.liaison.hbase.util.Util;
+
+import java.io.Serializable;
 
 public abstract class OpResult<O extends TableRowOpSpec<O>> implements Serializable {
     

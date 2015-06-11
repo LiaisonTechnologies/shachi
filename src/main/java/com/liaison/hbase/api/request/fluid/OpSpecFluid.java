@@ -9,6 +9,7 @@
 package com.liaison.hbase.api.request.fluid;
 
 import com.liaison.hbase.api.request.OperationController;
+import com.liaison.hbase.api.request.impl.SpecState;
 
 /**
  * Operation specification (either read or write) with a parent {@link OperationController}.

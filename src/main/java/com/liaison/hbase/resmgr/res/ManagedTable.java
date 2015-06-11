@@ -8,15 +8,14 @@
  */
 package com.liaison.hbase.resmgr.res;
 
-import java.io.IOException;
-
-import org.apache.hadoop.hbase.client.HTable;
-
+import com.liaison.commons.Util;
 import com.liaison.hbase.context.HBaseContext;
 import com.liaison.hbase.exception.HBaseResourceReleaseException;
 import com.liaison.hbase.model.TableModel;
 import com.liaison.hbase.resmgr.HBaseResourceManager;
-import com.liaison.hbase.util.Util;
+import org.apache.hadoop.hbase.client.HTable;
+
+import java.io.IOException;
 
 /**
  * TODO

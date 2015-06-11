@@ -8,15 +8,15 @@
  */
 package com.liaison.hbase.model;
 
+import com.liaison.commons.BytesUtil;
+import com.liaison.commons.DefensiveCopyStrategy;
+import com.liaison.hbase.dto.Value;
+
 import java.io.Serializable;
 import java.nio.charset.Charset;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
-
-import com.liaison.hbase.dto.Value;
-import com.liaison.hbase.util.DefensiveCopyStrategy;
-import com.liaison.hbase.util.Util;
 
 public class Name extends Value implements Serializable {
     
@@ -37,9 +37,9 @@ public class Name extends Value implements Serializable {
 
         private void setStrBasedOnInputBytes(final byte[] name, final Charset decoding) {
             if (decoding == null) {
-                this.str = Util.toString(name);
+                this.str = BytesUtil.toString(name);
             } else {
-                this.str = Util.toString(name, decoding);
+                this.str = BytesUtil.toString(name, decoding);
             }
         }
         
@@ -67,9 +67,9 @@ public class Name extends Value implements Serializable {
             final byte[] strAsBytes;
             this.str = str;
             if (encoding == null) {
-                strAsBytes = Util.toBytes(str);
+                strAsBytes = BytesUtil.toBytes(str);
             } else {
-                strAsBytes = Util.toBytes(str, encoding);
+                strAsBytes = BytesUtil.toBytes(str, encoding);
             }
             /*
              * A defensive copy is never needed/desired here, because the bytes are derived from a

@@ -8,11 +8,13 @@
  */
 package com.liaison.hbase.dto;
 
+
+
+import com.liaison.commons.BytesUtil;
+import com.liaison.commons.DefensiveCopyStrategy;
+
 import java.io.Serializable;
 import java.nio.charset.Charset;
-
-import com.liaison.hbase.util.DefensiveCopyStrategy;
-import com.liaison.hbase.util.Util;
 
 public final class RowKey extends Value implements Serializable {
 
@@ -45,12 +47,13 @@ public final class RowKey extends Value implements Serializable {
         return getRowKeyBuilder().value(value, copyStrategy).build();
     }
     public static final RowKey of(final String str) {
-        return getRowKeyBuilder().value(Util.toBytes(str), DefensiveCopyStrategy.NEVER).build();
+        return getRowKeyBuilder().value(BytesUtil.toBytes(str),
+                                        DefensiveCopyStrategy.NEVER).build();
     }
     public static final RowKey of(final String str, final Charset charset) {
         return
             getRowKeyBuilder()
-                .value(Util.toBytes(str, charset), DefensiveCopyStrategy.NEVER)
+                .value(BytesUtil.toBytes(str, charset), DefensiveCopyStrategy.NEVER)
                 .build();
     }
     
@@ -65,7 +68,7 @@ public final class RowKey extends Value implements Serializable {
         if (this.strRep == null) {
             this.strRep =
                 buildStrRep(ENTITY_PREFIX_FOR_TOSTRING, (strGen) -> {
-                    strGen.append(Util.toString(getValue(DefensiveCopyStrategy.NEVER)));
+                    strGen.append(BytesUtil.toString(getValue(DefensiveCopyStrategy.NEVER)));
                 });
         }
         return this.strRep;

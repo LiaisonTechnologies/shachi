@@ -8,10 +8,13 @@
  */
 package com.liaison.hbase.dto;
 
-import java.io.Serializable;
 
-import com.liaison.hbase.util.DefensiveCopyStrategy;
-import com.liaison.hbase.util.Util;
+
+import com.liaison.commons.BytesUtil;
+import com.liaison.commons.DefensiveCopyStrategy;
+import com.liaison.commons.Util;
+
+import java.io.Serializable;
 
 public final class Datum extends Value implements Serializable {
     
@@ -79,7 +82,7 @@ public final class Datum extends Value implements Serializable {
         if (this.strRep == null) {
             this.strRep =
                 buildStrRep(ENTITY_PREFIX_FOR_TOSTRING, (strGen) -> {
-                    strGen.append(Util.toString(getValue(DefensiveCopyStrategy.NEVER)));
+                    strGen.append(BytesUtil.toString(getValue(DefensiveCopyStrategy.NEVER)));
                     strGen.append("(@");
                     strGen.append(this.ts);
                     strGen.append(")");

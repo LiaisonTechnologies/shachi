@@ -8,13 +8,12 @@
  */
 package com.liaison.hbase.resmgr.res;
 
-import java.io.IOException;
-
-import org.apache.hadoop.hbase.client.HBaseAdmin;
-
 import com.liaison.hbase.context.HBaseContext;
 import com.liaison.hbase.exception.HBaseResourceReleaseException;
 import com.liaison.hbase.resmgr.HBaseResourceManager;
+import org.apache.hadoop.hbase.client.HBaseAdmin;
+
+import java.io.IOException;
 
 /**
  * TODO

@@ -8,12 +8,12 @@
  */
 package com.liaison.hbase.api.request.fluid;
 
-import java.util.function.BiConsumer;
-
 import com.liaison.hbase.api.request.OperationController;
 import com.liaison.hbase.api.request.fluid.fluent.ColSpecReadFluent;
 import com.liaison.hbase.api.request.fluid.fluent.LongValueSpecFluent;
 import com.liaison.hbase.api.request.fluid.fluent.RowSpecFluent;
+
+import java.util.function.BiConsumer;
 
 /**
  * Specifies an <strong>HBase read operation</strong> while it is in a fluid state (i.e. wherein it

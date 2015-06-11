@@ -8,13 +8,13 @@
  */
 package com.liaison.hbase.api.request.impl;
 
-import java.io.Serializable;
-import java.util.function.BiPredicate;
-
+import com.liaison.commons.Util;
 import com.liaison.hbase.api.request.fluid.fluent.LongValueSpecFluent;
 import com.liaison.hbase.api.request.frozen.LongValueSpecFrozen;
 import com.liaison.hbase.util.StringRepFormat;
-import com.liaison.hbase.util.Util;
+
+import java.io.Serializable;
+import java.util.function.BiPredicate;
 
 public final class LongValueSpec<P extends OperationSpec<P>> extends CriteriaSpec<LongValueSpec<P>, P> implements LongValueSpecFluent<P>, LongValueSpecFrozen, Serializable {
     

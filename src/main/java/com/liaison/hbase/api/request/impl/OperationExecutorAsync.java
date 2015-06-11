@@ -9,11 +9,12 @@
 package com.liaison.hbase.api.request.impl;
 
 import com.google.common.util.concurrent.ListenableFuture;
+import com.liaison.commons.Util;
 import com.liaison.hbase.HBaseControl;
 import com.liaison.hbase.api.request.OperationController;
 import com.liaison.hbase.api.request.OperationExecutor;
 import com.liaison.hbase.api.response.OpResultSet;
-import com.liaison.hbase.util.Util;
+
 
 /**
  * TODO

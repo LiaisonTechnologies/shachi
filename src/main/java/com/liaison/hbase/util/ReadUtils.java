@@ -8,12 +8,11 @@
  */
 package com.liaison.hbase.util;
 
-import java.io.IOException;
-
-import org.apache.hadoop.hbase.client.Get;
-
 import com.liaison.hbase.api.request.impl.LongValueSpec;
 import com.liaison.hbase.api.request.impl.ReadOpSpecDefault;
+import org.apache.hadoop.hbase.client.Get;
+
+import java.io.IOException;
 
 public final class ReadUtils {
 

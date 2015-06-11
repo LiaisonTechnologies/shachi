@@ -8,9 +8,11 @@
  */
 package com.liaison.hbase.model;
 
-import java.io.Serializable;
 
-import com.liaison.hbase.util.Util;
+
+import com.liaison.commons.Util;
+
+import java.io.Serializable;
 
 public abstract class NamedEntity implements Serializable {
     

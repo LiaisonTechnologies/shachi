@@ -8,15 +8,16 @@
  */
 package com.liaison.hbase.api.request.impl;
 
-import java.io.Serializable;
-
+import com.liaison.commons.Util;
 import com.liaison.hbase.api.request.fluid.fluent.RowSpecFluent;
 import com.liaison.hbase.api.request.frozen.RowSpecFrozen;
 import com.liaison.hbase.dto.RowKey;
 import com.liaison.hbase.exception.SpecValidationException;
 import com.liaison.hbase.model.TableModel;
+import com.liaison.hbase.util.SpecUtil;
 import com.liaison.hbase.util.StringRepFormat;
-import com.liaison.hbase.util.Util;
+
+import java.io.Serializable;
 
 /**
  * 
@@ -135,8 +136,8 @@ public final class RowSpec<P extends OperationSpec<P>> extends CriteriaSpec<RowS
     @Override
     protected void validate() throws SpecValidationException {
         super.validate();
-        Util.validateRequired(getTable(), this, "tbl", TableModel.class);
-        Util.validateRequired(getRowKey(), this, "row", RowKey.class);
+        SpecUtil.validateRequired(getTable(), this, "tbl", TableModel.class);
+        SpecUtil.validateRequired(getRowKey(), this, "row", RowKey.class);
     }
     
     // ||----(instance methods: utility)---------------------------------------------------------||

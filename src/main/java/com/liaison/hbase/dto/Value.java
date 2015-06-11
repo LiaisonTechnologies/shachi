@@ -8,11 +8,12 @@
  */
 package com.liaison.hbase.dto;
 
+import com.liaison.commons.BytesUtil;
+import com.liaison.commons.DefensiveCopyStrategy;
+import com.liaison.commons.Util;
+
 import java.io.Serializable;
 import java.nio.charset.Charset;
-
-import com.liaison.hbase.util.DefensiveCopyStrategy;
-import com.liaison.hbase.util.Util;
 
 /**
  * 
@@ -63,12 +64,12 @@ public class Value extends NullableValue implements Serializable {
         return getValueBuilder().value(value).build();
     }
     public static Value of(final String str) {
-        return getValueBuilder().value(Util.toBytes(str), DefensiveCopyStrategy.NEVER).build();
+        return getValueBuilder().value(BytesUtil.toBytes(str), DefensiveCopyStrategy.NEVER).build();
     }
     public static Value of(final String str, final Charset charset) {
         return
             getValueBuilder()
-            .value(Util.toBytes(str, charset), DefensiveCopyStrategy.NEVER)
+            .value(BytesUtil.toBytes(str, charset), DefensiveCopyStrategy.NEVER)
             .build();
     }
     

@@ -8,13 +8,13 @@
  */
 package com.liaison.hbase.dto;
 
+import com.liaison.commons.BytesUtil;
+import com.liaison.commons.DefensiveCopyStrategy;
+import com.liaison.hbase.util.AbstractSelfRefBuilder;
+
 import java.io.Serializable;
 import java.util.Arrays;
 import java.util.function.Consumer;
-
-import com.liaison.hbase.util.AbstractSelfRefBuilder;
-import com.liaison.hbase.util.DefensiveCopyStrategy;
-import com.liaison.hbase.util.Util;
 
 public abstract class NullableValue implements Serializable {
     
@@ -23,7 +23,7 @@ public abstract class NullableValue implements Serializable {
     protected abstract static class AbstractValueBuilder<T, B extends AbstractSelfRefBuilder<T, B>> extends AbstractSelfRefBuilder<T, B> {
         protected byte[] value;
         public B value(final byte[] value, final DefensiveCopyStrategy copyStrategy) {
-            this.value = Util.setInternalByteArray(value, copyStrategy);
+            this.value = BytesUtil.setInternalByteArray(value, copyStrategy);
             return self();
         }
         @Deprecated
@@ -58,7 +58,7 @@ public abstract class NullableValue implements Serializable {
     private String strRep;
     
     public byte[] getValue(final DefensiveCopyStrategy copyStrategy) {
-        return Util.getInternalByteArray(this.value, copyStrategy);
+        return BytesUtil.getInternalByteArray(this.value, copyStrategy);
     }
     @Deprecated
     public byte[] getValue() {
@@ -77,7 +77,7 @@ public abstract class NullableValue implements Serializable {
         final NullableValue otherVal;
         if (otherObj instanceof NullableValue) {
             otherVal = (Value) otherObj;
-            return Util.refEquals(this.value, otherVal.value);
+            return BytesUtil.refEquals(this.value, otherVal.value);
         }
         return false;
     }
@@ -86,7 +86,7 @@ public abstract class NullableValue implements Serializable {
         if (this.strRep == null) {
             this.strRep =
                 buildStrRep(ENTITY_PREFIX_FOR_TOSTRING, (strGen) -> {
-                    strGen.append(Util.toString(this.value));
+                    strGen.append(BytesUtil.toString(this.value));
                 });
         }
         return this.strRep;

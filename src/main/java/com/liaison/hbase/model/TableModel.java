@@ -8,11 +8,13 @@
  */
 package com.liaison.hbase.model;
 
+
+
+import com.liaison.commons.Util;
+
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
-
-import com.liaison.hbase.util.Util;
 
 public final class TableModel extends NamedEntity {
 

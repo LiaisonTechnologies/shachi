@@ -8,12 +8,8 @@
  */
 package com.liaison.hbase.resmgr;
 
-import java.io.Closeable;
-import java.io.IOException;
-
-import org.apache.hadoop.hbase.client.HBaseAdmin;
-import org.apache.hadoop.hbase.client.HTable;
-
+import com.liaison.commons.Util;
+import com.liaison.commons.log.LogMeMaybe;
 import com.liaison.hbase.context.HBaseContext;
 import com.liaison.hbase.exception.HBaseResourceAcquisitionException;
 import com.liaison.hbase.exception.HBaseResourceReleaseException;
@@ -22,8 +18,11 @@ import com.liaison.hbase.resmgr.res.Managed;
 import com.liaison.hbase.resmgr.res.ManagedAdmin;
 import com.liaison.hbase.resmgr.res.ManagedTable;
 import com.liaison.hbase.util.HBaseUtil;
-import com.liaison.hbase.util.LogMeMaybe;
-import com.liaison.hbase.util.Util;
+import org.apache.hadoop.hbase.client.HBaseAdmin;
+import org.apache.hadoop.hbase.client.HTable;
+
+import java.io.Closeable;
+import java.io.IOException;
 
 /**
  * TODO

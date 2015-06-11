@@ -8,22 +8,12 @@
  */
 package com.liaison.hbase;
 
-import java.io.Closeable;
-import java.io.IOException;
-import java.util.List;
-import java.util.concurrent.Callable;
-import java.util.concurrent.SynchronousQueue;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
-
-import org.apache.hadoop.hbase.client.Get;
-import org.apache.hadoop.hbase.client.HTable;
-import org.apache.hadoop.hbase.client.Put;
-import org.apache.hadoop.hbase.client.Result;
-
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
+import com.liaison.commons.DefensiveCopyStrategy;
+import com.liaison.commons.Util;
+import com.liaison.commons.log.LogMeMaybe;
 import com.liaison.hbase.api.request.OperationController;
 import com.liaison.hbase.api.request.frozen.ColSpecWriteFrozen;
 import com.liaison.hbase.api.request.impl.ColSpecRead;
@@ -46,10 +36,19 @@ import com.liaison.hbase.model.FamilyModel;
 import com.liaison.hbase.model.QualModel;
 import com.liaison.hbase.resmgr.HBaseResourceManager;
 import com.liaison.hbase.resmgr.res.ManagedTable;
-import com.liaison.hbase.util.DefensiveCopyStrategy;
-import com.liaison.hbase.util.LogMeMaybe;
 import com.liaison.hbase.util.ReadUtils;
-import com.liaison.hbase.util.Util;
+import org.apache.hadoop.hbase.client.Get;
+import org.apache.hadoop.hbase.client.HTable;
+import org.apache.hadoop.hbase.client.Put;
+import org.apache.hadoop.hbase.client.Result;
+
+import java.io.Closeable;
+import java.io.IOException;
+import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 /**
  * HBaseControl is the main kernel of functionality for the HBase Client, and as the default
@@ -94,7 +93,7 @@ public class HBaseControl implements HBaseStart<OpResultSet>, Closeable {
         private void addColumn(final String logMethodName, final DefensiveCopyStrategy dcs, final Get readGet, final ColSpecRead<ReadOpSpecDefault> colSpec) {
             final FamilyModel colFam;
             final QualModel colQual;
-            
+
             if (colSpec != null) {
                 colFam = colSpec.getFamily();
                 colQual = colSpec.getColumn();

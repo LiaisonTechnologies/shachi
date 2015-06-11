@@ -8,14 +8,14 @@
  */
 package com.liaison.hbase.api.request.impl;
 
-import java.io.Serializable;
-
 import com.liaison.hbase.api.request.fluid.fluent.ColSpecReadFluent;
 import com.liaison.hbase.api.request.frozen.ColSpecReadFrozen;
 import com.liaison.hbase.dto.FamilyQualifierPair;
 import com.liaison.hbase.exception.SpecValidationException;
 import com.liaison.hbase.model.FamilyModel;
-import com.liaison.hbase.util.Util;
+import com.liaison.hbase.util.SpecUtil;
+
+import java.io.Serializable;
 
 /**
  * TODO
@@ -121,7 +121,7 @@ public final class ColSpecRead<P extends OperationSpec<P>> extends ColSpec<ColSp
     @Override
     protected void validate() throws SpecValidationException {
         super.validate();
-        Util.validateRequired(getFamily(), this, "fam", FamilyModel.class);
+        SpecUtil.validateRequired(getFamily(), this, "fam", FamilyModel.class);
     }
     
     // ||----(instance methods: utility)---------------------------------------------------------||

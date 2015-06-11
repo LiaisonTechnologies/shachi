@@ -8,11 +8,11 @@
  */
 package com.liaison.hbase.api.request.impl;
 
-import java.io.Serializable;
-
+import com.liaison.commons.Util;
 import com.liaison.hbase.context.HBaseContext;
 import com.liaison.hbase.exception.SpecValidationException;
-import com.liaison.hbase.util.Util;
+
+import java.io.Serializable;
 
 public abstract class OperationSpec<O extends OperationSpec<O>> extends StatefulSpec<O, OperationControllerDefault> implements Serializable {
     

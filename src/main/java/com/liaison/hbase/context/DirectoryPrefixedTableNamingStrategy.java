@@ -8,12 +8,12 @@
  */
 package com.liaison.hbase.context;
 
-import java.nio.charset.Charset;
-
+import com.liaison.commons.BytesUtil;
+import com.liaison.commons.DefensiveCopyStrategy;
 import com.liaison.hbase.model.Name;
 import com.liaison.hbase.model.TableModel;
-import com.liaison.hbase.util.DefensiveCopyStrategy;
-import com.liaison.hbase.util.Util;
+
+import java.nio.charset.Charset;
 
 public class DirectoryPrefixedTableNamingStrategy implements TableNamingStrategy {
 
@@ -42,9 +42,9 @@ public class DirectoryPrefixedTableNamingStrategy implements TableNamingStrategy
             this.homeDir = null;
         } else {
             if (homeDirEncoding == null) {
-                this.homeDir = Util.toBytes(homeDirStr);
+                this.homeDir = BytesUtil.toBytes(homeDirStr);
             } else {
-                this.homeDir = Util.toBytes(homeDirStr, homeDirEncoding);
+                this.homeDir = BytesUtil.toBytes(homeDirStr, homeDirEncoding);
             }
         }
     }

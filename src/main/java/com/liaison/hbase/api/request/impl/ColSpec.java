@@ -8,14 +8,14 @@
  */
 package com.liaison.hbase.api.request.impl;
 
-import java.io.Serializable;
-
+import com.liaison.commons.Util;
 import com.liaison.hbase.api.request.fluid.ColSpecFluid;
 import com.liaison.hbase.api.request.frozen.ColSpecFrozen;
 import com.liaison.hbase.model.FamilyModel;
 import com.liaison.hbase.model.QualModel;
 import com.liaison.hbase.util.StringRepFormat;
-import com.liaison.hbase.util.Util;
+
+import java.io.Serializable;
 
 public abstract class ColSpec<C extends ColSpec<C, P>, P extends OperationSpec<P>> extends CriteriaSpec<C, P> implements ColSpecFluid<C>, ColSpecFrozen, Serializable {
     

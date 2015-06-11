@@ -8,8 +8,9 @@
  */
 package com.liaison.hbase.api.request.impl;
 
+import com.liaison.commons.Util;
 import com.liaison.hbase.context.HBaseContext;
-import com.liaison.hbase.util.Util;
+
 
 public abstract class TableRowOpSpec<O extends TableRowOpSpec<O>> extends OperationSpec<O> {
     

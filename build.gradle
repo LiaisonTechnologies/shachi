@@ -4,6 +4,7 @@ apply plugin: 'java-library-distribution'
 
 configurations {
     provided
+    provided.extendsFrom(compile)
 }
 
 sourceSets {
@@ -12,12 +13,29 @@ sourceSets {
     test.runtimeClasspath += configurations.provided
 }
 
+buildscript {
+    repositories {
+        mavenLocal()
+        mavenCentral()
+    }
+    apply from: file('gradle/buildscript.gradle'), to: buildscript
+}
+
 allprojects {
     repositories {
         mavenLocal()
-        mavenCentral() // maven { url: 'http://jcenter.bintray.com' }
+        mavenCentral()
+        // Liaison Private Maven artifact repo (Nexus)
+        maven { url releasesArtifactRepoURL }
+        maven { url snapshotsArtifactRepoURL }
+        maven { url thirdpartyArtifactRepoURL }
     }
 }
+
+apply from: file('gradle/convention.gradle')
+apply from: file('gradle/check.gradle')
+apply from: file('gradle/license.gradle')
+apply from: file('gradle/maven.gradle')
 
 group = 'com.liaison'
 version = '0.0.1-SNAPSHOT'
@@ -25,6 +43,7 @@ version = '0.0.1-SNAPSHOT'
 ext.libraryName = "liaison-hbase-${version}"
 ext.verGuava = '18.0'
 ext.verMockito = '1.10.19'
+ext.verPhoenixCommons = '0.0.2-SNAPSHOT'
 ext.verPool = '2.3'
 ext.verQuasar  = '0.6.2'
 ext.verTestNG  = '6.8.21'
@@ -53,11 +72,8 @@ jar {
     }
 }
 
-repositories {
-    mavenCentral()
-}
-
 dependencies {
+    compile "com.liaison.phoenix:phoenix-commons:0.0.1-SNAPSHOT"
     compile "com.google.guava:guava:${verGuava}"
     compile "co.paralleluniverse:quasar-core:${verQuasar}${classifier}"
     provided "org.apache.hbase:hbase-client:${verHBase}"
@@ -95,4 +111,12 @@ uploadArchives {
        }
     }
 }
+
 eclipse.classpath.plusConfigurations += configurations.provided
+plugins.withType(IdeaPlugin) {
+    idea {
+        module {
+            scopes.PROVIDED.plus += [configurations.provided]
+        }
+    }
+}
