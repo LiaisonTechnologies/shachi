@@ -14,11 +14,15 @@ import com.liaison.hbase.api.request.fluid.ColSpecReadFluid;
 import com.liaison.hbase.api.response.OpResultSet;
 import com.liaison.hbase.context.HBaseContext;
 import com.liaison.hbase.exception.SpecValidationException;
+import com.liaison.hbase.model.FamilyModel;
+import com.liaison.hbase.model.QualModel;
+import com.liaison.hbase.model.VersioningModel;
 import com.liaison.hbase.util.SpecUtil;
 import com.liaison.hbase.util.StringRepFormat;
 
 import java.io.Serializable;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.function.BiConsumer;
@@ -108,11 +112,137 @@ public final class ReadOpSpecDefault extends TableRowOpSpec<ReadOpSpecDefault> i
     @Override
     protected ReadOpSpecDefault self() { return this; }
 
+    /**
+     * If there are multiple cells to be read, and if any of them use timestamp-based versioning,
+     * then ensure that they all use a uniform versioning approach, as the timestamp setting on the
+     * Get object used to execute the request will be common.
+     * @throws SpecValidationException
+     */
+    private void ensureCompatibleVersioning() throws SpecValidationException {
+        final String logMsg;
+        final List<StatefulSpec<?, ?>> subordSpecList;
+        ColSpecRead<?> readColSpec;
+        QualModel colQualModel;
+        FamilyModel colFamilyModel;
+        boolean establishedVersioningConfigIsTimestampBased;
+        EnumSet<VersioningModel> establishedVersioningConfig;
+        LongValueSpec<?> establishedReadVersionSpec;
+        EnumSet<VersioningModel> currentVersioningConfig;
+        LongValueSpec<?> currentReadVersionSpec;
+
+        subordSpecList = getSubordSpecList();
+        establishedVersioningConfig = null;
+        establishedReadVersionSpec = null;
+        establishedVersioningConfigIsTimestampBased = false;
+
+        /*
+         * It is only necessary to check for versioning configuation + version number conflicts if
+         * there is more than one read column in the list of subordinate specifications.
+         */
+        if (subordSpecList.size() > 1) {
+            for (StatefulSpec<?, ?> spec : subordSpecList) {
+                currentVersioningConfig = null;
+                currentReadVersionSpec = null;
+
+                /*
+                 * Only examine instances of ColSpecRead (subordinate read columns) for this
+                 * comparison. There should not be any subordinate columns of any other type, but
+                 * since the collection of subordinate specifications is declared in a superclass
+                 * high in the hierarchy, the type information is general.
+                 */
+                if (spec instanceof ColSpecRead) {
+                    readColSpec = (ColSpecRead<?>) spec;
+
+                    /*
+                     * Get the version range/number specified for the current column.
+                     */
+                    currentReadVersionSpec = readColSpec.getVersion();
+
+                    /*
+                     * Determine the versioning configuration for the current read column spec. If
+                     * a versioning configuration is declared at the qualifier level, use it;
+                     * otherwise, default to the family level, if a configuration is defined there.
+                     * Note that in some cases, neither the family model nor the qualifier model
+                     * will define a versioning configuration, so currentVersioningConfig may
+                     * remain null after this logic block.
+                     */
+                    colQualModel = readColSpec.getColumn();
+                    if (colQualModel != null) {
+                        currentVersioningConfig = colQualModel.getVersioning();
+                    } else {
+                        colFamilyModel = readColSpec.getFamily();
+                        if (colFamilyModel != null) {
+                            currentVersioningConfig = colFamilyModel.getVersioning();
+                        }
+                    }
+
+                    /*
+                     * If the "established" versioning configuration and version number for this
+                     * read spec is not yet determined, then get it from this element (presumably,
+                     * the first read-column specification subordinate to this instance). Otherwise,
+                     * compare the current versioning configuration with the established one.
+                     */
+                    if (establishedVersioningConfig == null) {
+                        establishedVersioningConfig = currentVersioningConfig;
+                        establishedVersioningConfigIsTimestampBased =
+                            VersioningModel.isTimestampBased(establishedVersioningConfig);
+                        establishedReadVersionSpec = currentReadVersionSpec;
+                    } else {
+                        /*
+                         * This validation method enforces that if ANY of read column specs specify
+                         * a timestamp-based versioning scheme, then ALL of them must use the same
+                         * versioning scheme.
+                         *
+                         * Consequently, the logic here is as follows:
+                         *
+                         * If either the "established" versioning config (i.e. that in the first
+                         * column spec) is timestamp-based or the current versioning configuration
+                         * is timestamp-based, then throw a SpecValidationException if either:
+                         *    (a) the versioning configurations are NOT identical, or
+                         *    (b) the version numbers (or ranges) are NOT identical
+                         */
+                        if ((establishedVersioningConfigIsTimestampBased
+                             || VersioningModel.isTimestampBased(currentVersioningConfig))
+                            &&
+                            ((!Util.refEquals(establishedVersioningConfig,
+                                              currentVersioningConfig))
+                             || (!Util.refEquals(establishedReadVersionSpec,
+                                                 currentReadVersionSpec)))) {
+                            logMsg = "Failed to validate "
+                                     + getClass().getSimpleName()
+                                     + " (id:'"
+                                     + getHandle()
+                                     + "'). If multiple columns are specified, and any of them use"
+                                     + " a timestamp-based versioning configuration (one of: "
+                                     + VersioningModel.SET_TIMESTAMP
+                                     + "), then all columns must specify an identical versioning "
+                                     + "configuration and version number/range. Detected version "
+                                     + "mismatch: first-column={config:"
+                                     + establishedVersioningConfig
+                                     + ",version:"
+                                     + establishedReadVersionSpec
+                                     + "}, current-column={config:"
+                                     + establishedVersioningConfig
+                                     + ",version:"
+                                     + establishedReadVersionSpec
+                                     + "}";
+                            throw new SpecValidationException(SpecState.FLUID,
+                                                              SpecState.FROZEN,
+                                                              this,
+                                                              logMsg);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     @Override
     protected void validate() throws SpecValidationException {
         super.validate();
         SpecUtil.validateRequired(getTableRow(), this, "from", RowSpec.class);
         SpecUtil.validateAtLeastOne(getWithColumn(), this, "with", ColSpecRead.class);
+        ensureCompatibleVersioning();
     }
     
     @Override

@@ -1,5 +1,11 @@
 package com.liaison.hbase.model;
 
+import com.google.common.collect.Sets;
+import jdk.nashorn.internal.runtime.Version;
+
+import java.util.EnumSet;
+import java.util.Set;
+
 /**
  * Specifies how the version number will be affixed to cells in this column family.
  */
@@ -35,4 +41,56 @@ public enum VersioningModel {
      * qualifier value.
      */
     QUALIFIER_LATEST;
+
+    /**
+     * TODO
+     */
+    public static EnumSet<VersioningModel> SET_TIMESTAMP =
+        EnumSet.of(TIMESTAMP_CHRONO,
+                   TIMESTAMP_LATEST);
+
+    /**
+     * TODO
+     */
+    public static EnumSet<VersioningModel> SET_QUALIFIER =
+        EnumSet.of(QUALIFIER_CHRONO,
+                   QUALIFIER_LATEST);
+
+    private static boolean setsOverlap(final Set<VersioningModel> set1, final Set<VersioningModel> set2) {
+        return !Sets.intersection(set1, set2).isEmpty();
+    }
+
+    /**
+     * TODO
+     * @param verModel
+     * @return
+     */
+    public static boolean isTimestampBased(final VersioningModel verModel) {
+        return SET_TIMESTAMP.contains(verModel);
+    }
+    /**
+     * TODO
+     * @param verModelSet
+     * @return
+     */
+    public static boolean isTimestampBased(final EnumSet<VersioningModel> verModelSet) {
+        return setsOverlap(SET_TIMESTAMP, verModelSet);
+    }
+
+    /**
+     * TODO
+     * @param verModel
+     * @return
+     */
+    public static boolean isQualifierBased(final VersioningModel verModel) {
+        return SET_QUALIFIER.contains(verModel);
+    }
+    /**
+     * TODO
+     * @param verModelSet
+     * @return
+     */
+    public static boolean isQualifierBased(final EnumSet<VersioningModel> verModelSet) {
+        return setsOverlap(SET_QUALIFIER, verModelSet);
+    }
 }

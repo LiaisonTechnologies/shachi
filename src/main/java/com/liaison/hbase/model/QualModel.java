@@ -80,6 +80,11 @@ public final class QualModel extends NamedEntity {
     
     private QualModel(final Builder build) throws IllegalArgumentException {
         super(build.name);
+        /*
+        versioning should never be null, even if no versioning scheme is enabled; in that case, the
+        versioning variable should be EnumSet.noneOf(VersioningModel.class)
+         */
+        Util.ensureNotNull(build.versioning, this, "versioning", EnumSet.class);
         this.versioning = build.versioning;
     }
 }

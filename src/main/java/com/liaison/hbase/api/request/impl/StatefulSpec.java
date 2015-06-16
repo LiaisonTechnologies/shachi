@@ -15,7 +15,9 @@ import com.liaison.hbase.util.TreeNode;
 import com.liaison.hbase.util.TreeNodeNonRoot;
 
 import java.io.Serializable;
+import java.util.Collections;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -119,6 +121,14 @@ public abstract class StatefulSpec<A extends StatefulSpec<A, P>, P extends TreeN
     protected final void addSubordinate(final StatefulSpec<?,?> subordSpec) throws IllegalArgumentException {
         Util.ensureNotNull(subordSpec, this, "subordSpec", StatefulSpec.class);
         this.subordSpecList.add(subordSpec);
+    }
+
+    /**
+     * TODO
+     * @return
+     */
+    protected final List<StatefulSpec<?,?>> getSubordSpecList() {
+        return Collections.unmodifiableList(this.subordSpecList);
     }
     
     /**

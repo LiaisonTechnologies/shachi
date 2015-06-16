@@ -13,6 +13,7 @@ package com.liaison.hbase.model;
 import com.liaison.commons.Util;
 
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -24,7 +25,13 @@ public final class FamilyModel extends NamedEntity {
         private Name name;
         private LinkedHashMap<Name, QualModel> quals;
         private boolean closedQualSet;
-        
+        private EnumSet<VersioningModel> versioning;
+
+        public Builder versionWith(final VersioningModel verModel) throws IllegalArgumentException {
+            Util.ensureNotNull(verModel, this, "verModel", VersioningModel.class);
+            this.versioning.add(verModel);
+            return this;
+        }
         public Builder name(final Name name) {
             this.name = name;
             return this;
@@ -60,12 +67,16 @@ public final class FamilyModel extends NamedEntity {
     
     private final Map<Name, QualModel> quals;
     private final boolean closedQualSet;
+    private final EnumSet<VersioningModel> versioning;
     
     public Map<Name, QualModel> getQuals() {
         return this.quals;
     }
     public boolean isClosedQualSet() {
         return closedQualSet;
+    }
+    public EnumSet<VersioningModel> getVersioning() {
+        return this.versioning;
     }
     
     @Override
@@ -100,7 +111,17 @@ public final class FamilyModel extends NamedEntity {
     
     private FamilyModel(final Builder build) throws IllegalArgumentException {
         super(build.name);
-        this.quals = Collections.unmodifiableMap(build.quals);
+
         this.closedQualSet = build.closedQualSet;
+
+        Util.ensureNotNull(build.quals, this, "quals", LinkedHashMap.class);
+        this.quals = Collections.unmodifiableMap(build.quals);
+
+        /*
+        versioning should never be null, even if no versioning scheme is enabled; in that case, the
+        versioning variable should be EnumSet.noneOf(VersioningModel.class)
+         */
+        Util.ensureNotNull(build.versioning, this, "versioning", EnumSet.class);
+        this.versioning = build.versioning;
     }
 }
