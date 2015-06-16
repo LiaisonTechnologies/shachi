@@ -8,13 +8,25 @@
  */
 package com.liaison.hbase.model;
 
+import com.liaison.commons.Util;
+import jdk.nashorn.internal.runtime.Version;
+
+import java.util.EnumSet;
+
 public final class QualModel extends NamedEntity {
     
     private static final long serialVersionUID = 7491884927269731635L;
 
     public static final class Builder {
         private Name name;
-        
+        private EnumSet<VersioningModel> versioning;
+
+        public Builder versionWith(final VersioningModel verModel) throws IllegalArgumentException {
+            Util.ensureNotNull(verModel, this, "verModel", VersioningModel.class);
+            this.versioning.add(verModel);
+            return this;
+        }
+
         public Builder name(final Name name) {
             this.name = name;
             return this;
@@ -25,6 +37,7 @@ public final class QualModel extends NamedEntity {
         }
         private Builder() {
             this.name = null;
+            this.versioning = EnumSet.noneOf(VersioningModel.class);
         }
     }
     
@@ -36,10 +49,16 @@ public final class QualModel extends NamedEntity {
     public static final QualModel of(final Name name) {
         return with(name).build();
     }
+
+    private final EnumSet<VersioningModel> versioning;
     
     @Override
     protected String getEntityTitle() {
         return ENTITY_TITLE;
+    }
+
+    public EnumSet<VersioningModel> getVersioning() {
+        return this.versioning;
     }
     
     @Override
@@ -52,7 +71,7 @@ public final class QualModel extends NamedEntity {
         // no need to modify NamedEntity#hashCode
         return 0;
     }
-    
+
     @Override
     protected boolean deepEquals(final NamedEntity otherNE) {
         // beyond ensuring that it is a QualModel instance, no need to modify NamedEntity#equals
@@ -61,5 +80,6 @@ public final class QualModel extends NamedEntity {
     
     private QualModel(final Builder build) throws IllegalArgumentException {
         super(build.name);
+        this.versioning = build.versioning;
     }
 }

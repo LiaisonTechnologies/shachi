@@ -8,8 +8,6 @@
  */
 package com.liaison.hbase.model;
 
-
-
 import com.liaison.commons.Util;
 
 import java.io.Serializable;

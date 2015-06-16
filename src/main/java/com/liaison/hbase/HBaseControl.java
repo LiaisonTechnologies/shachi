@@ -93,21 +93,30 @@ public class HBaseControl implements HBaseStart<OpResultSet>, Closeable {
         private void addColumn(final String logMethodName, final DefensiveCopyStrategy dcs, final Get readGet, final ColSpecRead<ReadOpSpecDefault> colSpec) {
             final FamilyModel colFam;
             final QualModel colQual;
+            final byte[] famValue;
+            final byte[] qualValue;
 
             if (colSpec != null) {
                 colFam = colSpec.getFamily();
                 colQual = colSpec.getColumn();
                 if (colFam != null) {
+                    famValue = colFam.getName().getValue(dcs);
                     if (colQual != null) {
-                        readGet.addColumn(colFam.getName().getValue(dcs),
-                                          colQual.getName().getValue(dcs));
+                        /*
+                        TODO (VERSIONING):
+                        Determine how to adjust this qualifier value when versioning model uses
+                        qualifier-based versioning (VersioningModel.QUALIFIER_*)
+                         */
+                        qualValue = colQual.getName().getValue(dcs);
+                        
+                        readGet.addColumn(famValue, qualValue);
                         LOG.trace(logMethodName,
                                   ()->"adding to GET: family=",
                                   ()->colFam,
                                   ()->", qual=",
                                   ()->colQual);
                     } else {
-                        readGet.addFamily(colFam.getName().getValue(dcs));
+                        readGet.addFamily(famValue);
                         LOG.trace(logMethodName,
                                   ()->"adding to GET: family=",
                                   ()->colFam);

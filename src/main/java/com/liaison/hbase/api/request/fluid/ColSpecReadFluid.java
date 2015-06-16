@@ -8,6 +8,8 @@
  */
 package com.liaison.hbase.api.request.fluid;
 
+import com.liaison.hbase.api.request.fluid.fluent.LongValueSpecFluent;
+
 /**
  * An instance of {@link ColSpecFluid} intended for use in HBase read operations.
  * <br><br>
@@ -19,6 +21,22 @@ package com.liaison.hbase.api.request.fluid;
  * fluent/chaining API
  */
 public interface ColSpecReadFluid<C extends ColSpecReadFluid<C>> extends ColSpecFluid<C> {
+    /**
+     * TODO
+     * @param version
+     * @return
+     * @throws IllegalStateException
+     * @throws IllegalArgumentException
+     */
+    LongValueSpecFluent<C> version() throws IllegalStateException, IllegalArgumentException;
+    /**
+     * TODO
+     * @param version
+     * @return
+     * @throws IllegalStateException
+     * @throws IllegalArgumentException
+     */
+    C version(final long version) throws IllegalStateException, IllegalArgumentException;
     /**
      * Specify that reading the given column family+qualifier combination is not required, and
      * therefore operations which own this reference should <em>not</em> throw an Exception if it

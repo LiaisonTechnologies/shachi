@@ -12,26 +12,46 @@ import com.liaison.commons.Util;
 import com.liaison.hbase.api.request.fluid.ColSpecReadFluid;
 import com.liaison.hbase.model.FamilyModel;
 import com.liaison.hbase.model.QualModel;
+import com.liaison.hbase.util.TreeNodeRoot;
 
 
 /**
  * TODO
  * @author Branden Smith; Liaison Technologies, Inc.
  */
-public class ColSpecReadConfined implements ColSpecReadFluid<ColSpecReadConfined> {
+public class ColSpecReadConfined extends TreeNodeRoot<ColSpecReadConfined> implements ColSpecReadFluid<ColSpecReadConfined> {
 
     private final ColSpecRead<ReadOpSpecDefault> colSpecRead;
-    
+
+    @Override
     public ColSpecReadConfined fam(final FamilyModel family) throws IllegalStateException, IllegalArgumentException {
         colSpecRead.fam(family);
-        return this;
+        return self();
     }
+    @Override
     public ColSpecReadConfined qual(final QualModel qual) throws IllegalStateException, IllegalArgumentException {
         colSpecRead.qual(qual);
-        return this;
+        return self();
     }
+    @Override
     public ColSpecReadConfined optional() throws IllegalStateException, IllegalArgumentException {
         colSpecRead.optional();
+        return self();
+    }
+    @Override
+    public LongValueSpecConfinedParent<ColSpecReadConfined, ColSpecRead<ReadOpSpecDefault>> version() throws IllegalStateException, IllegalArgumentException {
+        return
+            new LongValueSpecConfinedParent<ColSpecReadConfined,
+                                            ColSpecRead<ReadOpSpecDefault>>
+                    (self(), colSpecRead.version());
+    }
+    @Override
+    public ColSpecReadConfined version(final long version) throws IllegalStateException, IllegalArgumentException {
+        return self();
+    }
+
+    @Override
+    protected ColSpecReadConfined self() {
         return this;
     }
     
@@ -39,5 +59,4 @@ public class ColSpecReadConfined implements ColSpecReadFluid<ColSpecReadConfined
         Util.ensureNotNull(colSpecRead, this, "colSpecRead", ColSpecRead.class);
         this.colSpecRead = colSpecRead;
     }
-
 }

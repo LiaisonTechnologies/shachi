@@ -17,6 +17,4 @@ import com.liaison.hbase.api.request.fluid.LongValueSpecFluid;
  * @author Branden Smith; Liaison Technologies, Inc.
  * @param <P> The type of the parent/owning element in the API/spec tree
  */
-public interface LongValueSpecFluent<P> extends LongValueSpecFluid<P>, CriteriaSpecFluid<P> {
-
-}
+public interface LongValueSpecFluent<P> extends LongValueSpecFluid<LongValueSpecFluent<P>, P>, CriteriaSpecFluid<P> { }

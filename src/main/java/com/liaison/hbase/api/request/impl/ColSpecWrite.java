@@ -29,7 +29,8 @@ public class ColSpecWrite<P extends OperationSpec<P>> extends ColSpec<ColSpecWri
     // ||========================================================================================||
     // ||    INSTANCE PROPERTIES                                                                 ||
     // ||----------------------------------------------------------------------------------------||
-    
+
+    private Long version;
     private Long ts;
     private NullableValue value;
     
@@ -39,6 +40,17 @@ public class ColSpecWrite<P extends OperationSpec<P>> extends ColSpec<ColSpecWri
     // ||    INSTANCE METHODS: API: FLUID                                                        ||
     // ||----------------------------------------------------------------------------------------||
 
+    @Override
+    public ColSpecWrite<P> version(final long version) throws IllegalStateException, IllegalArgumentException {
+        prepMutation();
+        this.version =
+            Util.validateExactlyOnceParam(Long.valueOf(version),
+                                          this,
+                                          "version",
+                                          Long.class,
+                                          this.version);
+        return self();
+    }
     @Override
     public ColSpecWrite<P> ts(final long ts) throws IllegalStateException, IllegalArgumentException {
         prepMutation();
@@ -63,7 +75,11 @@ public class ColSpecWrite<P extends OperationSpec<P>> extends ColSpec<ColSpecWri
     // ||========================================================================================||
     // ||    INSTANCE METHODS: API: FROZEN                                                       ||
     // ||----------------------------------------------------------------------------------------||
-    
+
+    @Override
+    public Long getVersion() {
+        return this.version;
+    }
     @Override
     public Long getTS() {
         return this.ts;
@@ -140,6 +156,8 @@ public class ColSpecWrite<P extends OperationSpec<P>> extends ColSpec<ColSpecWri
 
     public ColSpecWrite(final P parent) {
         super(parent);
+        this.ts = null;
+        this.version = null;
     }
     
     // ||----(constructors)----------------------------------------------------------------------||

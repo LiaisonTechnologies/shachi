@@ -16,7 +16,7 @@ import com.liaison.hbase.util.StringRepFormat;
 import java.io.Serializable;
 import java.util.function.BiPredicate;
 
-public final class LongValueSpec<P extends OperationSpec<P>> extends CriteriaSpec<LongValueSpec<P>, P> implements LongValueSpecFluent<P>, LongValueSpecFrozen, Serializable {
+public final class LongValueSpec<P extends StatefulSpec<P, ?>> extends CriteriaSpec<LongValueSpec<P>, P> implements LongValueSpecFluent<P>, LongValueSpecFrozen, Serializable {
     
     private static final long serialVersionUID = 7413385960948152177L;
     
@@ -234,7 +234,27 @@ public final class LongValueSpec<P extends OperationSpec<P>> extends CriteriaSpe
     public boolean isBounded() {
         return (isLowerBounded() || isUpperBounded());
     }
-    
+
+    @Override
+    public Long singleValue() {
+        final Long lower;
+        final Long upper;
+
+        lower = this.lowerBoundInclusive;
+        upper = this.upperBoundExclusive;
+
+        if ((lower != null) && (upper != null)) {
+            if ((lower.longValue() + 1) == (upper.longValue())) {
+                return lower;
+            }
+        }
+        return null;
+    }
+    @Override
+    public boolean isSingleValue() {
+        return (singleValue() != null);
+    }
+
     // ||----(instance methods: API: frozen)-----------------------------------------------------||
     
     // ||========================================================================================||

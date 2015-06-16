@@ -233,6 +233,10 @@ public class TestMapREnd2End {
                         .and()
                         .with()
                             .fam(FAM_MODEL_a)
+                            .version()
+                                .eq(4)
+                                /* TODO: fix the API to get rid of the ugly and-and sequence... */
+                                .and()
                         .and()
                         .atTime()
                             .gt(TS_SAMPLE_1 - 10)

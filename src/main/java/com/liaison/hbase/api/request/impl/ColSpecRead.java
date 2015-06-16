@@ -8,6 +8,7 @@
  */
 package com.liaison.hbase.api.request.impl;
 
+import com.liaison.commons.Util;
 import com.liaison.hbase.api.request.fluid.fluent.ColSpecReadFluent;
 import com.liaison.hbase.api.request.frozen.ColSpecReadFrozen;
 import com.liaison.hbase.dto.FamilyQualifierPair;
@@ -29,7 +30,8 @@ public final class ColSpecRead<P extends OperationSpec<P>> extends ColSpec<ColSp
     // ||========================================================================================||
     // ||    INSTANCE PROPERTIES                                                                 ||
     // ||----------------------------------------------------------------------------------------||
-    
+
+    private LongValueSpec<ColSpecRead<P>> version;
     private boolean optional;
     
     // ||----(instance properties)---------------------------------------------------------------||
@@ -37,12 +39,26 @@ public final class ColSpecRead<P extends OperationSpec<P>> extends ColSpec<ColSp
     // ||========================================================================================||
     // ||    INSTANCE METHODS: API: FLUID                                                        ||
     // ||----------------------------------------------------------------------------------------||
+
+    @Override
+    public LongValueSpec<ColSpecRead<P>> version() throws IllegalStateException, IllegalArgumentException {
+        prepMutation();
+        Util.validateExactlyOnce("atTime", LongValueSpec.class, this.version);
+        this.version = new LongValueSpec<>(this);
+        return this.version;
+    }
+
+    @Override
+    public ColSpecRead<P> version(final long version) throws IllegalStateException, IllegalArgumentException {
+        version().eq(version);
+        return self();
+    }
     
     @Override
     public ColSpecRead<P> optional() throws IllegalStateException {
         prepMutation();
         this.optional = true;
-        return this;
+        return self();
     }
     
     // ||----(instance methods: API: fluid)------------------------------------------------------||
@@ -50,6 +66,11 @@ public final class ColSpecRead<P extends OperationSpec<P>> extends ColSpec<ColSp
     // ||========================================================================================||
     // ||    INSTANCE METHODS: API: FROZEN                                                       ||
     // ||----------------------------------------------------------------------------------------||
+
+    @Override
+    public LongValueSpec<ColSpecRead<P>> getVersion() {
+        return this.version;
+    }
 
     @Override
     public boolean isOptional() {

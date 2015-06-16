@@ -32,6 +32,10 @@ public class ColSpecWriteConfined implements ColSpecWriteFluid<ColSpecWriteConfi
         colSpecWrite.qual(qual);
         return this;
     }
+    public ColSpecWriteConfined version(final long version) throws IllegalStateException, IllegalArgumentException {
+        colSpecWrite.version(version);
+        return this;
+    }
     public ColSpecWriteConfined ts(final long ts) throws IllegalStateException, IllegalArgumentException {
         colSpecWrite.ts(ts);
         return this;

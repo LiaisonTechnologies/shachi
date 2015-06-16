@@ -35,7 +35,7 @@ public final class ReadOpSpecDefault extends TableRowOpSpec<ReadOpSpecDefault> i
     // ||========================================================================================||
     // ||    INSTANCE PROPERTIES                                                                 ||
     // ||----------------------------------------------------------------------------------------||
-    
+
     private LongValueSpec<ReadOpSpecDefault> atTime;
     private final List<ColSpecRead<ReadOpSpecDefault>> withColumn;
     
@@ -44,7 +44,7 @@ public final class ReadOpSpecDefault extends TableRowOpSpec<ReadOpSpecDefault> i
     // ||========================================================================================||
     // ||    INSTANCE METHODS: API: FLUID                                                        ||
     // ||----------------------------------------------------------------------------------------||
-    
+
     @Override
     public LongValueSpec<ReadOpSpecDefault> atTime() throws IllegalStateException {
         prepMutation();
@@ -196,6 +196,7 @@ public final class ReadOpSpecDefault extends TableRowOpSpec<ReadOpSpecDefault> i
     public ReadOpSpecDefault(final Object handle, final HBaseContext context, final OperationControllerDefault parent) {
         super(handle, context, parent);
         this.withColumn = new LinkedList<>();
+        this.atTime = null;
     }
     
     // ||----(constructors)----------------------------------------------------------------------||

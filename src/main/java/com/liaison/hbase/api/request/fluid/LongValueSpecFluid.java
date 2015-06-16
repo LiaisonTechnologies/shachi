@@ -13,7 +13,7 @@ package com.liaison.hbase.api.request.fluid;
  * @author Branden Smith; Liaison Technologies, Inc.
  * @param <P> Type of the parent/owning operation
  */
-public interface LongValueSpecFluid<P> extends CriteriaSpecFluid<P> {
+public interface LongValueSpecFluid<F extends LongValueSpecFluid<F,P>, P> {
     /**
      * <strong>Greater-Than</strong>: require that values <code>V</code> in the range satisfy
      * <br><br>
@@ -27,7 +27,7 @@ public interface LongValueSpecFluid<P> extends CriteriaSpecFluid<P> {
      * @return this instance (for fluent/chaining API)
      * @throws ArithmeticException if the given value is out-of-range
      */
-    LongValueSpecFluid<P> gt(long value) throws ArithmeticException;
+    F gt(long value) throws ArithmeticException;
     /**
      * <strong>Greater-Than-Or-Equal</strong>: require that values <code>V</code> in the range
      * satisfy
@@ -42,7 +42,7 @@ public interface LongValueSpecFluid<P> extends CriteriaSpecFluid<P> {
      * @return this instance (for fluent/chaining API)
      * @throws ArithmeticException if the given value is out-of-range
      */
-    LongValueSpecFluid<P> ge(long value) throws ArithmeticException;
+    F ge(long value) throws ArithmeticException;
     /**
      * <strong>Equal</strong>: require that values <code>V</code> in the range satisfy
      * <br><br>
@@ -56,7 +56,7 @@ public interface LongValueSpecFluid<P> extends CriteriaSpecFluid<P> {
      * @return this instance (for fluent/chaining API)
      * @throws ArithmeticException if the given value is out-of-range
      */
-    LongValueSpecFluid<P> eq(long value) throws ArithmeticException;
+    F eq(long value) throws ArithmeticException;
     /**
      * <strong>Lesser-Than</strong>: require that values <code>V</code> in the range satisfy
      * <br><br>
@@ -70,7 +70,7 @@ public interface LongValueSpecFluid<P> extends CriteriaSpecFluid<P> {
      * @return this instance (for fluent/chaining API)
      * @throws ArithmeticException if the given value is out-of-range
      */
-    LongValueSpecFluid<P> lt(long value) throws ArithmeticException;
+    F lt(long value) throws ArithmeticException;
     /**
      * <strong>Lesser-Than-Or-Equal</strong>: require that values <code>V</code> in the range
      * satisfy
@@ -85,5 +85,5 @@ public interface LongValueSpecFluid<P> extends CriteriaSpecFluid<P> {
      * @return this instance (for fluent/chaining API)
      * @throws ArithmeticException if the given value is out-of-range
      */
-    LongValueSpecFluid<P> le(long value) throws ArithmeticException;
+    F le(long value) throws ArithmeticException;
 }

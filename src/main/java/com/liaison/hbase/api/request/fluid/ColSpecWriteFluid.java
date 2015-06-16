@@ -23,6 +23,14 @@ import com.liaison.hbase.dto.Value;
  */
 public interface ColSpecWriteFluid<C extends ColSpecWriteFluid<C>> extends ColSpecFluid<C> {
     /**
+     * TODO
+     * @param version
+     * @return
+     * @throws IllegalStateException
+     * @throws IllegalArgumentException
+     */
+    C version(final long version) throws IllegalStateException, IllegalArgumentException;
+    /**
      * Specify a timestamp value to be assigned to the value to be written. If not specified, no
      * timestamp value will be passed to the underlying API, so HBase will use the default, system-
      * generated timestamp.

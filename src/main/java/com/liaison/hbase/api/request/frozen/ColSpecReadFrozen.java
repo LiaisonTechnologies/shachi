@@ -8,10 +8,13 @@
  */
 package com.liaison.hbase.api.request.frozen;
 
+import com.liaison.hbase.api.request.impl.LongValueSpec;
+
 /**
  * TODO
  * @author Branden Smith; Liaison Technologies, Inc.
  */
 public interface ColSpecReadFrozen {
+    LongValueSpec<?> getVersion();
     boolean isOptional();
 }

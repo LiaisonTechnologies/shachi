@@ -15,6 +15,7 @@ import com.liaison.hbase.dto.NullableValue;
  * @author Branden Smith; Liaison Technologies, Inc.
  */
 public interface ColSpecWriteFrozen extends ColSpecFrozen {
+    Long getVersion();
     Long getTS();
     NullableValue getValue();
 }
