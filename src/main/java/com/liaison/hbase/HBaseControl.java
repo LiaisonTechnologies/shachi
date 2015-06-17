@@ -11,13 +11,16 @@ package com.liaison.hbase;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
+import com.liaison.commons.BytesUtil;
 import com.liaison.commons.DefensiveCopyStrategy;
 import com.liaison.commons.Util;
 import com.liaison.commons.log.LogMeMaybe;
 import com.liaison.hbase.api.request.OperationController;
 import com.liaison.hbase.api.request.frozen.ColSpecWriteFrozen;
+import com.liaison.hbase.api.request.frozen.LongValueSpecFrozen;
 import com.liaison.hbase.api.request.impl.ColSpecRead;
 import com.liaison.hbase.api.request.impl.CondSpec;
+import com.liaison.hbase.api.request.impl.LongValueSpec;
 import com.liaison.hbase.api.request.impl.OperationControllerDefault;
 import com.liaison.hbase.api.request.impl.OperationSpec;
 import com.liaison.hbase.api.request.impl.ReadOpSpecDefault;
@@ -34,8 +37,10 @@ import com.liaison.hbase.exception.HBaseRuntimeException;
 import com.liaison.hbase.exception.HBaseTableRowException;
 import com.liaison.hbase.model.FamilyModel;
 import com.liaison.hbase.model.QualModel;
+import com.liaison.hbase.model.VersioningModel;
 import com.liaison.hbase.resmgr.HBaseResourceManager;
 import com.liaison.hbase.resmgr.res.ManagedTable;
+import com.liaison.hbase.util.HBaseUtil;
 import com.liaison.hbase.util.ReadUtils;
 import org.apache.hadoop.hbase.client.Get;
 import org.apache.hadoop.hbase.client.HTable;
@@ -44,7 +49,10 @@ import org.apache.hadoop.hbase.client.Result;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.util.EnumSet;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -82,7 +90,64 @@ public class HBaseControl implements HBaseStart<OpResultSet>, Closeable {
      * @author Branden Smith; Liaison Technologies, Inc.
      */
     public final class HBaseDelegate {
-        
+
+        private Set<byte[]> getVersionAdjustedQualifiersForRead(final ColSpecRead<ReadOpSpecDefault> colSpec, final FamilyModel colFam, final QualModel colQual, final DefensiveCopyStrategy dcs) {
+            String logMsg;
+            final Set<byte[]> qualSet;
+            final byte[] qualValueBase;
+            final LongValueSpec<?> version;
+            final Long singleVersion;
+            EnumSet<VersioningModel> versioningScheme;
+
+            qualSet = new HashSet<byte[]>();
+            version = colSpec.getVersion();
+            if (version != null) {
+                versioningScheme = colQual.getVersioning();
+                if (versioningScheme == null) {
+                    versioningScheme = colFam.getVersioning();
+                }
+                if (VersioningModel.isQualifierBased(versioningScheme)) {
+                    // we're going to be creating new byte arrays here via concatenation anyway, so
+                    // skip doing the defensive copy
+                    qualValueBase = colQual.getName().getValue(DefensiveCopyStrategy.NEVER);
+                    singleVersion = version.singleValue();
+                    if (singleVersion == null) {
+                        /*
+                         * TODO
+                         * Per the API, a null value here means that the version number specified
+                         * for reading is a range, not a single version value. That feature is not
+                         * currently implemented, so for now throw an UnsupportedOpExc. Determine
+                         * how to make this work at a later time.
+                         */
+                        logMsg = "Read spec specifies a range of version numbers "
+                                 + version
+                                 + "; not yet supported";
+                        throw new UnsupportedOperationException(logMsg);
+                    }
+                    /*
+                     * For each versioning scheme specified by the model, add a qualifier to the
+                     * read spec, modified to accommodate the versioning scheme, if necessary.
+                     * TODO (important): not clear whether the Set is able to provide uniqueness
+                     *     guarantees with byte[] type; investigate/correct, if not
+                     * TODO: does this work for multiple overlapping versioning schemes?
+                     */
+                    for (VersioningModel verModel : versioningScheme) {
+                        qualSet.add(HBaseUtil.appendVersionToQual(qualValueBase,
+                                                                  singleVersion,
+                                                                  verModel));
+                    }
+                }
+            }
+            /*
+             * If the above logic did not indicate that qualifier-based versioning is in-use, then
+             * add a single element to the set containing the unmodified qualifier.
+             */
+            if (qualSet.size() <= 0) {
+                qualSet.add(colQual.getName().getValue(dcs));
+            }
+            return qualSet;
+        }
+
         /**
          * 
          * @param logMethodName
@@ -94,7 +159,7 @@ public class HBaseControl implements HBaseStart<OpResultSet>, Closeable {
             final FamilyModel colFam;
             final QualModel colQual;
             final byte[] famValue;
-            final byte[] qualValue;
+            final Set<byte[]> qualValues;
 
             if (colSpec != null) {
                 colFam = colSpec.getFamily();
@@ -102,20 +167,24 @@ public class HBaseControl implements HBaseStart<OpResultSet>, Closeable {
                 if (colFam != null) {
                     famValue = colFam.getName().getValue(dcs);
                     if (colQual != null) {
-                        /*
-                        TODO (VERSIONING):
-                        Determine how to adjust this qualifier value when versioning model uses
-                        qualifier-based versioning (VersioningModel.QUALIFIER_*)
-                         */
-                        qualValue = colQual.getName().getValue(dcs);
-                        
-                        readGet.addColumn(famValue, qualValue);
-                        LOG.trace(logMethodName,
-                                  ()->"adding to GET: family=",
-                                  ()->colFam,
-                                  ()->", qual=",
-                                  ()->colQual);
+                        qualValues =
+                            getVersionAdjustedQualifiersForRead(colSpec, colFam, colQual, dcs);
+                        for (byte[] qualValue : qualValues) {
+                            readGet.addColumn(famValue, qualValue);
+                            LOG.trace(logMethodName,
+                                      ()->"adding to GET: family=",
+                                      ()->colFam,
+                                      ()->", qual=",
+                                      ()->colQual,
+                                      ()->", actual-qual=",
+                                      // TODO? this toString will probably print out garbage if
+                                      // there is a version number appended to the qualifier...
+                                      ()->BytesUtil.toString(qualValue));
+                        }
                     } else {
+                        /*
+                         * TODO: versioning on qualifier when reading from a full family?
+                         */
                         readGet.addFamily(famValue);
                         LOG.trace(logMethodName,
                                   ()->"adding to GET: family=",
@@ -235,7 +304,61 @@ public class HBaseControl implements HBaseStart<OpResultSet>, Closeable {
             }
             return writeCompleted;
         }
-        
+
+        private void setReadTimestamp(final String logMethodName, final Get readGet, final ReadOpSpecDefault readSpec, final RowSpec<?> tableRowSpec) throws HBaseTableRowException {
+            String logMsg;
+            final LongValueSpecFrozen commonVer;
+            final EnumSet<VersioningModel> commonVerConf;
+            final LongValueSpecFrozen timestamp;
+
+            commonVer = readSpec.getCommonVersion();
+            commonVerConf = readSpec.getCommonVersioningConfig();
+
+            if ((commonVer != null)
+                && (commonVerConf != null)
+                && (VersioningModel.isTimestampBased(commonVerConf))) {
+                /*
+                 * TODO: Determine how to support multiple overlapping versioning models; that
+                 *     feature is not supported here yet, at all
+                 * TODO: Determine how to support TIMESTAMP_CHRONO, which would need to subtract
+                 *     the version numbers from Long.MAX_VALUE and invert the range. Not
+                 *     implemented yet.
+                 * TODO: should probably throw some kind of validation exception earlier if both
+                 *     timestamp and version information are specified, and the versioning conflict
+                 *     specifies to use the timestamp... that is never a valid configuration, as
+                 *     the literally-specified timestamp will always be overridden by the
+                 *     versioning-specified timestamp
+                 */
+                if (commonVerConf.contains(VersioningModel.TIMESTAMP_CHRONO)) {
+                    logMsg = "Chronological versioning via the timestamp ("
+                             + VersioningModel.class.getSimpleName()
+                             + "."
+                             + VersioningModel.TIMESTAMP_CHRONO
+                             + " is not yet implemented";
+                    throw new UnsupportedOperationException(logMsg);
+                }
+                // TODO: this code assumes TIMESTAMP_LATEST is the only versioning scheme
+                timestamp = commonVer;
+            } else {
+                timestamp = readSpec.getAtTime();
+            }
+            try {
+                ReadUtils.applyTS(readGet, timestamp);
+                LOG.trace(logMethodName,
+                          ()->"applied timestamp/version constraints (if applicable): ts=",
+                          ()->readSpec.getAtTime(),
+                          ()->",common-version=",
+                          ()->commonVer,
+                          ()->",common-versioning-config=",
+                          ()->readSpec.getCommonVersioningConfig());
+            } catch (IOException ioExc) {
+                logMsg = "Failed to apply timestamp cond to READ per spec: "
+                         + readSpec + "; " + ioExc;
+                LOG.error(logMethodName, logMsg, ioExc);
+                throw new HBaseTableRowException(tableRowSpec, logMsg, ioExc);
+            }
+        }
+
         /**
          * 
          * @param readSpec
@@ -249,6 +372,7 @@ public class HBaseControl implements HBaseStart<OpResultSet>, Closeable {
             final String logMethodName;
             final DefensiveCopyStrategy dcs;
             final RowSpec<?> tableRowSpec;
+            final Integer maxResultsPerFamily;
             final Get readGet;
             final List<ColSpecRead<ReadOpSpecDefault>> colReadList;
             final Result res;
@@ -279,17 +403,16 @@ public class HBaseControl implements HBaseStart<OpResultSet>, Closeable {
                 LOG.trace(logMethodName, ()->"table obtained");
                 
                 readGet = new Get(tableRowSpec.getRowKey().getValue(dcs));
-                try {
-                    ReadUtils.applyTS(readGet, readSpec);
+
+                maxResultsPerFamily = readSpec.getMaxEntriesPerFamily();
+                if (maxResultsPerFamily != null) {
+                    readGet.setMaxResultsPerColumnFamily(maxResultsPerFamily.intValue());
                     LOG.trace(logMethodName,
-                              ()->"applied timestamp constraints (if applicable): ",
-                              ()->readSpec.getAtTime());
-                } catch (IOException ioExc) {
-                    logMsg = "Failed to apply timestamp cond to READ per spec: "
-                             + readSpec + "; " + ioExc;
-                    LOG.error(logMethodName, logMsg, ioExc);
-                    throw new HBaseTableRowException(tableRowSpec, logMsg, ioExc);
+                              ()->"applied maximum number of columns to read per family: ",
+                              ()->maxResultsPerFamily);
                 }
+
+                setReadTimestamp(logMethodName, readGet, readSpec, tableRowSpec);
                 
                 colReadList = readSpec.getWithColumn();
                 LOG.trace(logMethodName,

@@ -8,22 +8,23 @@
  */
 package com.liaison.hbase.util;
 
-import com.liaison.hbase.api.request.impl.LongValueSpec;
-import com.liaison.hbase.api.request.impl.ReadOpSpecDefault;
+import com.liaison.hbase.api.request.frozen.LongValueSpecFrozen;
 import org.apache.hadoop.hbase.client.Get;
 
 import java.io.IOException;
 
 public final class ReadUtils {
 
-    public static void applyTS(final Get get, final ReadOpSpecDefault readSpec) throws IOException {
-        final LongValueSpec<?> atTime;
+    /*
+     * TODO: extract more of what is currently in HBaseControl.HBaseDelegate into this class
+     */
+
+    public static void applyTS(final Get get, final LongValueSpecFrozen atTime) throws IOException {
         final Long lowerIncObj;
         final Long upperExcObj;
         final long min;
         final long max;
-        
-        atTime = readSpec.getAtTime();
+
         if (atTime != null) {
             lowerIncObj = atTime.getLowerBoundInclusive();
             upperExcObj = atTime.getUpperBoundExclusive();

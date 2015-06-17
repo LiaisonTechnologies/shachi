@@ -9,7 +9,9 @@
 package com.liaison.hbase.api.request.frozen;
 
 import com.liaison.hbase.api.request.impl.ReadOpSpecDefault;
+import com.liaison.hbase.model.VersioningModel;
 
+import java.util.EnumSet;
 import java.util.List;
 
 /**
@@ -17,6 +19,36 @@ import java.util.List;
  * @author Branden Smith; Liaison Technologies, Inc.
  */
 public interface ReadOpSpecFrozen extends TableRowOpSpecFrozen<ReadOpSpecDefault> {
+
+    /**
+     * TODO
+     * @return
+     * @throws IllegalStateException
+     */
+    public EnumSet<VersioningModel> getCommonVersioningConfig() throws IllegalStateException;
+
+    /**
+     * TODO
+     * @return
+     * @throws IllegalStateException
+     */
+    public LongValueSpecFrozen getCommonVersion() throws IllegalStateException;
+
+    /**
+     * TODO
+     * @return
+     */
+    Integer getMaxEntriesPerFamily();
+
+    /**
+     * TODO
+     * @return
+     */
     LongValueSpecFrozen getAtTime();
+
+    /**
+     * TODO
+     * @return
+     */
     List<? extends ColSpecReadFrozen> getWithColumn();
 }

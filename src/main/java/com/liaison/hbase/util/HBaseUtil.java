@@ -10,6 +10,7 @@ package com.liaison.hbase.util;
 
 import co.paralleluniverse.fibers.SuspendExecution;
 import co.paralleluniverse.strands.Strand;
+import com.liaison.commons.BytesUtil;
 import com.liaison.commons.DefensiveCopyStrategy;
 import com.liaison.commons.Util;
 import com.liaison.commons.log.LogMeMaybe;
@@ -17,6 +18,7 @@ import com.liaison.hbase.context.HBaseContext;
 import com.liaison.hbase.exception.HBaseInitializationException;
 import com.liaison.hbase.model.Name;
 import com.liaison.hbase.model.TableModel;
+import com.liaison.hbase.model.VersioningModel;
 import com.liaison.hbase.resmgr.ResourceConnectTolerance;
 import org.apache.hadoop.hbase.HColumnDescriptor;
 import org.apache.hadoop.hbase.HTableDescriptor;
@@ -27,9 +29,35 @@ import org.apache.hadoop.hbase.client.HTable;
 import java.io.IOException;
 
 public final class HBaseUtil {
-    
+
+    public static final byte[] DELIM_VERSION = {0};
+
     private static final LogMeMaybe LOG;
-    
+
+    public static byte[] appendVersionToQual(final byte[] original, final long version, final VersioningModel model) throws ArithmeticException {
+        String logMsg;
+        final byte[] versionBytes;
+
+        if (model == VersioningModel.QUALIFIER_LATEST) {
+            if (version < 0) {
+                logMsg = "Overflow when computing version number: versioning model ("
+                         + VersioningModel.QUALIFIER_LATEST
+                         + ") requires subtraction from Long.MAX_VALUE for most-recent-first "
+                         + "ordering, but initial version number is negative, and Long.MAX_VALUE -"
+                         + " version > Long.MAX_VALUE for version < 0";
+                throw new ArithmeticException(logMsg);
+            }
+            versionBytes = BytesUtil.toBytes(Long.MAX_VALUE - version);
+        } else {
+            versionBytes = BytesUtil.toBytes(version);
+        }
+        /*
+         * TODO: make the format for a field identifier which includes a version configurable,
+         * rather than using the original + 0-byte + version format for all cases
+         */
+        return BytesUtil.concat(original, DELIM_VERSION, versionBytes);
+    }
+
     public static final void createTableFromModel(final HBaseAdmin tableAdmin, final TableModel model, Name tableName, final DefensiveCopyStrategy dcs) throws IOException {
         final String logMethodName;
         final HTableDescriptor tableDesc;

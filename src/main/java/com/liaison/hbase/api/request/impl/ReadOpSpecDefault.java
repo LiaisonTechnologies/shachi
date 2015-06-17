@@ -11,6 +11,7 @@ package com.liaison.hbase.api.request.impl;
 import com.liaison.commons.Util;
 import com.liaison.hbase.api.request.ReadOpSpec;
 import com.liaison.hbase.api.request.fluid.ColSpecReadFluid;
+import com.liaison.hbase.api.request.frozen.LongValueSpecFrozen;
 import com.liaison.hbase.api.response.OpResultSet;
 import com.liaison.hbase.context.HBaseContext;
 import com.liaison.hbase.exception.SpecValidationException;
@@ -40,14 +41,33 @@ public final class ReadOpSpecDefault extends TableRowOpSpec<ReadOpSpecDefault> i
     // ||    INSTANCE PROPERTIES                                                                 ||
     // ||----------------------------------------------------------------------------------------||
 
+    private Integer maxEntriesPerFamily;
     private LongValueSpec<ReadOpSpecDefault> atTime;
     private final List<ColSpecRead<ReadOpSpecDefault>> withColumn;
+
+    private EnumSet<VersioningModel> commonVersioningConfig;
+    private LongValueSpecFrozen commonVersion;
     
     // ||----(instance properties)---------------------------------------------------------------||
     
     // ||========================================================================================||
     // ||    INSTANCE METHODS: API: FLUID                                                        ||
     // ||----------------------------------------------------------------------------------------||
+
+    @Override
+    public ReadOpSpecDefault atMost(final int maxEntriesPerFamily) throws IllegalArgumentException, IllegalStateException {
+        String logMsg;
+        if (maxEntriesPerFamily < 0) {
+            logMsg =
+                "Maximum number of entries to read per column family must be >= 0; specified: "
+                + maxEntriesPerFamily;
+            throw new IllegalArgumentException(logMsg);
+        }
+        prepMutation();
+        Util.validateExactlyOnce("atMost", Integer.class, this.maxEntriesPerFamily);
+        this.maxEntriesPerFamily = Integer.valueOf(maxEntriesPerFamily);
+        return self();
+    }
 
     @Override
     public LongValueSpec<ReadOpSpecDefault> atTime() throws IllegalStateException {
@@ -95,6 +115,34 @@ public final class ReadOpSpecDefault extends TableRowOpSpec<ReadOpSpecDefault> i
     // ||----------------------------------------------------------------------------------------||
 
     @Override
+    public EnumSet<VersioningModel> getCommonVersioningConfig() throws IllegalStateException {
+        /*
+         * Value is only populated after the validation step calls ensureCompatibleVersioning to
+         * iterate through subordinate specifications to ensure that they use a common versioning
+         * scheme/number if any of them use timestamp-based versioning. Therefore, this accessor
+         * will always return null (meaninglessly) if the spec state is still unvalidated, i.e.
+         * FLUID. In that case, throw IllegalStateException.
+         */
+        prepAccess("getCommonVersioningConfig");
+        return this.commonVersioningConfig;
+    }
+    @Override
+    public LongValueSpecFrozen getCommonVersion() throws IllegalStateException {
+        /*
+         * Value is only populated after the validation step calls ensureCompatibleVersioning to
+         * iterate through subordinate specifications to ensure that they use a common versioning
+         * scheme/number if any of them use timestamp-based versioning. Therefore, this accessor
+         * will always return null (meaninglessly) if the spec state is still unvalidated, i.e.
+         * FLUID. In that case, throw IllegalStateException.
+         */
+        prepAccess("getCommonVersion");
+        return this.commonVersion;
+    }
+    @Override
+    public Integer getMaxEntriesPerFamily() {
+        return this.maxEntriesPerFamily;
+    }
+    @Override
     public LongValueSpec<ReadOpSpecDefault> getAtTime() {
         return this.atTime;
     }
@@ -136,7 +184,7 @@ public final class ReadOpSpecDefault extends TableRowOpSpec<ReadOpSpecDefault> i
         establishedVersioningConfigIsTimestampBased = false;
 
         /*
-         * It is only necessary to check for versioning configuation + version number conflicts if
+         * It is only necessary to check for versioning configuration + version number conflicts if
          * there is more than one read column in the list of subordinate specifications.
          */
         if (subordSpecList.size() > 1) {
@@ -200,6 +248,11 @@ public final class ReadOpSpecDefault extends TableRowOpSpec<ReadOpSpecDefault> i
                          * is timestamp-based, then throw a SpecValidationException if either:
                          *    (a) the versioning configurations are NOT identical, or
                          *    (b) the version numbers (or ranges) are NOT identical
+                         *
+                         * Since this validation step ensures that all read columns use the same
+                         * versioning configuration and version number, copy both the versioning
+                         * config and the version number/range into this ReadOpSpec, for easier
+                         * access during execution.
                          */
                         if ((establishedVersioningConfigIsTimestampBased
                              || VersioningModel.isTimestampBased(currentVersioningConfig))
@@ -235,6 +288,8 @@ public final class ReadOpSpecDefault extends TableRowOpSpec<ReadOpSpecDefault> i
                 }
             }
         }
+        this.commonVersioningConfig = establishedVersioningConfig;
+        this.commonVersion = establishedReadVersionSpec;
     }
 
     @Override

@@ -1,7 +1,6 @@
 package com.liaison.hbase.model;
 
 import com.google.common.collect.Sets;
-import jdk.nashorn.internal.runtime.Version;
 
 import java.util.EnumSet;
 import java.util.Set;
@@ -57,7 +56,7 @@ public enum VersioningModel {
                    QUALIFIER_LATEST);
 
     private static boolean setsOverlap(final Set<VersioningModel> set1, final Set<VersioningModel> set2) {
-        return !Sets.intersection(set1, set2).isEmpty();
+        return ((set1 != null) && (set2 != null) && (!Sets.intersection(set1, set2).isEmpty()));
     }
 
     /**

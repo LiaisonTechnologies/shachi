@@ -10,7 +10,6 @@ package com.liaison.hbase.api.opspec;
 
 import com.liaison.hbase.api.request.impl.LongValueSpec;
 import com.liaison.hbase.api.request.impl.NoOpSpec;
-import com.liaison.hbase.api.request.impl.OperationSpec;
 import org.mockito.Mockito;
 import org.testng.Assert;
 import org.testng.annotations.Test;

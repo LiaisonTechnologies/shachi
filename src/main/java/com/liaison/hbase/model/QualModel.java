@@ -9,7 +9,6 @@
 package com.liaison.hbase.model;
 
 import com.liaison.commons.Util;
-import jdk.nashorn.internal.runtime.Version;
 
 import java.util.EnumSet;
 

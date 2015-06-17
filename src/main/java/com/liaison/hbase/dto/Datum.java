@@ -24,8 +24,13 @@ public final class Datum extends Value implements Serializable {
 
     public static final class Builder extends AbstractValueBuilder<Datum, Builder> {
         private Long tsObj;
+        private Long version;
         public Builder ts(final long ts) {
             this.tsObj = Long.valueOf(ts);
+            return this;
+        }
+        public Builder version(final long version) {
+            this.version = Long.valueOf(version);
             return this;
         }
         @Override
@@ -38,11 +43,20 @@ public final class Datum extends Value implements Serializable {
         }
         private Builder() throws IllegalArgumentException {
             super();
+            this.tsObj = null;
+            this.version = null;
         }
     }
     
     public static Builder getDatumBuilder() {
         return new Builder();
+    }
+    public static final Datum of(final byte[] value, final long timestamp, final long version, final DefensiveCopyStrategy copyStrategy) {
+        return getDatumBuilder().value(value, copyStrategy).ts(timestamp).build();
+    }
+    @Deprecated
+    public static final Datum of(final byte[] value, final long timestamp, final long version) {
+        return getDatumBuilder().value(value).ts(timestamp).build();
     }
     public static final Datum of(final byte[] value, final long timestamp, final DefensiveCopyStrategy copyStrategy) {
         return getDatumBuilder().value(value, copyStrategy).ts(timestamp).build();
@@ -53,12 +67,28 @@ public final class Datum extends Value implements Serializable {
     }
     
     private final long ts;
+    /**
+     * The version number as stored in HBase, populated IFF the corresponding model/schema
+     * specifies a versioning strategy. If the model does not specify versioning, then this field
+     * will be null.
+     */
+    private final Long version;
     
     private Integer hc;
     private String strRep;
     
     public long getTS() {
         return ts;
+    }
+
+    /**
+     * Returns the version number as stored in HBase, populated IFF the corresponding model/schema
+     * specifies a versioning strategy. If the model does not specify versioning, then this field
+     * will be null.
+     * @return the column version number, if the corresponding model configures a versioning scheme
+     */
+    public Long getVersion() {
+        return this.version;
     }
 
     @Override
@@ -96,5 +126,6 @@ public final class Datum extends Value implements Serializable {
         Util.ensureNotNull(build.value, this, "value", byte[].class);
         Util.ensureNotNull(build.tsObj, this, "tsObj", Long.class);
         this.ts = build.tsObj.longValue();
+        this.version = build.version;
     }
 }

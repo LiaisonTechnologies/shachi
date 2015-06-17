@@ -83,6 +83,20 @@ public abstract class StatefulSpec<A extends StatefulSpec<A, P>, P extends TreeN
         this.strRep.clear();
         this.hc = null;
     }
+
+    /**
+     *
+     * @param operationName
+     * @throws IllegalStateException
+     */
+    protected final void prepAccess(final Object operationName) throws IllegalStateException {
+        if (!isFrozen()) {
+            throw new IllegalStateException("Operation '"
+                                            + String.valueOf(operationName)
+                                            + "'not supported until spec is frozen: "
+                                            + toString());
+        }
+    }
     
     /**
      * TODO

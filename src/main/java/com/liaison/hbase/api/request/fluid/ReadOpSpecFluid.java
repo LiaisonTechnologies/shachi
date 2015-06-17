@@ -24,6 +24,15 @@ import java.util.function.BiConsumer;
  */
 public interface ReadOpSpecFluid<Z> extends OpSpecFluid<Z> {
     /**
+     * Specify the maximum number of results to retrieve per column family.
+     * @param resultsPerFamily the maximum number of results to retrieve per column family
+     * @return this instance (for fluent/chaining API)
+     * @throws IllegalArgumentException if resultsPerFamily is negative
+     * @throws IllegalStateException if this value is already specified for this read, or if this
+     * operation is not in a fluid state
+     */
+    ReadOpSpecFluid<Z> atMost(int resultsPerFamily) throws IllegalArgumentException, IllegalStateException;
+    /**
      * Specify the range of timestamp values to which the HBase read operation specified by this
      * spec should be limited.
      * <br><br>
