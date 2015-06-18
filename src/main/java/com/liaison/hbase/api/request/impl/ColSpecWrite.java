@@ -154,10 +154,13 @@ public class ColSpecWrite<P extends OperationSpec<P>> extends ColSpec<ColSpecWri
     // ||    CONSTRUCTORS                                                                        ||
     // ||----------------------------------------------------------------------------------------||
 
-    public ColSpecWrite(final P parent) {
-        super(parent);
+    public ColSpecWrite(final P parent, final Object handle) {
+        super(parent, handle);
         this.ts = null;
         this.version = null;
+    }
+    public ColSpecWrite(final P parent) {
+        this(parent, null);
     }
     
     // ||----(constructors)----------------------------------------------------------------------||

@@ -57,6 +57,10 @@ public class ReadOpResult extends OpResult<ReadOpSpecDefault> {
          * TODO: javadoc
          */
         private Map<ColSpecReadFrozen, List<SingleCellResult>> dataBySpec;
+        /**
+         * TODO: javadoc
+         */
+        private Map<Object, List<SingleCellResult>> dataBySpecHandle;
 
         /**
          * TODO: javadoc
@@ -88,17 +92,13 @@ public class ReadOpResult extends OpResult<ReadOpSpecDefault> {
         private ReadOpResultBuilder addCellResult(final ColSpecReadFrozen colSpec, SingleCellResult cellResult) {
             List<SingleCellResult> resList;
             final List<SingleCellResult> existingResList;
+            final Object handle;
 
             Util.ensureNotNull(colSpec, CLOSURENAME_ADD, "colSpec", ColSpecRead.class);
-
-            resList = this.dataBySpec.get(colSpec);
-            if (resList == null) {
-                resList = new LinkedList<SingleCellResult>();
-                existingResList = this.dataBySpec.putIfAbsent(colSpec, resList);
-                if (existingResList != null) {
-                    resList = existingResList;
-                }
-                resList.add(cellResult);
+            Util.putToLinkedListInMap(colSpec, cellResult, this.dataBySpec);
+            handle = colSpec.getHandle();
+            if (handle != null) {
+                Util.putToLinkedListInMap(handle, cellResult, this.dataBySpecHandle);
             }
             return self();
         }
@@ -189,6 +189,7 @@ public class ReadOpResult extends OpResult<ReadOpSpecDefault> {
              */
             this.data = new LinkedHashMap<>();
             this.dataBySpec = new HashMap<>();
+            this.dataBySpecHandle = new HashMap<>();
         }
     }
     
@@ -214,6 +215,10 @@ public class ReadOpResult extends OpResult<ReadOpSpecDefault> {
      * TODO: javadoc
      */
     private final Map<ColSpecReadFrozen, List<SingleCellResult>> dataBySpec;
+    /**
+     * TODO: javadoc
+     */
+    private final Map<Object, List<SingleCellResult>> dataBySpecHandle;
 
     private Datum toContent(final SingleCellResult cellRes) throws HBaseException {
         final HBaseException hbExc;
@@ -262,17 +267,19 @@ public class ReadOpResult extends OpResult<ReadOpSpecDefault> {
 
     /**
      * TODO: javadoc
-     * @param colSpec
+     * @param key
+     * @param dataMap
+     * @param <K>
      * @return
      * @throws HBaseException
      */
-    public List<Datum> getData(final ColSpecReadFrozen colSpec) throws HBaseException {
+    private <K> List<Datum> getDataBy(final K key, final Map<K, List<SingleCellResult>> dataMap) throws HBaseException {
         final List<Datum> dataList;
         final List<SingleCellResult> cellResList;
         Datum content;
 
         dataList = new LinkedList<Datum>();
-        cellResList = this.dataBySpec.get(colSpec);
+        cellResList = dataMap.get(key);
         if (cellResList == null) {
             return Collections.unmodifiableList(dataList);
         }
@@ -286,7 +293,27 @@ public class ReadOpResult extends OpResult<ReadOpSpecDefault> {
     }
 
     /**
-     *
+     * TODO: javadoc
+     * @param colSpec
+     * @return
+     * @throws HBaseException
+     */
+    public List<Datum> getData(final ColSpecReadFrozen colSpec) throws HBaseException {
+        return getDataBy(colSpec, this.dataBySpec);
+    }
+
+    /**
+     * TODO: javadoc
+     * @param handle
+     * @return
+     * @throws Exception
+     */
+    public List<Datum> getData(final Object handle) throws HBaseException {
+        return getDataBy(handle, this.dataBySpecHandle);
+    }
+
+    /**
+     * TODO: javadoc
      * @param otherOpResult
      * @return
      */
@@ -331,5 +358,6 @@ public class ReadOpResult extends OpResult<ReadOpSpecDefault> {
         }
         this.data = Collections.unmodifiableMap(build.data);
         this.dataBySpec = Collections.unmodifiableMap(build.dataBySpec);
+        this.dataBySpecHandle = new HashMap<>();
     }
 }

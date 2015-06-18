@@ -181,10 +181,13 @@ public final class ColSpecRead<P extends OperationSpec<P>> extends ColSpec<ColSp
     // ||    CONSTRUCTORS                                                                        ||
     // ||----------------------------------------------------------------------------------------||
 
-    public ColSpecRead(final P parent) {
-        super(parent);
+    public ColSpecRead(final P parent, final Object handle) {
+        super(parent, handle);
         this.optional = false;
         this.resultColumnAssoc = null;
+    }
+    public ColSpecRead(final P parent) {
+        this(parent, null);
     }
     
     // ||----(constructors)----------------------------------------------------------------------||

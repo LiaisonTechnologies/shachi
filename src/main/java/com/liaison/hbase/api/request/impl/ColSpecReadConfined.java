@@ -24,6 +24,11 @@ public class ColSpecReadConfined extends TreeNodeRoot<ColSpecReadConfined> imple
     private final ColSpecRead<ReadOpSpecDefault> colSpecRead;
 
     @Override
+    public ColSpecReadConfined handle(Object handle) throws IllegalStateException {
+        colSpecRead.handle(handle);
+        return self();
+    }
+    @Override
     public ColSpecReadConfined fam(final FamilyModel family) throws IllegalStateException, IllegalArgumentException {
         colSpecRead.fam(family);
         return self();

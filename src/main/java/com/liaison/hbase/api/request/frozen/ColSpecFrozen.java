@@ -16,6 +16,7 @@ import com.liaison.hbase.model.QualModel;
  * @author Branden Smith; Liaison Technologies, Inc.
  */
 public interface ColSpecFrozen {
+    Object getHandle();
     FamilyModel getFamily();
     QualModel getColumn();
 }

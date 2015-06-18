@@ -17,7 +17,7 @@ import java.util.Set;
  * TODO
  * @author Branden Smith; Liaison Technologies, Inc.
  */
-public interface ColSpecReadFrozen {
+public interface ColSpecReadFrozen extends ColSpecFrozen {
 
     /**
      * TODO

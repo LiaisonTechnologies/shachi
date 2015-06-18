@@ -115,7 +115,7 @@ public class TestMapREnd2End {
                     MapRHBaseContext
                         .getBuilder()
                         .id(CONTEXT_ID_1)
-                        .configProvider(() -> HBaseConfiguration.create())
+                        .configProvider(HBaseConfiguration::create)
                         .build(),
                     SimpleHBaseResourceManager.INSTANCE);
 
@@ -192,7 +192,7 @@ public class TestMapREnd2End {
                     MapRHBaseContext
                         .getBuilder()
                         .id(CONTEXT_ID_2)
-                        .configProvider(() -> HBaseConfiguration.create())
+                        .configProvider(HBaseConfiguration::create)
                         .build(),
                     SimpleHBaseResourceManager.INSTANCE);
             
@@ -274,7 +274,7 @@ public class TestMapREnd2End {
                         .getBuilder()
                         .id(CONTEXT_ID_3)
                         .asyncConfig(AsyncConfigDefault.getBuilder().enabled().build())
-                        .configProvider(() -> HBaseConfiguration.create())
+                        .configProvider(HBaseConfiguration::create)
                         .build(),
                     PoolingHBaseResourceManager.INSTANCE);
             

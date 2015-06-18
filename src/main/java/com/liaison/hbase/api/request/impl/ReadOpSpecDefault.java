@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 
 /**
  * 
@@ -100,30 +101,52 @@ public final class ReadOpSpecDefault extends TableRowOpSpec<ReadOpSpecDefault> i
         setTableRow(rowSpec);
         return rowSpec;
     }
-    
+
     @Override
-    public ColSpecRead<ReadOpSpecDefault> with() throws IllegalStateException {
+    public ColSpecRead<ReadOpSpecDefault> with(final Object handle) throws IllegalStateException {
         final ColSpecRead<ReadOpSpecDefault> withCol;
         prepMutation();
-        withCol = new ColSpecRead<>(this);
+        withCol = new ColSpecRead<>(this, handle);
         this.withColumn.add(withCol);
         return withCol;
     }
     
     @Override
-    public <X> ReadOpSpecDefault withAllOf(final Iterable<X> sourceData, final BiConsumer<? super X, ColSpecReadFluid<?>> dataToColumnGenerator) {
+    public ColSpecRead<ReadOpSpecDefault> with() throws IllegalStateException {
+        return with(null);
+    }
+    
+    @Override
+    public <X> ReadOpSpecDefault withAllOf(final Iterable<X> sourceData, final BiFunction<? super X, ColSpecReadFluid<?>, Object> dataToColumnGenerator) {
         ColSpecRead<ReadOpSpecDefault> withCol;
+        Object handle;
+
+        // TODO: identical to similar function in WriteOpSpecDefault; could code be combined?
+
         prepMutation();
         if (sourceData != null) {
             for (X element : sourceData) {
                 withCol = new ColSpecRead<>(this);
-                dataToColumnGenerator.accept(element, new ColSpecReadConfined(withCol));
-                this.withColumn.add(withCol);
+                handle = dataToColumnGenerator.apply(element, new ColSpecReadConfined(withCol));
+                this.withColumn.add(withCol.handle(handle));
             }
         }
         return self();
     }
-    
+
+    @Override
+    public <X> ReadOpSpecDefault withAllOf(final Iterable<X> sourceData, final BiConsumer<? super X, ColSpecReadFluid<?>> dataToColumnGenerator) {
+
+        // TODO: identical to similar function in WriteOpSpecDefault; could code be combined?
+
+        return withAllOf(sourceData,
+                         // convert the BiConsumer to a null-returning BiFunction
+                         (X sourceDataElement, ColSpecReadFluid<?> colSpec) -> {
+                             dataToColumnGenerator.accept(sourceDataElement, colSpec);
+                             return null;
+                         });
+    }
+
     // ||----(instance methods: API: fluid)------------------------------------------------------||
     
     // ||========================================================================================||

@@ -10,7 +10,10 @@ package com.liaison.hbase.api.response;
 
 import com.liaison.commons.BytesUtil;
 import com.liaison.commons.DefensiveCopyStrategy;
+import com.liaison.hbase.api.request.ReadOpSpec;
 import com.liaison.hbase.api.request.frozen.ColSpecReadFrozen;
+import com.liaison.hbase.api.request.frozen.ReadOpSpecFrozen;
+import com.liaison.hbase.api.request.frozen.WriteOpSpecFrozen;
 import com.liaison.hbase.api.request.impl.ColSpecRead;
 import com.liaison.hbase.api.request.impl.OperationSpec;
 import com.liaison.hbase.api.request.impl.ReadOpSpecDefault;
@@ -216,6 +219,13 @@ public class OpResultSet implements Serializable {
     public OpResult<?> getResult(final OperationSpec<?> spec) {
         return this.dataBySpec.get(spec);
     }
+    public ReadOpResult getReadResult(final ReadOpSpecFrozen spec) throws ClassCastException {
+        return (ReadOpResult) getResult(spec);
+    }
+    public WriteOpResult getWriteResult(final WriteOpSpecFrozen spec) throws ClassCastException {
+        return (WriteOpResult) getResult(spec);
+    }
+
     /**
      * TODO
      * @param handle
@@ -224,6 +234,13 @@ public class OpResultSet implements Serializable {
     public OpResult<?> getResult(final Object handle) {
         return this.dataByHandle.get(handle);
     }
+    public ReadOpResult getReadResult(final Object handle) throws ClassCastException {
+        return (ReadOpResult) getResult(handle);
+    }
+    public WriteOpResult getWriteResult(final Object handle) throws ClassCastException {
+        return (WriteOpResult) getResult(handle);
+    }
+
     /**
      * TODO
      * @return

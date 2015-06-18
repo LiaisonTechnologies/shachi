@@ -61,9 +61,10 @@ public final class CondSpec<P extends OperationSpec<P>> extends ColSpec<CondSpec
     }
     
     @Override
-    public CondSpec<P> empty(final Empty empty) throws IllegalStateException, IllegalArgumentException {
+    public CondSpec<P> empty() throws IllegalStateException, IllegalArgumentException {
         prepMutation();
-        this.value = Util.validateExactlyOnceParam(empty, this, "empty", Empty.class, this.value);
+        Util.validateExactlyOnce("value", Empty.class, this.value);
+        this.value = Empty.getInstance();
         return self();
     }
     

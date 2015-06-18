@@ -38,7 +38,7 @@ public class Value extends NullableValue implements Serializable {
             return new Value(self());
         }
         public Empty voidBuild() {
-            return new Empty(self());
+            return Empty.getInstance();
         }
         
         private Builder() throws IllegalArgumentException {

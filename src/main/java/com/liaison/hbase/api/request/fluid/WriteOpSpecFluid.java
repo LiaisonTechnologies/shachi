@@ -14,6 +14,7 @@ import com.liaison.hbase.api.request.fluid.fluent.CondSpecFluent;
 import com.liaison.hbase.api.request.fluid.fluent.RowSpecFluent;
 
 import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 
 /**
  * Specifies an <strong>HBase write operation</strong> while it is in a fluid state (i.e. wherein
@@ -65,6 +66,13 @@ public interface WriteOpSpecFluid<Z> extends OpSpecFluid<Z> {
      */
     ColSpecWriteFluent<?, ? extends WriteOpSpecFluid<Z>> with() throws IllegalStateException;
     /**
+     * TODO: javadoc
+     * @param handle
+     * @return
+     * @throws IllegalStateException
+     */
+    ColSpecWriteFluent<?, ? extends WriteOpSpecFluid<Z>> with(Object handle) throws IllegalStateException;
+    /**
      * Add a series of column+value specifications to the list of cells which the HBase write
      * operation specified by this spec will write. Unlike {@link #with()}, which returns a
      * {@link ColSpecWriteFluent} instance allowing the cell write parameters for each cell to be
@@ -99,4 +107,12 @@ public interface WriteOpSpecFluid<Z> extends OpSpecFluid<Z> {
      * @see {@link ReadOpSpecFluid#withAllOf(Iterable, BiConsumer)} (equivalent operation on read)
      */
     <X> WriteOpSpecFluid<Z> withAllOf(Iterable<X> sourceData, BiConsumer<X, ColSpecWriteFluid<?>> dataToColumnGenerator);
+    /**
+     * TODO: javadoc
+     * @param sourceData
+     * @param dataToColumnGenerator
+     * @param <X>
+     * @return
+     */
+    <X> WriteOpSpecFluid<Z> withAllOf(Iterable<X> sourceData, BiFunction<X, ColSpecWriteFluid<?>, Object> dataToColumnGenerator);
 }
