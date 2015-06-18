@@ -9,12 +9,37 @@
 package com.liaison.hbase.api.request.frozen;
 
 import com.liaison.hbase.api.request.impl.LongValueSpec;
+import com.liaison.hbase.dto.FamilyQualifierPair;
+
+import java.util.Set;
 
 /**
  * TODO
  * @author Branden Smith; Liaison Technologies, Inc.
  */
 public interface ColSpecReadFrozen {
+
+    /**
+     * TODO
+     * @return
+     */
     LongValueSpec<?> getVersion();
+
+    /**
+     * TODO
+     * @return
+     */
     boolean isOptional();
+
+    /**
+     * TODO
+     * @return
+     */
+    public Set<FamilyQualifierPair> getResultColumnAssoc();
+
+    /**
+     * TODO
+     * @param resultSetKeyAssoc
+     */
+    public void setResultColumnAssoc(Set<FamilyQualifierPair> resultSetKeyAssoc);
 }

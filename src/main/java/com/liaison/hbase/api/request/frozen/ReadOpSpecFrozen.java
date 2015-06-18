@@ -9,10 +9,13 @@
 package com.liaison.hbase.api.request.frozen;
 
 import com.liaison.hbase.api.request.impl.ReadOpSpecDefault;
+import com.liaison.hbase.dto.FamilyQualifierPair;
+import com.liaison.hbase.model.FamilyModel;
 import com.liaison.hbase.model.VersioningModel;
 
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * TODO
@@ -51,4 +54,32 @@ public interface ReadOpSpecFrozen extends TableRowOpSpecFrozen<ReadOpSpecDefault
      * @return
      */
     List<? extends ColSpecReadFrozen> getWithColumn();
+
+    /**
+     * TODO
+     * @param famModel
+     * @param colSpecRead
+     */
+    public void addColumnAssoc(FamilyModel famModel, ColSpecReadFrozen colSpecRead);
+
+    /**
+     * TODO
+     * @param fqp
+     * @param colSpecRead
+     */
+    public void addColumnAssoc(FamilyQualifierPair fqp, ColSpecReadFrozen colSpecRead);
+
+    /**
+     * TODO
+     * @param famModel
+     * @return
+     */
+    public Set<ColSpecReadFrozen> getColumnAssoc(FamilyModel famModel);
+
+    /**
+     * TODO
+     * @param fqp
+     * @return
+     */
+    public Set<ColSpecReadFrozen> getColumnAssoc(FamilyQualifierPair fqp);
 }

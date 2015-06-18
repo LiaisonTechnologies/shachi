@@ -11,13 +11,13 @@ package com.liaison.hbase;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
-import com.liaison.commons.BytesUtil;
 import com.liaison.commons.DefensiveCopyStrategy;
 import com.liaison.commons.Util;
 import com.liaison.commons.log.LogMeMaybe;
 import com.liaison.hbase.api.request.OperationController;
 import com.liaison.hbase.api.request.frozen.ColSpecWriteFrozen;
 import com.liaison.hbase.api.request.frozen.LongValueSpecFrozen;
+import com.liaison.hbase.api.request.frozen.ReadOpSpecFrozen;
 import com.liaison.hbase.api.request.impl.ColSpecRead;
 import com.liaison.hbase.api.request.impl.CondSpec;
 import com.liaison.hbase.api.request.impl.LongValueSpec;
@@ -28,6 +28,7 @@ import com.liaison.hbase.api.request.impl.RowSpec;
 import com.liaison.hbase.api.request.impl.WriteOpSpecDefault;
 import com.liaison.hbase.api.response.OpResultSet;
 import com.liaison.hbase.context.HBaseContext;
+import com.liaison.hbase.dto.FamilyQualifierPair;
 import com.liaison.hbase.dto.NullableValue;
 import com.liaison.hbase.dto.RowKey;
 import com.liaison.hbase.exception.HBaseEmptyResultSetException;
@@ -36,6 +37,7 @@ import com.liaison.hbase.exception.HBaseMultiColumnException;
 import com.liaison.hbase.exception.HBaseRuntimeException;
 import com.liaison.hbase.exception.HBaseTableRowException;
 import com.liaison.hbase.model.FamilyModel;
+import com.liaison.hbase.model.Name;
 import com.liaison.hbase.model.QualModel;
 import com.liaison.hbase.model.VersioningModel;
 import com.liaison.hbase.resmgr.HBaseResourceManager;
@@ -49,6 +51,7 @@ import org.apache.hadoop.hbase.client.Result;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
@@ -91,15 +94,25 @@ public class HBaseControl implements HBaseStart<OpResultSet>, Closeable {
      */
     public final class HBaseDelegate {
 
-        private Set<byte[]> getVersionAdjustedQualifiersForRead(final ColSpecRead<ReadOpSpecDefault> colSpec, final FamilyModel colFam, final QualModel colQual, final DefensiveCopyStrategy dcs) {
+        /**
+         * TODO
+         * @param colSpec
+         * @param colFam
+         * @param colQual
+         * @param dcs
+         * @return
+         */
+        private Set<FamilyQualifierPair> getVersionAdjustedQualifiersForRead(final ColSpecRead<ReadOpSpecDefault> colSpec, final FamilyModel colFam, final QualModel colQual, final DefensiveCopyStrategy dcs) {
             String logMsg;
-            final Set<byte[]> qualSet;
+            final Set<FamilyQualifierPair> fqpSet;
             final byte[] qualValueBase;
             final LongValueSpec<?> version;
             final Long singleVersion;
             EnumSet<VersioningModel> versioningScheme;
+            QualModel qual;
+            byte[] qualBytes;
 
-            qualSet = new HashSet<byte[]>();
+            fqpSet = new HashSet<FamilyQualifierPair>();
             version = colSpec.getVersion();
             if (version != null) {
                 versioningScheme = colQual.getVersioning();
@@ -132,9 +145,15 @@ public class HBaseControl implements HBaseStart<OpResultSet>, Closeable {
                      * TODO: does this work for multiple overlapping versioning schemes?
                      */
                     for (VersioningModel verModel : versioningScheme) {
-                        qualSet.add(HBaseUtil.appendVersionToQual(qualValueBase,
-                                                                  singleVersion,
-                                                                  verModel));
+                        // create a new qualifier with the version number appended
+                        qualBytes =
+                            HBaseUtil.appendVersionToQual(qualValueBase,
+                                                          singleVersion.longValue(),
+                                                          verModel);
+                        qual = QualModel.of(Name.of(qualBytes, DefensiveCopyStrategy.NEVER));
+                        // create a new family+qualifier pair pairing the existing column family
+                        // with the newly-created qualifier
+                        fqpSet.add(FamilyQualifierPair.of(colFam, qual));
                     }
                 }
             }
@@ -142,50 +161,72 @@ public class HBaseControl implements HBaseStart<OpResultSet>, Closeable {
              * If the above logic did not indicate that qualifier-based versioning is in-use, then
              * add a single element to the set containing the unmodified qualifier.
              */
-            if (qualSet.size() <= 0) {
-                qualSet.add(colQual.getName().getValue(dcs));
+            if (fqpSet.size() <= 0) {
+                fqpSet.add(FamilyQualifierPair.of(colFam, colQual));
             }
-            return qualSet;
+            return Collections.unmodifiableSet(fqpSet);
         }
 
         /**
-         * 
+         * TODO
          * @param logMethodName
          * @param dcs
          * @param readGet
          * @param colSpec
          */
         private void addColumn(final String logMethodName, final DefensiveCopyStrategy dcs, final Get readGet, final ColSpecRead<ReadOpSpecDefault> colSpec) {
+            final ReadOpSpecFrozen readOpSpec;
             final FamilyModel colFam;
             final QualModel colQual;
             final byte[] famValue;
-            final Set<byte[]> qualValues;
+            final Set<FamilyQualifierPair> fqpSet;
 
             if (colSpec != null) {
+                readOpSpec = colSpec.getParent();
                 colFam = colSpec.getFamily();
                 colQual = colSpec.getColumn();
                 if (colFam != null) {
                     famValue = colFam.getName().getValue(dcs);
                     if (colQual != null) {
-                        qualValues =
+                        // Generate the set of family-qualifier pairs to which the given column
+                        // specification refers, adding any version-specific adjustments to the
+                        // qualifier values as needed
+                        fqpSet =
                             getVersionAdjustedQualifiersForRead(colSpec, colFam, colQual, dcs);
-                        for (byte[] qualValue : qualValues) {
-                            readGet.addColumn(famValue, qualValue);
+                        // Update the column specification to associate it with the set of
+                        // generated family-qualifier pairs being added to the HBase Get
+                        colSpec.setResultColumnAssoc(fqpSet);
+                        for (FamilyQualifierPair fqp : fqpSet) {
+                            /*
+                             * TODO
+                             * it might be worth investigating modifying
+                             * getVersionAdjustedQualifiersForRead such that it guarantees that the
+                             * return values are already defensive copies, to avoid the possibility
+                             * of duplicate defensive-copying here
+                             */
+                            readGet.addColumn(fqp.getFamily().getName().getValue(dcs),
+                                              fqp.getQual().getName().getValue(dcs));
+
+                            // Update the parent read operation spec to associate it with this
+                            // family-qualifier pair
+                            readOpSpec.addColumnAssoc(fqp, colSpec);
+
                             LOG.trace(logMethodName,
                                       ()->"adding to GET: family=",
-                                      ()->colFam,
+                                      fqp::getFamily,
                                       ()->", qual=",
-                                      ()->colQual,
-                                      ()->", actual-qual=",
-                                      // TODO? this toString will probably print out garbage if
-                                      // there is a version number appended to the qualifier...
-                                      ()->BytesUtil.toString(qualValue));
+                                      fqp::getQual);
                         }
                     } else {
                         /*
                          * TODO: versioning on qualifier when reading from a full family?
                          */
                         readGet.addFamily(famValue);
+
+                        // Update the parent read operation spec to associate it with this
+                        // column family reference
+                        readOpSpec.addColumnAssoc(colFam, colSpec);
+
                         LOG.trace(logMethodName,
                                   ()->"adding to GET: family=",
                                   ()->colFam);
@@ -195,7 +236,7 @@ public class HBaseControl implements HBaseStart<OpResultSet>, Closeable {
         }
         
         /**
-         * 
+         * TODO
          * @param logMethodName
          * @param dcs
          * @param writePut
@@ -242,7 +283,7 @@ public class HBaseControl implements HBaseStart<OpResultSet>, Closeable {
         }
         
         /**
-         * 
+         * TODO
          * @param logMethodName
          * @param writeToTable
          * @param tableRowSpec
@@ -305,6 +346,14 @@ public class HBaseControl implements HBaseStart<OpResultSet>, Closeable {
             return writeCompleted;
         }
 
+        /**
+         * TODO
+         * @param logMethodName
+         * @param readGet
+         * @param readSpec
+         * @param tableRowSpec
+         * @throws HBaseTableRowException
+         */
         private void setReadTimestamp(final String logMethodName, final Get readGet, final ReadOpSpecDefault readSpec, final RowSpec<?> tableRowSpec) throws HBaseTableRowException {
             String logMsg;
             final LongValueSpecFrozen commonVer;
@@ -360,7 +409,7 @@ public class HBaseControl implements HBaseStart<OpResultSet>, Closeable {
         }
 
         /**
-         * 
+         * TODO
          * @param readSpec
          * @return
          * @throws IllegalArgumentException

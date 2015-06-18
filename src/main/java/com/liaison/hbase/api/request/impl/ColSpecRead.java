@@ -17,6 +17,8 @@ import com.liaison.hbase.model.FamilyModel;
 import com.liaison.hbase.util.SpecUtil;
 
 import java.io.Serializable;
+import java.util.Collections;
+import java.util.Set;
 
 /**
  * TODO
@@ -33,6 +35,17 @@ public final class ColSpecRead<P extends OperationSpec<P>> extends ColSpec<ColSp
 
     private LongValueSpec<ColSpecRead<P>> version;
     private boolean optional;
+
+    /**
+     * Set of FamilyQualifierPair entries generated from this spec when it is translated to a Get
+     * object for HBase execution. Indicates the correspondence between this source specification
+     * and the family/qualifier combinations which key the result set, and used in order to
+     * re-associate the spec with the result in the OpResultSet.
+     *
+     * Note that this field is not populated until the parent ReadOpSpec transitions from FLUID
+     * state to FROZEN.
+     */
+    private Set<FamilyQualifierPair> resultColumnAssoc;
     
     // ||----(instance properties)---------------------------------------------------------------||
     
@@ -75,6 +88,23 @@ public final class ColSpecRead<P extends OperationSpec<P>> extends ColSpec<ColSp
     @Override
     public boolean isOptional() {
         return this.optional;
+    }
+
+    @Override
+    public void setResultColumnAssoc(final Set<FamilyQualifierPair> resultColumnAssoc) {
+        prepPostFreezeOp("setResultColumnAssoc");
+        Util.validateExactlyOnceParam(resultColumnAssoc,
+                                      this,
+                                      "resultColumnAssoc",
+                                      Set.class,
+                                      this.resultColumnAssoc);
+        this.resultColumnAssoc = Collections.unmodifiableSet(resultColumnAssoc);
+    }
+
+    @Override
+    public Set<FamilyQualifierPair> getResultColumnAssoc() {
+        prepPostFreezeOp("getResultColumnAssoc");
+        return this.resultColumnAssoc;
     }
     
     // ||----(instance methods: API: frozen)-----------------------------------------------------||
@@ -154,6 +184,7 @@ public final class ColSpecRead<P extends OperationSpec<P>> extends ColSpec<ColSp
     public ColSpecRead(final P parent) {
         super(parent);
         this.optional = false;
+        this.resultColumnAssoc = null;
     }
     
     // ||----(constructors)----------------------------------------------------------------------||

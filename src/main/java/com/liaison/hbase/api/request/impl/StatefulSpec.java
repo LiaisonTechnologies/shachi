@@ -85,11 +85,14 @@ public abstract class StatefulSpec<A extends StatefulSpec<A, P>, P extends TreeN
     }
 
     /**
-     *
-     * @param operationName
-     * @throws IllegalStateException
+     * Enforces that the given operation may <strong>only</strong> be executed <em>after</em> the
+     * corresponding spec has transitioned from FLUID to FROZEN state.
+     * @param operationName name of the operation to be executed; will be included in the
+     * Exception message if an IllegalStateException is thrown due to the spec not being in frozen
+     * state.
+     * @throws IllegalStateException if the spec is not in frozen state
      */
-    protected final void prepAccess(final Object operationName) throws IllegalStateException {
+    protected final void prepPostFreezeOp(final Object operationName) throws IllegalStateException {
         if (!isFrozen()) {
             throw new IllegalStateException("Operation '"
                                             + String.valueOf(operationName)

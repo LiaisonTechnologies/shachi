@@ -11,9 +11,11 @@ package com.liaison.hbase.api.request.impl;
 import com.liaison.commons.Util;
 import com.liaison.hbase.api.request.ReadOpSpec;
 import com.liaison.hbase.api.request.fluid.ColSpecReadFluid;
+import com.liaison.hbase.api.request.frozen.ColSpecReadFrozen;
 import com.liaison.hbase.api.request.frozen.LongValueSpecFrozen;
 import com.liaison.hbase.api.response.OpResultSet;
 import com.liaison.hbase.context.HBaseContext;
+import com.liaison.hbase.dto.FamilyQualifierPair;
 import com.liaison.hbase.exception.SpecValidationException;
 import com.liaison.hbase.model.FamilyModel;
 import com.liaison.hbase.model.QualModel;
@@ -24,8 +26,11 @@ import com.liaison.hbase.util.StringRepFormat;
 import java.io.Serializable;
 import java.util.Collections;
 import java.util.EnumSet;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.function.BiConsumer;
 
 /**
@@ -47,6 +52,17 @@ public final class ReadOpSpecDefault extends TableRowOpSpec<ReadOpSpecDefault> i
 
     private EnumSet<VersioningModel> commonVersioningConfig;
     private LongValueSpecFrozen commonVersion;
+
+    /**
+     * Association of family+qualifier pairs to the original column specifications which caused
+     * them to be read; used when parsing the result set.
+     */
+    private Map<FamilyQualifierPair, Set<ColSpecReadFrozen>> columnAssoc;
+    /**
+     * Association of family references to the original column specifications which caused them to
+     * be read; used when parsing the result set.
+     */
+    private Map<FamilyModel, Set<ColSpecReadFrozen>> fullFamilyAssoc;
     
     // ||----(instance properties)---------------------------------------------------------------||
     
@@ -114,6 +130,50 @@ public final class ReadOpSpecDefault extends TableRowOpSpec<ReadOpSpecDefault> i
     // ||    INSTANCE METHODS: API: FROZEN                                                       ||
     // ||----------------------------------------------------------------------------------------||
 
+    private <K> void addColumnAssoc(final K key, final ColSpecReadFrozen colSpec, final Map<K, Set<ColSpecReadFrozen>> assoc) {
+        Set<ColSpecReadFrozen> colSpecReadSet;
+        final Set<ColSpecReadFrozen> existing;
+
+        prepPostFreezeOp("addColumnAssoc");
+
+        colSpecReadSet = assoc.get(key);
+        if (colSpecReadSet == null) {
+            colSpecReadSet = new HashSet<ColSpecReadFrozen>();
+            existing = assoc.putIfAbsent(key, colSpecReadSet);
+            // should never happen, as long as the user is not trying to use the spec objects in
+            // multiple threads, but included just in case...
+            if (existing != null) {
+                colSpecReadSet = existing;
+            }
+        }
+        colSpecReadSet.add(colSpec);
+    }
+
+    @Override
+    public void addColumnAssoc(final FamilyModel famModel, final ColSpecReadFrozen colSpecRead) {
+        addColumnAssoc(famModel, colSpecRead, this.fullFamilyAssoc);
+    }
+
+    @Override
+    public void addColumnAssoc(final FamilyQualifierPair fqp, final ColSpecReadFrozen colSpecRead) {
+        addColumnAssoc(fqp, colSpecRead, this.columnAssoc);
+    }
+
+    private <K> Set<ColSpecReadFrozen> getColumnAssoc(final K key, final Map<K, Set<ColSpecReadFrozen>> assoc) {
+        prepPostFreezeOp("getColumnAssoc");
+        return assoc.getOrDefault(key, Collections.emptySet());
+    }
+
+    @Override
+    public Set<ColSpecReadFrozen> getColumnAssoc(final FamilyModel famModel) {
+        return getColumnAssoc(famModel, this.fullFamilyAssoc);
+    }
+
+    @Override
+    public Set<ColSpecReadFrozen> getColumnAssoc(final FamilyQualifierPair fqp) {
+        return getColumnAssoc(fqp, this.columnAssoc);
+    }
+
     @Override
     public EnumSet<VersioningModel> getCommonVersioningConfig() throws IllegalStateException {
         /*
@@ -123,7 +183,7 @@ public final class ReadOpSpecDefault extends TableRowOpSpec<ReadOpSpecDefault> i
          * will always return null (meaninglessly) if the spec state is still unvalidated, i.e.
          * FLUID. In that case, throw IllegalStateException.
          */
-        prepAccess("getCommonVersioningConfig");
+        prepPostFreezeOp("getCommonVersioningConfig");
         return this.commonVersioningConfig;
     }
     @Override
@@ -135,7 +195,7 @@ public final class ReadOpSpecDefault extends TableRowOpSpec<ReadOpSpecDefault> i
          * will always return null (meaninglessly) if the spec state is still unvalidated, i.e.
          * FLUID. In that case, throw IllegalStateException.
          */
-        prepAccess("getCommonVersion");
+        prepPostFreezeOp("getCommonVersion");
         return this.commonVersion;
     }
     @Override

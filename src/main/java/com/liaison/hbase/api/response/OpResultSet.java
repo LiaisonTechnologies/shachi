@@ -10,6 +10,7 @@ package com.liaison.hbase.api.response;
 
 import com.liaison.commons.BytesUtil;
 import com.liaison.commons.DefensiveCopyStrategy;
+import com.liaison.hbase.api.request.frozen.ColSpecReadFrozen;
 import com.liaison.hbase.api.request.impl.ColSpecRead;
 import com.liaison.hbase.api.request.impl.OperationSpec;
 import com.liaison.hbase.api.request.impl.ReadOpSpecDefault;
@@ -19,7 +20,6 @@ import com.liaison.hbase.api.request.impl.WriteOpSpecDefault;
 import com.liaison.hbase.api.response.ReadOpResult.ReadOpResultBuilder;
 import com.liaison.hbase.dto.Datum;
 import com.liaison.hbase.dto.FamilyQualifierPair;
-import com.liaison.hbase.exception.HBaseEmptyCellValueException;
 import com.liaison.hbase.exception.HBaseNoCellException;
 import com.liaison.hbase.exception.HBaseTableRowException;
 import com.liaison.hbase.model.FamilyModel;
@@ -32,7 +32,6 @@ import org.apache.hadoop.hbase.client.Result;
 import java.io.Serializable;
 import java.util.Collections;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 
 public class OpResultSet implements Serializable {
@@ -69,12 +68,12 @@ public class OpResultSet implements Serializable {
         return FamilyQualifierPair.of(family, qual);
     }
     
-    private void populateContent(final ReadOpResultBuilder readResBuild, final ReadOpSpecDefault readSpec, final Result res, final RowSpec<ReadOpSpecDefault> rowSpec, final ColSpecRead<ReadOpSpecDefault> readColSpec) throws HBaseNoCellException, HBaseEmptyCellValueException {
+    private void populateContent(final ReadOpResultBuilder readResBuild, final ReadOpSpecDefault readSpec, final Result res) {
         Datum datum = null;
         byte[] content = null;
         Long contentTS = null;
         FamilyQualifierPair fqp = null;
-        
+
         for (Cell resCell : res.rawCells()) {
             if (resCell != null) {
                 fqp = generateFQP(resCell);
@@ -88,7 +87,7 @@ public class OpResultSet implements Serializable {
                 contentTS = Long.valueOf(resCell.getTimestamp());
                 /*
                  * TODO
-                 * At the moment, the code assumes that an empty return value (byte arrary of
+                 * At the moment, the code assumes that an empty return value (byte array of
                  * zero length) and a null return value are equivalent; need to determine if
                  * that is a valid assumption, and change the logic, if not.
                  */
@@ -113,39 +112,30 @@ public class OpResultSet implements Serializable {
                         Datum.of(content,
                                  contentTS.longValue(),
                                  DefensiveCopyStrategy.NEVER);
+                    /*
+                     * Add this data cell to the master result list corresponding to the read spec,
+                     * i.e. the result list not segregated by source column specification
+                     */
                     readResBuild.add(fqp, datum);
+
+                    /*
+                     * For any column specifications which are associated with this data cell based
+                     * upon the *combination* of family and qualifier (i.e. column specs which
+                     * specified both), add this data cell to the result list for the column spec.
+                     */
+                    for (ColSpecReadFrozen colSpec : readSpec.getColumnAssoc(fqp)) {
+                        readResBuild.add(colSpec, datum);
+                    }
+                    /*
+                     * For any column specifications which are associated with this data cell based
+                     * upon the *combination* of family and qualifier (i.e. column specs which
+                     * specified both), add this data cell to the result list for the column spec.
+                     */
+                    for (ColSpecReadFrozen colSpec : readSpec.getColumnAssoc(fqp.getFamily())) {
+                        readResBuild.add(colSpec, datum);
+                    }
                 }
             }
-        }
-        /*
-         * If the FamilyQualifierPair is null, then it means that it was never set, which means
-         * that the Result set did not contain any non-null cells. In that case, throw a
-         * HBaseNoCellException if the read is non-optional.
-         */
-        if ((fqp == null) && (!readColSpec.isOptional())) {
-            throw new HBaseNoCellException(rowSpec,
-                    readColSpec,
-                    ("READ (handle:'"
-                     + readSpec.getHandle()
-                     + "') returned no Cell for table/row "
-                     + rowSpec
-                     + " and required column "
-                     + readColSpec));
-        }
-        /*
-         * If datum is null, then it means that none of the cells which were returned contained
-         * non-empty data, so throw an HBaseEmptyCellValueException if the read is non-optional.
-         */
-        if (datum == null) {
-            throw new HBaseEmptyCellValueException(rowSpec,
-                                                   readColSpec,
-                                                   ("READ (handle:'"
-                                                    + readSpec.getHandle()
-                                                    + "') returned Cell for table/row "
-                                                    + rowSpec
-                                                    + " and (required) column "
-                                                    + readColSpec
-                                                    + " with null/empty content"));
         }
     }
     
@@ -161,19 +151,26 @@ public class OpResultSet implements Serializable {
      * @throws HBaseTableRowException
      */
     public void assimilate(final ReadOpSpecDefault readSpec, final Result res) throws HBaseTableRowException {
+        String logMsg;
         final ReadOpResultBuilder opResBuild;
         final RowSpec<ReadOpSpecDefault> rowSpec;
-        final List<ColSpecRead<ReadOpSpecDefault>> colSpecList;
 
         rowSpec = readSpec.getTableRow();
         try {
             opResBuild = ReadOpResult.getBuilder().origin(readSpec);
-            colSpecList = readSpec.getWithColumn();
-            for (ColSpecRead<ReadOpSpecDefault> readColSpec : colSpecList) {
-                try {
-                    populateContent(opResBuild, readSpec, res, rowSpec, readColSpec);
-                } catch (HBaseNoCellException | HBaseEmptyCellValueException exc) {
-                    opResBuild.add(readColSpec, exc);
+            populateContent(opResBuild, readSpec, res);
+
+            for (ColSpecRead<ReadOpSpecDefault> readColSpec : readSpec.getWithColumn()) {
+                if ((!readColSpec.isOptional())
+                    && (opResBuild.getDataBySpec(readColSpec).isEmpty())) {
+                    logMsg = "READ (handle:'"
+                             + readSpec.getHandle()
+                             + "') returned no Cell for table/row "
+                             + rowSpec
+                             + " and required column "
+                             + readColSpec;
+                    opResBuild.add(readColSpec,
+                                   new HBaseNoCellException(rowSpec, readColSpec, logMsg));
                 }
             }
             storeResult(readSpec, opResBuild.build());
