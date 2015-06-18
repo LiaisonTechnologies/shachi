@@ -15,6 +15,7 @@ import com.liaison.commons.DefensiveCopyStrategy;
 import com.liaison.commons.Util;
 import com.liaison.commons.log.LogMeMaybe;
 import com.liaison.hbase.api.request.OperationController;
+import com.liaison.hbase.api.request.frozen.ColSpecFrozen;
 import com.liaison.hbase.api.request.frozen.ColSpecWriteFrozen;
 import com.liaison.hbase.api.request.frozen.LongValueSpecFrozen;
 import com.liaison.hbase.api.request.frozen.ReadOpSpecFrozen;
@@ -95,6 +96,127 @@ public class HBaseControl implements HBaseStart<OpResultSet>, Closeable {
     public final class HBaseDelegate {
 
         /**
+         * TODO: javadoc
+         * @param colFam
+         * @param colQual
+         * @return
+         */
+        private EnumSet<VersioningModel> determineVersioningScheme(final FamilyModel colFam, final QualModel colQual) {
+            EnumSet<VersioningModel> versioningScheme;
+
+            versioningScheme = colQual.getVersioning();
+            if (versioningScheme == null) {
+                versioningScheme = colFam.getVersioning();
+            }
+            return versioningScheme;
+        }
+
+        private EnumSet<VersioningModel> determineVersioningScheme(final ColSpecFrozen colSpec) {
+            return determineVersioningScheme(colSpec.getFamily(), colSpec.getColumn());
+        }
+
+        /**
+         * TODO: javadoc
+         * @param fqpSet
+         * @param versioningScheme
+         * @param colFam
+         * @param colQual
+         * @param multiVersion
+         */
+        private void addVersioningDerivedQualifiers(final Set<FamilyQualifierPair> fqpSet, final EnumSet<VersioningModel> versioningScheme, final FamilyModel colFam, final QualModel colQual, final LongValueSpecFrozen multiVersion) {
+            final String logMsg;
+            // TODO: figure out how to implement this (only needed for reads)
+            logMsg = "Read spec specifies a range of version numbers "
+                     + multiVersion
+                     + "; not yet supported";
+            throw new UnsupportedOperationException(logMsg);
+        }
+
+        /**
+         * TODO: javadoc
+         * @param fqpSet
+         * @param versioningScheme
+         * @param colFam
+         * @param colQual
+         * @param singleVersion
+         */
+        private void addVersioningDerivedQualifiers(final Set<FamilyQualifierPair> fqpSet, final EnumSet<VersioningModel> versioningScheme, final FamilyModel colFam, final QualModel colQual, final Long singleVersion) {
+            final byte[] qualValueBase;
+            QualModel qualForWrite;
+            byte[] qualBytes;
+
+            // we're going to be creating new byte arrays here via concatenation anyway, so
+            // skip doing the defensive copy
+            qualValueBase = colQual.getName().getValue(DefensiveCopyStrategy.NEVER);
+
+            /*
+             * For each versioning scheme specified by the model, add a qualifier to the
+             * read spec, modified to accommodate the versioning scheme, if necessary.
+             * TODO (important): not clear whether the Set is able to provide uniqueness
+             *     guarantees with byte[] type; investigate/correct, if not
+             * TODO: does this work for multiple overlapping versioning schemes?
+             */
+            for (VersioningModel verModel : versioningScheme) {
+                // create a new qualifier with the version number appended
+                qualBytes =
+                    HBaseUtil.appendVersionToQual(qualValueBase,
+                        singleVersion.longValue(),
+                        verModel);
+                qualForWrite = QualModel.of(Name.of(qualBytes, DefensiveCopyStrategy.NEVER));
+                // create a new family+qualifier pair pairing the existing column family
+                // with the newly-created qualifier
+                fqpSet.add(FamilyQualifierPair.of(colFam, qualForWrite));
+            }
+        }
+
+        /**
+         * TODO: javadoc
+         * @param fqpSet
+         * @param colFam
+         * @param colQual
+         * @return
+         */
+        private Set<FamilyQualifierPair> prepareHBaseOpQualifierSet(final Set<FamilyQualifierPair> fqpSet, final FamilyModel colFam, final QualModel colQual) {
+            /*
+             * Intended for the case where the logic to add versioning-derived qualifiers indicates
+             * that qualifier versioning is not in use; in that case, adds a single pair using the
+             * base family and qualifier.
+             */
+            if (fqpSet.size() <= 0) {
+                fqpSet.add(FamilyQualifierPair.of(colFam, colQual));
+            }
+            return Collections.unmodifiableSet(fqpSet);
+        }
+
+        /**
+         * TODO: javadoc
+         * @param colSpec
+         * @param colFam
+         * @param colQual
+         * @param dcs
+         * @return
+         */
+        private Set<FamilyQualifierPair> getVersionAdjustedQualifiersForWrite(final ColSpecWriteFrozen colSpec, final FamilyModel colFam, final QualModel colQual, final DefensiveCopyStrategy dcs) {
+            final Set<FamilyQualifierPair> fqpSet;
+            final Long singleVersion;
+            EnumSet<VersioningModel> versioningScheme;
+
+            fqpSet = new HashSet<FamilyQualifierPair>();
+            singleVersion = colSpec.getVersion();
+            if (singleVersion != null) {
+                versioningScheme = determineVersioningScheme(colFam, colQual);
+                if (VersioningModel.isQualifierBased(versioningScheme)) {
+                    addVersioningDerivedQualifiers(fqpSet,
+                                                   versioningScheme,
+                                                   colFam,
+                                                   colQual,
+                                                   singleVersion);
+                }
+            }
+            return prepareHBaseOpQualifierSet(fqpSet, colFam, colQual);
+        }
+
+        /**
          * TODO
          * @param colSpec
          * @param colFam
@@ -103,26 +225,16 @@ public class HBaseControl implements HBaseStart<OpResultSet>, Closeable {
          * @return
          */
         private Set<FamilyQualifierPair> getVersionAdjustedQualifiersForRead(final ColSpecRead<ReadOpSpecDefault> colSpec, final FamilyModel colFam, final QualModel colQual, final DefensiveCopyStrategy dcs) {
-            String logMsg;
             final Set<FamilyQualifierPair> fqpSet;
-            final byte[] qualValueBase;
             final LongValueSpec<?> version;
             final Long singleVersion;
             EnumSet<VersioningModel> versioningScheme;
-            QualModel qual;
-            byte[] qualBytes;
 
-            fqpSet = new HashSet<FamilyQualifierPair>();
+            fqpSet = new HashSet<>();
             version = colSpec.getVersion();
             if (version != null) {
-                versioningScheme = colQual.getVersioning();
-                if (versioningScheme == null) {
-                    versioningScheme = colFam.getVersioning();
-                }
+                versioningScheme = determineVersioningScheme(colFam, colQual);
                 if (VersioningModel.isQualifierBased(versioningScheme)) {
-                    // we're going to be creating new byte arrays here via concatenation anyway, so
-                    // skip doing the defensive copy
-                    qualValueBase = colQual.getName().getValue(DefensiveCopyStrategy.NEVER);
                     singleVersion = version.singleValue();
                     if (singleVersion == null) {
                         /*
@@ -132,39 +244,21 @@ public class HBaseControl implements HBaseStart<OpResultSet>, Closeable {
                          * currently implemented, so for now throw an UnsupportedOpExc. Determine
                          * how to make this work at a later time.
                          */
-                        logMsg = "Read spec specifies a range of version numbers "
-                                 + version
-                                 + "; not yet supported";
-                        throw new UnsupportedOperationException(logMsg);
-                    }
-                    /*
-                     * For each versioning scheme specified by the model, add a qualifier to the
-                     * read spec, modified to accommodate the versioning scheme, if necessary.
-                     * TODO (important): not clear whether the Set is able to provide uniqueness
-                     *     guarantees with byte[] type; investigate/correct, if not
-                     * TODO: does this work for multiple overlapping versioning schemes?
-                     */
-                    for (VersioningModel verModel : versioningScheme) {
-                        // create a new qualifier with the version number appended
-                        qualBytes =
-                            HBaseUtil.appendVersionToQual(qualValueBase,
-                                                          singleVersion.longValue(),
-                                                          verModel);
-                        qual = QualModel.of(Name.of(qualBytes, DefensiveCopyStrategy.NEVER));
-                        // create a new family+qualifier pair pairing the existing column family
-                        // with the newly-created qualifier
-                        fqpSet.add(FamilyQualifierPair.of(colFam, qual));
+                        addVersioningDerivedQualifiers(fqpSet,
+                                                       versioningScheme,
+                                                       colFam,
+                                                       colQual,
+                                                       version);
+                    } else {
+                        addVersioningDerivedQualifiers(fqpSet,
+                                                       versioningScheme,
+                                                       colFam,
+                                                       colQual,
+                                                       singleVersion);
                     }
                 }
             }
-            /*
-             * If the above logic did not indicate that qualifier-based versioning is in-use, then
-             * add a single element to the set containing the unmodified qualifier.
-             */
-            if (fqpSet.size() <= 0) {
-                fqpSet.add(FamilyQualifierPair.of(colFam, colQual));
-            }
-            return Collections.unmodifiableSet(fqpSet);
+            return prepareHBaseOpQualifierSet(fqpSet, colFam, colQual);
         }
 
         /**
@@ -234,7 +328,39 @@ public class HBaseControl implements HBaseStart<OpResultSet>, Closeable {
                 }
             }
         }
-        
+
+        /**
+         * TODO: javadoc
+         * @param colSpec
+         * @return
+         */
+        private Long determineWriteTimestamp(final ColSpecWriteFrozen colSpec) {
+            final Long version;
+
+            version = colSpec.getVersion();
+            if ((version != null)
+                && (VersioningModel.isTimestampBased(determineVersioningScheme(colSpec)))) {
+                /*
+                 * (NOTE: this list of TODOs copied from setReadTimestamp, because the issues they
+                 * reference will need to addressed concurrently on both the read and write sides)
+                 *
+                 * TODO: Determine how to support multiple overlapping versioning models; that
+                 *     feature is not supported here yet, at all
+                 * TODO: Determine how to support TIMESTAMP_CHRONO, which would need to subtract
+                 *     the version numbers from Long.MAX_VALUE and invert the range. Not
+                 *     implemented yet.
+                 * TODO: should probably throw some kind of validation exception earlier if both
+                 *     timestamp and version information are specified, and the versioning conflict
+                 *     specifies to use the timestamp... that is never a valid configuration, as
+                 *     the literally-specified timestamp will always be overridden by the
+                 *     versioning-specified timestamp
+                 */
+                return version;
+            } else {
+                return colSpec.getTS();
+            }
+        }
+
         /**
          * TODO
          * @param logMethodName
@@ -247,38 +373,42 @@ public class HBaseControl implements HBaseStart<OpResultSet>, Closeable {
             final FamilyModel colFam;
             final QualModel colQual;
             final NullableValue colValue;
+            final Set<FamilyQualifierPair> fqpSet;
             
-            writeTS = colSpec.getTS();
+            writeTS = determineWriteTimestamp(colSpec);
             colFam = colSpec.getFamily();
             colQual = colSpec.getColumn();
             colValue = colSpec.getValue();
-            
-            if (writeTS == null) {
-                writePut.add(colFam.getName().getValue(dcs),
-                             colQual.getName().getValue(dcs),
-                             colValue.getValue(dcs));
-                LOG.trace(logMethodName,
-                          ()->"adding to PUT: family=",
-                          ()->colFam,
-                          ()->", qual=",
-                          ()->colQual,
-                          ()->", value='",
-                          ()->colValue,
-                          ()->"'");
-            } else {
-                writePut.add(colFam.getName().getValue(dcs),
-                             colQual.getName().getValue(dcs),
-                             writeTS.longValue(),
-                             colValue.getValue(dcs));
-                LOG.trace(logMethodName,
-                          ()->"adding to PUT: family=",
-                          ()->colFam,
-                          ()->", qual=",
-                          ()->colQual,
-                          ()->", value='",
-                          ()->colValue,
-                          ()->"', ts=",
-                          ()->writeTS);
+
+            fqpSet = getVersionAdjustedQualifiersForWrite(colSpec, colFam, colQual, dcs);
+            for (FamilyQualifierPair fqp: fqpSet) {
+                if (writeTS == null) {
+                    writePut.add(fqp.getFamily().getName().getValue(dcs),
+                                 fqp.getQual().getName().getValue(dcs),
+                                 colValue.getValue(dcs));
+                    LOG.trace(logMethodName,
+                              () -> "adding to PUT: family=",
+                              fqp::getFamily,
+                              () -> ", qual=",
+                              fqp::getQual,
+                              () -> ", value='",
+                              () -> colValue,
+                              () -> "'");
+                } else {
+                    writePut.add(colFam.getName().getValue(dcs),
+                                 colQual.getName().getValue(dcs),
+                                 writeTS.longValue(),
+                                 colValue.getValue(dcs));
+                    LOG.trace(logMethodName,
+                              () -> "adding to PUT: family=",
+                              fqp::getFamily,
+                              () -> ", qual=",
+                              fqp::getQual,
+                              () -> ", value='",
+                              () -> colValue,
+                              () -> "', ts=",
+                              () -> writeTS);
+                }
             }
         }
         
