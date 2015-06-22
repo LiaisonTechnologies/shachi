@@ -1,26 +1,35 @@
+/**
+ * Copyright 2015 Liaison Technologies, Inc.
+ * This software is the confidential and proprietary information of
+ * Liaison Technologies, Inc. ("Confidential Information").  You shall
+ * not disclose such Confidential Information and shall use it only in
+ * accordance with the terms of the license agreement you entered into
+ * with Liaison Technologies.
+ */
 package com.liaison.hbase.dto;
 
-import java.io.Serializable;
-import java.util.Arrays;
+import com.liaison.commons.Util;
+import com.liaison.hbase.model.FamilyModel;
+import com.liaison.hbase.model.QualModel;
 
-import com.liaison.hbase.util.Util;
+import java.io.Serializable;
 
 public class FamilyQualifierPair implements Serializable {
 
     private static final long serialVersionUID = -3126811569021715389L;
 
     public static final class Builder {
-        private byte[] family;
-        private byte[] qual;
+        private FamilyModel family;
+        private QualModel qual;
         private String description;
         private boolean optional;
         
-        public Builder family(final byte[] family) {
-            this.family = Util.copyOf(family);
+        public Builder family(final FamilyModel family) {
+            this.family = family;
             return this;
         }
-        public Builder qual(final byte[] qual) {
-            this.qual = Util.copyOf(qual);
+        public Builder qual(final QualModel qual) {
+            this.qual = qual;
             return this;
         }
         public Builder description(final String description) {
@@ -45,9 +54,15 @@ public class FamilyQualifierPair implements Serializable {
     public static Builder getBuilder() {
         return new Builder();
     }
+    public static FamilyQualifierPair of(final FamilyModel fam, final QualModel qual, final String description) throws IllegalArgumentException {
+        return getBuilder().family(fam).qual(qual).description(description).build();
+    }
+    public static FamilyQualifierPair of(final FamilyModel fam, final QualModel qual) throws IllegalArgumentException {
+        return getBuilder().family(fam).qual(qual).build();
+    }
     
-    private final byte[] family;
-    private final byte[] qual;
+    private final FamilyModel family;
+    private final QualModel qual;
     /**
      * description is an optional field, so it is important that it NOT be included in hashCode
      * and equals implementations, so that instances with and without a description (or with
@@ -64,10 +79,10 @@ public class FamilyQualifierPair implements Serializable {
     private Integer hc;
     private String strRep;
 
-    public byte[] getFamily() {
+    public FamilyModel getFamily() {
         return this.family;
     }
-    public byte[] getQual() {
+    public QualModel getQual() {
         return this.qual;
     }
     public String getDescription() {
@@ -80,8 +95,8 @@ public class FamilyQualifierPair implements Serializable {
     public int hashCode() {
         int hcInt;
         if (this.hc == null) {
-            hcInt = Arrays.hashCode(this.family);
-            hcInt ^= Arrays.hashCode(this.qual);
+            hcInt = this.family.hashCode();
+            hcInt ^= this.qual.hashCode();
             this.hc = Integer.valueOf(hcInt);
         }
         return this.hc.intValue();
@@ -101,9 +116,9 @@ public class FamilyQualifierPair implements Serializable {
             strGen = new StringBuilder();
             strGen.append(FamilyQualifierPair.class.getSimpleName());
             strGen.append("(family=");
-            strGen.append(Util.toString(this.family));
+            strGen.append(this.family);
             strGen.append(",qual=");
-            strGen.append(Util.toString(this.qual));
+            strGen.append(this.qual);
             if (this.description != null) {
                 strGen.append(",description='");
                 strGen.append(this.description);
@@ -121,8 +136,8 @@ public class FamilyQualifierPair implements Serializable {
     }
     
     private FamilyQualifierPair(final Builder build) throws IllegalArgumentException {
-        Util.ensureNotNull(build.family, this, "family", byte[].class);
-        Util.ensureNotNull(build.qual, this, "qual", byte[].class);
+        Util.ensureNotNull(build.family, this, "family", FamilyModel.class);
+        Util.ensureNotNull(build.qual, this, "qual", QualModel.class);
         this.family = build.family;
         this.qual = build.qual;
         this.description = build.description;

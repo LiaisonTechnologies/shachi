@@ -1,0 +1,27 @@
+apply plugin: 'groovy'
+apply plugin: 'java'
+//apply plugin: 'scala'
+apply plugin: 'eclipse'
+
+
+
+sourceCompatibility = 1.8
+[compileJava, compileTestJava]*.options*.encoding = 'UTF-8'
+
+// GRADLE-2087 workaround, perform after java plugin
+status = project.hasProperty('preferredStatus')?project.preferredStatus:(version.contains('SNAPSHOT')?'snapshot':'release')
+
+// Indenting to align with multi-project branch
+//    task sourcesJar(type: Jar, dependsOn:classes) {
+//        from sourceSets.main.allSource
+//        classifier 'sources'
+//        extension 'jar'
+//    }
+//
+//    task javadocJar(type: Jar, dependsOn:javadoc) {
+//        from javadoc.destinationDir
+//        classifier 'javadoc'
+//        extension 'jar'
+//    }
+
+

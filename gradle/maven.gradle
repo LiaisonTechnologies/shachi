@@ -1,0 +1,15 @@
+// Maven side of things
+allprojects {
+    apply plugin: 'maven' // Java plugin has to have been already applied for the conf2scope mappings to work
+
+    uploadArchives {
+        repositories.mavenDeployer {
+            repository(url: releasesArtifactRepoURL) {
+                authentication(userName: sonatypeUsername, password: sonatypePassword)
+            }
+            snapshotRepository(url: snapshotsArtifactRepoURL) {
+                authentication(userName: sonatypeUsername, password: sonatypePassword)
+            }
+        }
+    }
+}

@@ -1,0 +1,38 @@
+// Checkstyle
+apply plugin: 'checkstyle'
+checkstyle {
+    ignoreFailures = true
+    configFile = rootProject.file('codequality/checkstyle.xml')
+
+}
+
+// FindBugs
+apply plugin: 'findbugs'
+findbugs {
+    ignoreFailures = true
+}
+tasks.withType(FindBugs) {
+    reports {
+        xml.enabled = false
+        html.enabled = true
+    }
+}
+
+// PMD
+apply plugin: 'pmd'
+pmd {
+    ignoreFailures = true
+}
+tasks.withType(Pmd) { reports.html.enabled true }
+
+//apply plugin: 'cobertura'
+//cobertura {
+//    coverageFormats = ['html', 'xml']
+//    coverageIgnoreTrivial = true
+//    coverageIgnores = ['org.slf4j.Logger.*']
+//}
+
+apply plugin: "jacoco"
+jacoco {
+    toolVersion = "0.7.4.201502262128"
+}

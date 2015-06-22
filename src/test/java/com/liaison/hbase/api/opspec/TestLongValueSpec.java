@@ -1,33 +1,40 @@
+/**
+ * Copyright 2015 Liaison Technologies, Inc.
+ * This software is the confidential and proprietary information of
+ * Liaison Technologies, Inc. ("Confidential Information").  You shall
+ * not disclose such Confidential Information and shall use it only in
+ * accordance with the terms of the license agreement you entered into
+ * with Liaison Technologies.
+ */
 package com.liaison.hbase.api.opspec;
 
-import java.util.function.BiConsumer;
-
+import com.liaison.hbase.api.request.impl.LongValueSpec;
+import com.liaison.hbase.api.request.impl.NoOpSpec;
 import org.mockito.Mockito;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
-import com.liaison.hbase.CRUDOperationSpec;
-import com.liaison.hbase.LongValueSpec;
+import java.util.function.BiConsumer;
 
 public class TestLongValueSpec {
 
     private static final long NONBOUNDARY_LONG_LOW = 5;
     private static final long NONBOUNDARY_LONG_HIGH = 10;
     
-    private LongValueSpec<CRUDOperationSpec> buildLongValueSpec() {
-        return new LongValueSpec<CRUDOperationSpec>(Mockito.mock(CRUDOperationSpec.class));
+    private LongValueSpec<NoOpSpec> buildLongValueSpec() {
+        return new LongValueSpec<NoOpSpec>(Mockito.mock(NoOpSpec.class));
     }
     
     @Test(expectedExceptions = ArithmeticException.class)
     public void testGTBoundary() throws ArithmeticException {
-        LongValueSpec<CRUDOperationSpec> lvs;
+        LongValueSpec<NoOpSpec> lvs;
         lvs = buildLongValueSpec();
         lvs.gt(Long.MAX_VALUE);
     }
     
     @Test()
     public void testGT() {
-        LongValueSpec<CRUDOperationSpec> lvs;
+        LongValueSpec<NoOpSpec> lvs;
         
         lvs = buildLongValueSpec();
         lvs.gt(NONBOUNDARY_LONG_HIGH);
@@ -48,7 +55,7 @@ public class TestLongValueSpec {
     
     @Test()
     public void testGE() {
-        LongValueSpec<CRUDOperationSpec> lvs;
+        LongValueSpec<NoOpSpec> lvs;
         
         lvs = buildLongValueSpec();
         lvs.ge(NONBOUNDARY_LONG_HIGH);
@@ -76,7 +83,7 @@ public class TestLongValueSpec {
     
     @Test()
     public void testEQ() {
-        LongValueSpec<CRUDOperationSpec> lvs;
+        LongValueSpec<NoOpSpec> lvs;
         
         lvs = buildLongValueSpec();
         lvs.eq(NONBOUNDARY_LONG_HIGH);
@@ -106,14 +113,14 @@ public class TestLongValueSpec {
     
     @Test(expectedExceptions = ArithmeticException.class)
     public void testLTBoundary() throws ArithmeticException {
-        LongValueSpec<CRUDOperationSpec> lvs;
+        LongValueSpec<NoOpSpec> lvs;
         lvs = buildLongValueSpec();
         lvs.lt(Long.MIN_VALUE);
     }
     
     @Test()
     public void testLT() {
-        LongValueSpec<CRUDOperationSpec> lvs;
+        LongValueSpec<NoOpSpec> lvs;
         
         lvs = buildLongValueSpec();
         lvs.lt(NONBOUNDARY_LONG_HIGH);
@@ -134,7 +141,7 @@ public class TestLongValueSpec {
     
     @Test()
     public void testLE() {
-        LongValueSpec<CRUDOperationSpec> lvs;
+        LongValueSpec<NoOpSpec> lvs;
         
         lvs = buildLongValueSpec();
         lvs.le(NONBOUNDARY_LONG_HIGH);
@@ -219,14 +226,14 @@ public class TestLongValueSpec {
     
     @Test(expectedExceptions = ArithmeticException.class)
     public void testBadRangesGTLTEmptyRange() throws ArithmeticException {
-        LongValueSpec<CRUDOperationSpec> lvs;
+        LongValueSpec<NoOpSpec> lvs;
         lvs = buildLongValueSpec();
         lvs.gt(NONBOUNDARY_LONG_HIGH); // >5 -> lower-bound-inc:6
         lvs.lt(NONBOUNDARY_LONG_HIGH + 1); // <6 -> upper-bound-exc:6
     }
     @Test(expectedExceptions = ArithmeticException.class)
     public void testBadRangesLTGTEmptyRange() throws ArithmeticException {
-        LongValueSpec<CRUDOperationSpec> lvs;
+        LongValueSpec<NoOpSpec> lvs;
         lvs = buildLongValueSpec();
         lvs.lt(NONBOUNDARY_LONG_HIGH + 1);
         lvs.gt(NONBOUNDARY_LONG_HIGH);
@@ -234,14 +241,14 @@ public class TestLongValueSpec {
     
     @Test(expectedExceptions = ArithmeticException.class)
     public void testBadRangesGTLEEmptyRange() throws ArithmeticException {
-        LongValueSpec<CRUDOperationSpec> lvs;
+        LongValueSpec<NoOpSpec> lvs;
         lvs = buildLongValueSpec();
         lvs.gt(NONBOUNDARY_LONG_HIGH); // >5 -> lower-bound-inc:6
         lvs.le(NONBOUNDARY_LONG_HIGH); // <=5 -> upper-bound-exc:6
     }
     @Test(expectedExceptions = ArithmeticException.class)
     public void testBadRangesLEGTEmptyRange() throws ArithmeticException {
-        LongValueSpec<CRUDOperationSpec> lvs;
+        LongValueSpec<NoOpSpec> lvs;
         lvs = buildLongValueSpec();
         lvs.le(NONBOUNDARY_LONG_HIGH);
         lvs.gt(NONBOUNDARY_LONG_HIGH);
@@ -249,14 +256,14 @@ public class TestLongValueSpec {
     
     @Test(expectedExceptions = ArithmeticException.class)
     public void testBadRangesGELTEmptyRange() throws ArithmeticException {
-        LongValueSpec<CRUDOperationSpec> lvs;
+        LongValueSpec<NoOpSpec> lvs;
         lvs = buildLongValueSpec();
         lvs.ge(NONBOUNDARY_LONG_HIGH); // >=5 -> lower-bound-inc:5
         lvs.lt(NONBOUNDARY_LONG_HIGH); // <5 -> upper-bound-exc:5
     }
     @Test(expectedExceptions = ArithmeticException.class)
     public void testBadRangesLTGEEmptyRange() throws ArithmeticException {
-        LongValueSpec<CRUDOperationSpec> lvs;
+        LongValueSpec<NoOpSpec> lvs;
         lvs = buildLongValueSpec();
         lvs.lt(NONBOUNDARY_LONG_HIGH);
         lvs.ge(NONBOUNDARY_LONG_HIGH);
@@ -264,14 +271,14 @@ public class TestLongValueSpec {
     
     @Test(expectedExceptions = ArithmeticException.class)
     public void testBadRangesGELEEmptyRange() throws ArithmeticException {
-        LongValueSpec<CRUDOperationSpec> lvs;
+        LongValueSpec<NoOpSpec> lvs;
         lvs = buildLongValueSpec();
         lvs.ge(NONBOUNDARY_LONG_HIGH + 1); // >=6 -> lower-bound-inc:6
         lvs.le(NONBOUNDARY_LONG_HIGH); // <=5 -> upper-bound-exc:6
     }
     @Test(expectedExceptions = ArithmeticException.class)
     public void testBadRangesLEGEEmptyRange() throws ArithmeticException {
-        LongValueSpec<CRUDOperationSpec> lvs;
+        LongValueSpec<NoOpSpec> lvs;
         lvs = buildLongValueSpec();
         lvs.le(NONBOUNDARY_LONG_HIGH);
         lvs.ge(NONBOUNDARY_LONG_HIGH + 1);
@@ -279,14 +286,14 @@ public class TestLongValueSpec {
     
     @Test(expectedExceptions = ArithmeticException.class)
     public void testBadRangesGTLTInvertedRange() throws ArithmeticException {
-        LongValueSpec<CRUDOperationSpec> lvs;
+        LongValueSpec<NoOpSpec> lvs;
         lvs = buildLongValueSpec();
         lvs.gt(NONBOUNDARY_LONG_HIGH); // >10 -> lower-bound-inc:11
         lvs.lt(NONBOUNDARY_LONG_LOW); // <5 -> upper-bound-exc:5
     }
     @Test(expectedExceptions = ArithmeticException.class)
     public void testBadRangesLTGTInvertedRange() throws ArithmeticException {
-        LongValueSpec<CRUDOperationSpec> lvs;
+        LongValueSpec<NoOpSpec> lvs;
         lvs = buildLongValueSpec();
         lvs.lt(NONBOUNDARY_LONG_LOW);
         lvs.gt(NONBOUNDARY_LONG_HIGH);
@@ -294,14 +301,14 @@ public class TestLongValueSpec {
     
     @Test(expectedExceptions = ArithmeticException.class)
     public void testBadRangesGTLEInvertedRange() throws ArithmeticException {
-        LongValueSpec<CRUDOperationSpec> lvs;
+        LongValueSpec<NoOpSpec> lvs;
         lvs = buildLongValueSpec();
         lvs.gt(NONBOUNDARY_LONG_HIGH); // >10 -> lower-bound-inc:11
         lvs.le(NONBOUNDARY_LONG_LOW); // <=5 -> upper-bound-exc:6
     }
     @Test(expectedExceptions = ArithmeticException.class)
     public void testBadRangesLEGTInvertedRange() throws ArithmeticException {
-        LongValueSpec<CRUDOperationSpec> lvs;
+        LongValueSpec<NoOpSpec> lvs;
         lvs = buildLongValueSpec();
         lvs.le(NONBOUNDARY_LONG_LOW);
         lvs.gt(NONBOUNDARY_LONG_HIGH);
@@ -309,14 +316,14 @@ public class TestLongValueSpec {
     
     @Test(expectedExceptions = ArithmeticException.class)
     public void testBadRangesGELTInvertedRange() throws ArithmeticException {
-        LongValueSpec<CRUDOperationSpec> lvs;
+        LongValueSpec<NoOpSpec> lvs;
         lvs = buildLongValueSpec();
         lvs.ge(NONBOUNDARY_LONG_HIGH); // >=10 -> lower-bound-inc:10
         lvs.lt(NONBOUNDARY_LONG_LOW); // <5 -> upper-bound-exc:5
     }
     @Test(expectedExceptions = ArithmeticException.class)
     public void testBadRangesLTGEInvertedRange() throws ArithmeticException {
-        LongValueSpec<CRUDOperationSpec> lvs;
+        LongValueSpec<NoOpSpec> lvs;
         lvs = buildLongValueSpec();
         lvs.lt(NONBOUNDARY_LONG_LOW);
         lvs.ge(NONBOUNDARY_LONG_HIGH);
@@ -324,14 +331,14 @@ public class TestLongValueSpec {
     
     @Test(expectedExceptions = ArithmeticException.class)
     public void testBadRangesGELEInvertedRange() throws ArithmeticException {
-        LongValueSpec<CRUDOperationSpec> lvs;
+        LongValueSpec<NoOpSpec> lvs;
         lvs = buildLongValueSpec();
         lvs.ge(NONBOUNDARY_LONG_HIGH); // >=10 -> lower-bound-inc:10
         lvs.le(NONBOUNDARY_LONG_LOW); // <=5 -> upper-bound-exc:6
     }
     @Test(expectedExceptions = ArithmeticException.class)
     public void testBadRangesLEGEInvertedRange() throws ArithmeticException {
-        LongValueSpec<CRUDOperationSpec> lvs;
+        LongValueSpec<NoOpSpec> lvs;
         lvs = buildLongValueSpec();
         lvs.le(NONBOUNDARY_LONG_LOW);
         lvs.ge(NONBOUNDARY_LONG_HIGH);
