@@ -35,6 +35,7 @@ public class DatasetSimulation {
     private static final String HBWRITE_START_ACTIONID_INCR = "increment-action-start-id";
     private static final String HBWRITE_META = "write-all-the-meta";
     private static final String HBWRITE_DATA = "write-all-the-data";
+    private static final String HBWRITE_DATAMETA = "write-update-specific-meta";
     private static final String HBWRITE_COMPLETE_ACTIONID = "put-action-complete-id";
 
     private static final String USERINPUT_YES = "Y";
@@ -63,11 +64,20 @@ public class DatasetSimulation {
             .qual(QUAL_ACTION_START)
             .qual(QUAL_ACTION_COMPLETE)
             .build();
+    private static final FamilyModel FAMILY_DATAMETA =
+        FamilyModel
+            .with(Name.of("u"))
+            /*
+            uses the same qualifier model as FAMILY_DATA, because these updates will be parallel to the data puts
+             */
+            .qual(QUAL_DATA_COLUMN)
+            .build();
     private static final TableModel TABLE_PRIMEDATA =
         TableModel
             .with(Name.of("PRIME"))
             .family(FAMILY_DATA)
             .family(FAMILY_META)
+            .family(FAMILY_DATAMETA)
             .build();
 
     private static HBaseControl createControl() {
@@ -200,7 +210,7 @@ public class DatasetSimulation {
         }
     }
 
-    private void writeData(final RowKey rowKey, final String data, final Map<String, String> meta, final long actionId) throws HBaseException {
+    private void writeData(final RowKey rowKey, final String data, final Map<String, String> meta, final String dataMeta, final long actionId) throws HBaseException {
         final OpResultSet result;
         final OperationController<OpResultSet> hbTrans;
 
@@ -236,6 +246,19 @@ public class DatasetSimulation {
         }
         result =
             hbTrans
+                .write(HBWRITE_DATAMETA)
+                    .on()
+                        .tbl(TABLE_PRIMEDATA)
+                        .row(rowKey)
+                        .and()
+                    .with()
+                        .fam(FAMILY_DATAMETA)
+                        .qual(QUAL_DATA_COLUMN)
+                        .value(Value.of(dataMeta))
+                        .version(actionId)
+                        .ts(actionId)
+                        .and()
+                    .then()
                 .write(HBWRITE_DATA)
                     .on()
                         .tbl(TABLE_PRIMEDATA)
@@ -260,13 +283,13 @@ public class DatasetSimulation {
         }
     }
 
-    public void persist(final String rowKeyStr, final String data, final Map<String, String> meta) throws HBaseException {
+    public void persist(final String rowKeyStr, final String data, final Map<String, String> meta, final String dataMeta) throws HBaseException {
         final RowKey rowKey;
         final long actionId;
 
         rowKey = RowKey.of(rowKeyStr);
         actionId = readIncrementActionStart(rowKey);
-        writeData(rowKey, data, meta, actionId);
+        writeData(rowKey, data, meta, dataMeta, actionId);
         writeActionComplete(rowKey, actionId);
     }
 
@@ -284,33 +307,53 @@ public class DatasetSimulation {
         String metaKey;
         String metaValue;
         String data;
+        String dataMeta;
         String rowKeyStr;
 
         meta = new HashMap<>();
         dataSim = new DatasetSimulation();
         try (final Scanner inScan = new Scanner(System.in)) {
             do {
+                metaKey = null;
+                metaValue = null;
+                data = null;
+                dataMeta = null;
+                rowKeyStr = null;
                 meta.clear();
+
+                // input row key
                 System.out.print("ROWKEY: ");
                 rowKeyStr = next(inScan);
-                System.out.print("META? [y/n] ");
-                if (USERINPUT_YES.equalsIgnoreCase(next(inScan))) {
-                    do {
-                        System.out.print("    META-key: ");
-                        metaKey = next(inScan);
-                        System.out.print("    META-value: ");
-                        metaValue = next(inScan);
-                        if ((metaKey != null) && (metaValue != null)) {
-                            meta.put(metaKey, metaValue);
+                if (rowKeyStr != null) {
+
+                    // input metadata map (optional)
+                    System.out.print("META? [y/n] ");
+                    if (USERINPUT_YES.equalsIgnoreCase(next(inScan))) {
+                        do {
+                            System.out.print("    META-key: ");
+                            metaKey = next(inScan);
+                            System.out.print("    META-value: ");
+                            metaValue = next(inScan);
+                            if ((metaKey != null) && (metaValue != null)) {
+                                meta.put(metaKey, metaValue);
+                            }
+                        } while ((metaKey != null) && (metaValue != null));
+                    }
+
+                    // input update-specific metadata blob
+                    System.out.print("DATA-META: ");
+                    dataMeta = next(inScan);
+                    if (dataMeta != null) {
+
+                        // input data
+                        System.out.print("DATA: ");
+                        data = next(inScan);
+                        if (data != null) {
+                            dataSim.persist(rowKeyStr, data, meta, dataMeta);
                         }
-                    } while ((metaKey != null) && (metaValue != null));
+                    }
                 }
-                System.out.print("DATA: ");
-                data = next(inScan);
-                if (data != null) {
-                    dataSim.persist(rowKeyStr, data, meta);
-                }
-            } while (data != null);
+            } while ((rowKeyStr != null) && (dataMeta != null) && (data != null));
         } catch (Exception exc) {
             exc.printStackTrace();
         }
