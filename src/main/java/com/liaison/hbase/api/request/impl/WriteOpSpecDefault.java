@@ -47,6 +47,7 @@ public final class WriteOpSpecDefault extends TableRowOpSpec<WriteOpSpecDefault>
         final RowSpec<WriteOpSpecDefault> rowSpec;
         rowSpec = new RowSpec<>(this);
         setTableRow(rowSpec);
+        addSubordinate(rowSpec);
         return rowSpec;
     }
     
@@ -55,6 +56,7 @@ public final class WriteOpSpecDefault extends TableRowOpSpec<WriteOpSpecDefault>
         prepMutation();
         Util.validateExactlyOnce("givenCondition", CondSpec.class, this.givenCondition);
         this.givenCondition = new CondSpec<>(this);
+        addSubordinate(this.givenCondition);
         return this.givenCondition;
     }
     
@@ -64,6 +66,7 @@ public final class WriteOpSpecDefault extends TableRowOpSpec<WriteOpSpecDefault>
         prepMutation();
         withCol = new ColSpecWrite<>(this, handle);
         this.withColumn.add(withCol);
+        addSubordinate(withCol);
         return withCol;
     }
     @Override
@@ -81,7 +84,9 @@ public final class WriteOpSpecDefault extends TableRowOpSpec<WriteOpSpecDefault>
             for (X element : sourceData) {
                 withCol = new ColSpecWrite<>(this);
                 handle = dataToColumnGenerator.apply(element, new ColSpecWriteConfined(withCol));
-                this.withColumn.add(withCol.handle(handle));
+                withCol.handle(handle);
+                addSubordinate(withCol);
+                this.withColumn.add(withCol);
             }
         }
         return self();

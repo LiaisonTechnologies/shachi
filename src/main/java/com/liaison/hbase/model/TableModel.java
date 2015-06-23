@@ -16,7 +16,7 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-public final class TableModel extends NamedEntity {
+public final class TableModel extends NamedEntityDefault implements TableHB {
 
     private static final long serialVersionUID = 5725568314447294526L;
 
@@ -54,9 +54,11 @@ public final class TableModel extends NamedEntity {
     
     private final Map<Name, FamilyModel> families;
     
+    @Override
     public Map<Name, FamilyModel> getFamilies() {
         return this.families;
     }
+    @Override
     public FamilyModel getFamily(final Name famName) {
         return this.families.get(famName);
     }
@@ -81,7 +83,7 @@ public final class TableModel extends NamedEntity {
     }
     
     @Override
-    protected boolean deepEquals(final NamedEntity otherNE) {
+    protected boolean deepEquals(final NamedEntityDefault otherNE) {
         final TableModel otherTableModel;
         if (otherNE instanceof TableModel) {
             otherTableModel = (TableModel) otherNE;

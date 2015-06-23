@@ -8,7 +8,6 @@
  */
 package com.liaison.hbase.dto;
 
-import com.liaison.commons.Util;
 import com.liaison.hbase.exception.HBaseException;
 
 import java.io.Serializable;

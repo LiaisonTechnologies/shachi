@@ -24,13 +24,8 @@ import com.liaison.hbase.util.SpecUtil;
 import com.liaison.hbase.util.StringRepFormat;
 
 import java.io.Serializable;
-import java.util.Collections;
-import java.util.EnumSet;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 
@@ -58,12 +53,12 @@ public final class ReadOpSpecDefault extends TableRowOpSpec<ReadOpSpecDefault> i
      * Association of family+qualifier pairs to the original column specifications which caused
      * them to be read; used when parsing the result set.
      */
-    private Map<FamilyQualifierPair, Set<ColSpecReadFrozen>> columnAssoc;
+    private final Map<FamilyQualifierPair, Set<ColSpecReadFrozen>> columnAssoc;
     /**
      * Association of family references to the original column specifications which caused them to
      * be read; used when parsing the result set.
      */
-    private Map<FamilyModel, Set<ColSpecReadFrozen>> fullFamilyAssoc;
+    private final Map<FamilyModel, Set<ColSpecReadFrozen>> fullFamilyAssoc;
     
     // ||----(instance properties)---------------------------------------------------------------||
     
@@ -74,6 +69,7 @@ public final class ReadOpSpecDefault extends TableRowOpSpec<ReadOpSpecDefault> i
     @Override
     public ReadOpSpecDefault atMost(final int maxEntriesPerFamily) throws IllegalArgumentException, IllegalStateException {
         String logMsg;
+
         if (maxEntriesPerFamily < 0) {
             logMsg =
                 "Maximum number of entries to read per column family must be >= 0; specified: "
@@ -91,6 +87,7 @@ public final class ReadOpSpecDefault extends TableRowOpSpec<ReadOpSpecDefault> i
         prepMutation();
         Util.validateExactlyOnce("atTime", LongValueSpec.class, this.atTime);
         this.atTime = new LongValueSpec<>(this);
+        addSubordinate(this.atTime);
         return this.atTime;
     }
     
@@ -108,6 +105,7 @@ public final class ReadOpSpecDefault extends TableRowOpSpec<ReadOpSpecDefault> i
         prepMutation();
         withCol = new ColSpecRead<>(this, handle);
         this.withColumn.add(withCol);
+        addSubordinate(withCol);
         return withCol;
     }
     
@@ -128,7 +126,9 @@ public final class ReadOpSpecDefault extends TableRowOpSpec<ReadOpSpecDefault> i
             for (X element : sourceData) {
                 withCol = new ColSpecRead<>(this);
                 handle = dataToColumnGenerator.apply(element, new ColSpecReadConfined(withCol));
-                this.withColumn.add(withCol.handle(handle));
+                withCol.handle(handle);
+                addSubordinate(withCol);
+                this.withColumn.add(withCol);
             }
         }
         return self();
@@ -195,6 +195,18 @@ public final class ReadOpSpecDefault extends TableRowOpSpec<ReadOpSpecDefault> i
     @Override
     public Set<ColSpecReadFrozen> getColumnAssoc(final FamilyQualifierPair fqp) {
         return getColumnAssoc(fqp, this.columnAssoc);
+    }
+
+    @Override
+    public Map<FamilyQualifierPair, Set<ColSpecReadFrozen>> getFamilyQualifierAssoc() {
+        // TODO Collections.unmodifiableMap does nothing to safeguard the Sets inside the Map
+        return Collections.unmodifiableMap(this.columnAssoc);
+    }
+
+    @Override
+    public Map<FamilyModel, Set<ColSpecReadFrozen>> getFullFamilyAssoc() {
+        // TODO Collections.unmodifiableMap does nothing to safeguard the Sets inside the Map
+        return Collections.unmodifiableMap(this.fullFamilyAssoc);
     }
 
     @Override
@@ -465,6 +477,8 @@ public final class ReadOpSpecDefault extends TableRowOpSpec<ReadOpSpecDefault> i
         super(handle, context, parent);
         this.withColumn = new LinkedList<>();
         this.atTime = null;
+        this.fullFamilyAssoc = new ConcurrentHashMap<>();
+        this.columnAssoc = new ConcurrentHashMap<>();
     }
     
     // ||----(constructors)----------------------------------------------------------------------||

@@ -96,7 +96,7 @@ public abstract class StatefulSpec<A extends StatefulSpec<A, P>, P extends TreeN
         if (!isFrozen()) {
             throw new IllegalStateException("Operation '"
                                             + String.valueOf(operationName)
-                                            + "'not supported until spec is frozen: "
+                                            + "' not supported until spec is frozen: "
                                             + toString());
         }
     }

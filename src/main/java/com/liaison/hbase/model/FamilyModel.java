@@ -17,7 +17,7 @@ import java.util.EnumSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-public final class FamilyModel extends NamedEntity {
+public final class FamilyModel extends NamedEntityDefault implements FamilyHB {
     
     private static final long serialVersionUID = -6051047393328804323L;
 
@@ -53,6 +53,7 @@ public final class FamilyModel extends NamedEntity {
             this.closedQualSet = false;
             this.name = null;
             this.quals = new LinkedHashMap<>();
+            this.versioning = EnumSet.noneOf(VersioningModel.class);
         }
     }
     
@@ -69,12 +70,15 @@ public final class FamilyModel extends NamedEntity {
     private final boolean closedQualSet;
     private final EnumSet<VersioningModel> versioning;
     
+    @Override
     public Map<Name, QualModel> getQuals() {
         return this.quals;
     }
+    @Override
     public boolean isClosedQualSet() {
         return closedQualSet;
     }
+    @Override
     public EnumSet<VersioningModel> getVersioning() {
         return this.versioning;
     }
@@ -99,7 +103,22 @@ public final class FamilyModel extends NamedEntity {
     }
     
     @Override
-    protected boolean deepEquals(final NamedEntity otherNE) {
+    protected boolean deepEquals(final NamedEntityDefault otherNE) {
+        /*
+         * TODO: TEMPORARY FIX!
+         * This is a temporary fix to resolve the problem where the result-parsing logic cannot
+         * match a result from HBase with the original model, because the comparison of family and
+         * qualifier column identifiers does not match. The identifying family/qual model instances
+         * coming from HBase include only the name, and not additional meta-data, so performing a
+         * "deep" equals check with the original model returns false, so the assimilation process
+         * is never able to perform a match.
+         *
+         * The permanent fix will abstract the name away into a separate reference class, so the
+         * model and the identifier determined from the DB can be easily matched based on name
+         * alone.
+         */
+        return true;
+        /*
         final FamilyModel otherFamilyModel;
         if (otherNE instanceof FamilyModel) {
             otherFamilyModel = (FamilyModel) otherNE;
@@ -107,6 +126,7 @@ public final class FamilyModel extends NamedEntity {
                     && (this.quals.equals(otherFamilyModel.quals)));
         }
         return false;
+        */
     }
     
     private FamilyModel(final Builder build) throws IllegalArgumentException {

@@ -58,6 +58,7 @@ public final class ColSpecRead<P extends OperationSpec<P>> extends ColSpec<ColSp
         prepMutation();
         Util.validateExactlyOnce("atTime", LongValueSpec.class, this.version);
         this.version = new LongValueSpec<>(this);
+        addSubordinate(this.version);
         return this.version;
     }
 
@@ -69,6 +70,11 @@ public final class ColSpecRead<P extends OperationSpec<P>> extends ColSpec<ColSp
     
     @Override
     public ColSpecRead<P> optional() throws IllegalStateException {
+        /*
+         * TODO
+         *     The enforcement mechanism for non-optional elements (i.e. required) is really not
+         *     working right now; fix it
+         */
         prepMutation();
         this.optional = true;
         return self();

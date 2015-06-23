@@ -9,8 +9,6 @@
 package com.liaison.hbase.dto;
 
 
-import com.liaison.hbase.util.AbstractSelfRefBuilder;
-
 public final class Empty extends NullableValue {
 
     private static final long serialVersionUID = 4938091499596277118L;

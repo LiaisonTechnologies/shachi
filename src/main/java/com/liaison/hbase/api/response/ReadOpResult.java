@@ -17,12 +17,7 @@ import com.liaison.hbase.dto.FamilyQualifierPair;
 import com.liaison.hbase.dto.SingleCellResult;
 import com.liaison.hbase.exception.HBaseException;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * TODO: javadoc
@@ -166,7 +161,13 @@ public class ReadOpResult extends OpResult<ReadOpSpecDefault> {
          * @return
          */
         public List<SingleCellResult> getDataBySpec(final ColSpecReadFrozen colSpec) {
-            return Collections.unmodifiableList(this.dataBySpec.get(colSpec));
+            final List<SingleCellResult> dataList;
+            dataList = this.dataBySpec.get(colSpec);
+            if (dataList == null) {
+                return Collections.emptyList();
+            } else {
+                return Collections.unmodifiableList(dataList);
+            }
         }
 
         /**
@@ -350,14 +351,17 @@ public class ReadOpResult extends OpResult<ReadOpSpecDefault> {
                 + " may not reference both a row-level exception and a non-empty data result set";
             throw new IllegalStateException(logMsg);
         }
+        /*
+        TODO? decide whether this is a necessary restriction; right now, it's causing problems
         if ((this.getException() == null) && (build.data.size() <= 0)) {
             logMsg = 
                 OpResult.class.getSimpleName()
                 + " must reference exactly one of: a row-level exception or a data result set";
             throw new IllegalStateException(logMsg);
         }
+        */
         this.data = Collections.unmodifiableMap(build.data);
         this.dataBySpec = Collections.unmodifiableMap(build.dataBySpec);
-        this.dataBySpecHandle = new HashMap<>();
+        this.dataBySpecHandle = Collections.unmodifiableMap(build.dataBySpecHandle);
     }
 }

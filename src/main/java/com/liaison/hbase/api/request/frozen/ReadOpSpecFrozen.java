@@ -15,6 +15,7 @@ import com.liaison.hbase.model.VersioningModel;
 
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -28,14 +29,14 @@ public interface ReadOpSpecFrozen extends TableRowOpSpecFrozen<ReadOpSpecDefault
      * @return
      * @throws IllegalStateException
      */
-    public EnumSet<VersioningModel> getCommonVersioningConfig() throws IllegalStateException;
+    EnumSet<VersioningModel> getCommonVersioningConfig() throws IllegalStateException;
 
     /**
      * TODO
      * @return
      * @throws IllegalStateException
      */
-    public LongValueSpecFrozen getCommonVersion() throws IllegalStateException;
+    LongValueSpecFrozen getCommonVersion() throws IllegalStateException;
 
     /**
      * TODO
@@ -60,26 +61,38 @@ public interface ReadOpSpecFrozen extends TableRowOpSpecFrozen<ReadOpSpecDefault
      * @param famModel
      * @param colSpecRead
      */
-    public void addColumnAssoc(FamilyModel famModel, ColSpecReadFrozen colSpecRead);
+    void addColumnAssoc(FamilyModel famModel, ColSpecReadFrozen colSpecRead);
 
     /**
      * TODO
      * @param fqp
      * @param colSpecRead
      */
-    public void addColumnAssoc(FamilyQualifierPair fqp, ColSpecReadFrozen colSpecRead);
+    void addColumnAssoc(FamilyQualifierPair fqp, ColSpecReadFrozen colSpecRead);
 
     /**
      * TODO
      * @param famModel
      * @return
      */
-    public Set<ColSpecReadFrozen> getColumnAssoc(FamilyModel famModel);
+    Set<ColSpecReadFrozen> getColumnAssoc(FamilyModel famModel);
 
     /**
      * TODO
      * @param fqp
      * @return
      */
-    public Set<ColSpecReadFrozen> getColumnAssoc(FamilyQualifierPair fqp);
+    Set<ColSpecReadFrozen> getColumnAssoc(FamilyQualifierPair fqp);
+
+    /**
+     *
+     * @return
+     */
+    Map<FamilyQualifierPair, Set<ColSpecReadFrozen>> getFamilyQualifierAssoc();
+
+    /**
+     *
+     * @return
+     */
+    Map<FamilyModel, Set<ColSpecReadFrozen>> getFullFamilyAssoc();
 }
