@@ -24,7 +24,13 @@ import com.liaison.hbase.util.SpecUtil;
 import com.liaison.hbase.util.StringRepFormat;
 
 import java.io.Serializable;
-import java.util.*;
+import java.util.Collections;
+import java.util.EnumSet;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;

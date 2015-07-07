@@ -19,7 +19,14 @@ import com.liaison.hbase.api.request.frozen.ColSpecFrozen;
 import com.liaison.hbase.api.request.frozen.ColSpecWriteFrozen;
 import com.liaison.hbase.api.request.frozen.LongValueSpecFrozen;
 import com.liaison.hbase.api.request.frozen.ReadOpSpecFrozen;
-import com.liaison.hbase.api.request.impl.*;
+import com.liaison.hbase.api.request.impl.ColSpecRead;
+import com.liaison.hbase.api.request.impl.CondSpec;
+import com.liaison.hbase.api.request.impl.LongValueSpec;
+import com.liaison.hbase.api.request.impl.OperationControllerDefault;
+import com.liaison.hbase.api.request.impl.OperationSpec;
+import com.liaison.hbase.api.request.impl.ReadOpSpecDefault;
+import com.liaison.hbase.api.request.impl.RowSpec;
+import com.liaison.hbase.api.request.impl.WriteOpSpecDefault;
 import com.liaison.hbase.api.response.OpResultSet;
 import com.liaison.hbase.context.HBaseContext;
 import com.liaison.hbase.dto.FamilyQualifierPair;
@@ -44,7 +51,11 @@ import org.apache.hadoop.hbase.client.Result;
 
 import java.io.Closeable;
 import java.io.IOException;
-import java.util.*;
+import java.util.Collections;
+import java.util.EnumSet;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -313,7 +324,7 @@ public class HBaseControl implements HBaseStart<OpResultSet>, Closeable {
                              * of duplicate defensive-copying here
                              */
                             readGet.addColumn(fqp.getFamily().getName().getValue(dcs),
-                                              fqp.getQual().getName().getValue(dcs));
+                                              fqp.getColumn().getName().getValue(dcs));
 
                             // Update the parent read operation spec to associate it with this
                             // family-qualifier pair
@@ -322,8 +333,8 @@ public class HBaseControl implements HBaseStart<OpResultSet>, Closeable {
                             LOG.trace(logMethodName,
                                       ()->"adding to GET: family=",
                                       fqp::getFamily,
-                                      ()->", qual=",
-                                      fqp::getQual,
+                                      ()->", column=",
+                                      fqp::getColumn,
                                       ()->" --> ",
                                       ()->colSpec);
                         }
@@ -402,26 +413,26 @@ public class HBaseControl implements HBaseStart<OpResultSet>, Closeable {
             for (FamilyQualifierPair fqp : fqpSet) {
                 if (writeTS == null) {
                     writePut.add(fqp.getFamily().getName().getValue(dcs),
-                                 fqp.getQual().getName().getValue(dcs),
+                                 fqp.getColumn().getName().getValue(dcs),
                                  colValue.getValue(dcs));
                     LOG.trace(logMethodName,
                               () -> "adding to PUT: family=",
                               fqp::getFamily,
-                              () -> ", qual=",
-                              fqp::getQual,
+                              () -> ", column=",
+                              fqp::getColumn,
                               () -> ", value='",
                               () -> colValue,
                               () -> "'");
                 } else {
                     writePut.add(fqp.getFamily().getName().getValue(dcs),
-                                 fqp.getQual().getName().getValue(dcs),
+                                 fqp.getColumn().getName().getValue(dcs),
                                  writeTS.longValue(),
                                  colValue.getValue(dcs));
                     LOG.trace(logMethodName,
                               () -> "adding to PUT: family=",
                               fqp::getFamily,
-                              () -> ", qual=",
-                              fqp::getQual,
+                              () -> ", column=",
+                              fqp::getColumn,
                               () -> ", value='",
                               () -> colValue,
                               () -> "', ts=",

@@ -139,7 +139,7 @@ public final class CondSpec<P extends OperationSpec<P>> extends ColSpec<CondSpec
         super.validate();
         SpecUtil.validateRequired(getRowKey(), this, "row", RowKey.class);
         SpecUtil.validateRequired(getFamily(), this, "fam", FamilyModel.class);
-        SpecUtil.validateRequired(getColumn(), this, "qual", QualModel.class);
+        SpecUtil.validateRequired(getColumn(), this, "column", QualModel.class);
         SpecUtil.validateRequired(getValue(), this, "value/empty", NullableValue.class);
     }
     

@@ -14,7 +14,12 @@ import com.liaison.commons.log.LogMeMaybe;
 import com.liaison.hbase.api.request.frozen.ColSpecReadFrozen;
 import com.liaison.hbase.api.request.frozen.ReadOpSpecFrozen;
 import com.liaison.hbase.api.request.frozen.WriteOpSpecFrozen;
-import com.liaison.hbase.api.request.impl.*;
+import com.liaison.hbase.api.request.impl.ColSpecRead;
+import com.liaison.hbase.api.request.impl.OperationSpec;
+import com.liaison.hbase.api.request.impl.ReadOpSpecDefault;
+import com.liaison.hbase.api.request.impl.RowSpec;
+import com.liaison.hbase.api.request.impl.TableRowOpSpec;
+import com.liaison.hbase.api.request.impl.WriteOpSpecDefault;
 import com.liaison.hbase.api.response.ReadOpResult.ReadOpResultBuilder;
 import com.liaison.hbase.dto.Datum;
 import com.liaison.hbase.dto.FamilyQualifierPair;
@@ -72,15 +77,15 @@ public class OpResultSet implements Serializable {
         return FamilyQualifierPair.of(family, qual);
     }
 
-    private void addToResultBuilderIndexedToColumn(final ReadOpResultBuilder readResBuild, final ColSpecReadFrozen colSpec, final Datum datum, final int cellIndex, final int cellTotalCount, final Object assoc, final String logMethodName) {
-        readResBuild.add(colSpec, datum);
+    private void addToResultBuilderIndexedToColumn(final ReadOpResultBuilder readResBuild, final ColSpecReadFrozen colSpec, final Datum datum, final FamilyQualifierPair fqp, final int logCellIndex, final int logCellTotalCount, final Object logAssoc, final String logMethodName) {
+        readResBuild.add(colSpec, fqp, datum);
         LOG.trace(logMethodName,
                  ()->"cell ",
-                 ()->Integer.valueOf(cellIndex),
+                 ()->Integer.valueOf(logCellIndex),
                  ()->"/",
-                 ()->Integer.valueOf(cellTotalCount),
+                 ()->Integer.valueOf(logCellTotalCount),
                  ()->" added to data result set with association ",
-                 ()->assoc,
+                 ()->logAssoc,
                  ()->" for column: ",
                  ()->colSpec);
     }
@@ -164,6 +169,7 @@ public class OpResultSet implements Serializable {
                     addToResultBuilderIndexedToColumn(readResBuild,
                                                       colSpec,
                                                       datum,
+                                                      fqp,
                                                       cellIndex,
                                                       cellTotalCount,
                                                       fqp,
@@ -178,6 +184,7 @@ public class OpResultSet implements Serializable {
                     addToResultBuilderIndexedToColumn(readResBuild,
                                                       colSpec,
                                                       datum,
+                                                      fqp,
                                                       cellIndex,
                                                       cellTotalCount,
                                                       fqp.getFamily(),

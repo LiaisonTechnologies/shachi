@@ -31,7 +31,7 @@ public class MapRHBaseContext extends CommonHBaseContext {
     public static final Builder getBuilder() {
         return new Builder();
     }
-    
+
     @Override
     protected final TableNamingStrategy getDefaultTableNamingStrategy() {
         return DEFAULT_TABLENAMINGSTRATEGY;

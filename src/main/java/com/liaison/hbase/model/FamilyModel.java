@@ -37,7 +37,7 @@ public final class FamilyModel extends NamedEntityDefault implements FamilyHB {
             return this;
         }
         public Builder qual(final QualModel qual) throws IllegalArgumentException {
-            Util.ensureNotNull(qual, this, "qual", QualModel.class);
+            Util.ensureNotNull(qual, this, "column", QualModel.class);
             this.quals.put(qual.getName(), qual);
             return this;
         }
@@ -91,7 +91,7 @@ public final class FamilyModel extends NamedEntityDefault implements FamilyHB {
     @Override
     protected void deepToString(final StringBuilder strGen) {
         /*
-        strGen.append(":qual={");
+        strGen.append(":column={");
         strGen.append(this.quals);
         strGen.append("}");
         */
@@ -108,7 +108,7 @@ public final class FamilyModel extends NamedEntityDefault implements FamilyHB {
          * TODO: TEMPORARY FIX!
          * This is a temporary fix to resolve the problem where the result-parsing logic cannot
          * match a result from HBase with the original model, because the comparison of family and
-         * qualifier column identifiers does not match. The identifying family/qual model instances
+         * qualifier column identifiers does not match. The identifying family/column model instances
          * coming from HBase include only the name, and not additional meta-data, so performing a
          * "deep" equals check with the original model returns false, so the assimilation process
          * is never able to perform a match.

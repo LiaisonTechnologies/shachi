@@ -92,7 +92,7 @@ public abstract class ColSpec<C extends ColSpec<C, P>, P extends OperationSpec<P
                 Util.appendIndented(strGen, getDepth() + 1, "family: ", this.family, "\n");
             }
             if (this.column != null) {
-                Util.appendIndented(strGen, getDepth() + 1, "qual: ", this.column, "\n");
+                Util.appendIndented(strGen, getDepth() + 1, "column: ", this.column, "\n");
             }
             prepareStrRepAdditional(strGen, format);
         } else if (format == StringRepFormat.INLINE) {
@@ -104,7 +104,7 @@ public abstract class ColSpec<C extends ColSpec<C, P>, P extends OperationSpec<P
                 }
             }
             if (this.column != null) {
-                Util.append(strGen, "qual=", this.column);
+                Util.append(strGen, "column=", this.column);
             }
             prepareStrRepAdditional(strGen, format);
             strGen.append("}");

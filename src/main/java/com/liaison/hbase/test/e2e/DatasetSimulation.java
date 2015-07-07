@@ -8,11 +8,17 @@ import com.liaison.hbase.HBaseControl;
 import com.liaison.hbase.HBaseStart;
 import com.liaison.hbase.api.request.OperationController;
 import com.liaison.hbase.api.response.OpResultSet;
+import com.liaison.hbase.context.DirectoryPrefixedTableNamingStrategy;
 import com.liaison.hbase.context.MapRHBaseContext;
+import com.liaison.hbase.context.TableNamingStrategy;
 import com.liaison.hbase.dto.RowKey;
 import com.liaison.hbase.dto.Value;
 import com.liaison.hbase.exception.HBaseException;
-import com.liaison.hbase.model.*;
+import com.liaison.hbase.model.FamilyModel;
+import com.liaison.hbase.model.Name;
+import com.liaison.hbase.model.QualModel;
+import com.liaison.hbase.model.TableModel;
+import com.liaison.hbase.model.VersioningModel;
 import com.liaison.hbase.resmgr.SimpleHBaseResourceManager;
 import org.apache.hadoop.hbase.HBaseConfiguration;
 
@@ -28,6 +34,8 @@ public class DatasetSimulation {
 
     private static final LogMeMaybe LOG;
 
+    private static final String SYSPROP_PATH_MAPRTABLES = "PATH_MAPRTABLES";
+
     private static final long ACTIONINDEX_INIT = 0;
 
     private static final String HBREAD_START_ACTIONID = "get-action-start-id";
@@ -37,6 +45,11 @@ public class DatasetSimulation {
     private static final String HBWRITE_DATA = "write-all-the-data";
     private static final String HBWRITE_DATAMETA = "write-update-specific-meta";
     private static final String HBWRITE_COMPLETE_ACTIONID = "put-action-complete-id";
+
+    private static final String USERINPUT_OP_CREATE = "C";
+    private static final String USERINPUT_OP_REPLACE = "R";
+    private static final String USERINPUT_OP_UPDATE = "U";
+    private static final String USERINPUT_OP_DELETE = "D";
 
     private static final String USERINPUT_YES = "Y";
 
@@ -80,18 +93,33 @@ public class DatasetSimulation {
             .family(FAMILY_DATAMETA)
             .build();
 
-    private static HBaseControl createControl() {
+    private static HBaseControl createControl(final TableNamingStrategy namingStrategy) {
         final HBaseControl hbc;
 
-        hbc =
-            new HBaseControl(
-                MapRHBaseContext
-                    .getBuilder()
-                    .id(DatasetSimulation.class.getSimpleName())
-                    .configProvider(HBaseConfiguration::create)
-                    .build(),
-                SimpleHBaseResourceManager.INSTANCE);
+        if (namingStrategy == null) {
+            hbc =
+                new HBaseControl(
+                    MapRHBaseContext
+                        .getBuilder()
+                        .id(DatasetSimulation.class.getSimpleName())
+                        .configProvider(HBaseConfiguration::create)
+                        .build(),
+                    SimpleHBaseResourceManager.INSTANCE);
+        } else {
+            hbc =
+                new HBaseControl(
+                    MapRHBaseContext
+                        .getBuilder()
+                        .id(DatasetSimulation.class.getSimpleName())
+                        .configProvider(HBaseConfiguration::create)
+                        .tableNamingStrategy(namingStrategy)
+                        .build(),
+                    SimpleHBaseResourceManager.INSTANCE);
+        }
         return hbc;
+    }
+    private static HBaseControl createControl() {
+        return createControl(null);
     }
 
     static {
@@ -118,22 +146,52 @@ public class DatasetSimulation {
                         .atMost(1)
                         .then()
                     .exec();
-        try {
-            return
-                BytesUtil.toLong(
-                    result
-                        .getReadResult(HBREAD_START_ACTIONID)
-                        .getData(HBREADFIELD_ACTIONSTART)
-                        .get(0)
-                        .getValue(DefensiveCopyStrategy.NEVER));
-        } catch (IndexOutOfBoundsException exc) {
-            /*
-             * TODO: this is a temporary fix until the framework is updated to properly throw an
-             * exception when a required field fails to retrieve an element; not sure why it isn't
-             * working now.
-             */
-            throw new HBaseException("No value for " + QUAL_ACTION_START);
+        return
+            BytesUtil.toLong(
+                result
+                    .getReadResult(HBREAD_START_ACTIONID)
+                    .getData(HBREADFIELD_ACTIONSTART)
+                    .get(0)
+                    .getDatum()
+                    .getValue(DefensiveCopyStrategy.NEVER));
+    }
+
+    private long initializeActionStart(final RowKey rowKey) throws HBaseException {
+        final Long currentVersion;
+        final Long nextVersion;
+        boolean writeCompleted = false;
+
+        currentVersion = Long.valueOf(ACTIONINDEX_INIT);
+        nextVersion = Long.valueOf(ACTIONINDEX_INIT + 1);
+        writeCompleted =
+            ctrl
+                .begin()
+                    .write(HBWRITE_START_ACTIONID_INCR)
+                        .on()
+                            .tbl(TABLE_PRIMEDATA)
+                            .row(rowKey)
+                            .and()
+                        .with()
+                            .fam(FAMILY_META)
+                            .qual(QUAL_ACTION_START)
+                            .value(Value.of(BytesUtil.toBytes(nextVersion),
+                                DefensiveCopyStrategy.NEVER))
+                            .and()
+                        .given()
+                            .row(rowKey)
+                            .fam(FAMILY_META)
+                            .qual(QUAL_ACTION_START)
+                            .empty()
+                            .and()
+                        .then()
+                    .exec()
+                .getWriteResult(HBWRITE_START_ACTIONID_INCR)
+                .isMutationPerformed();
+        if (!writeCompleted) {
+            throw new HBaseException("Failed to initialize column version: "
+                                     + QUAL_ACTION_START);
         }
+        return currentVersion;
     }
 
     private long readIncrementActionStart(final RowKey rowKey) throws HBaseException {
@@ -166,7 +224,7 @@ public class DatasetSimulation {
                         .given()
                             .row(rowKey)
                             .fam(FAMILY_META)
-                            .qual(QUAL_ACTION_START);
+                            .column(QUAL_ACTION_START);
                             .value(Value.of(BytesUtil.toBytes(currentVersion.longValue()),
                                 DefensiveCopyStrategy.NEVER))
                             .and()
@@ -283,18 +341,30 @@ public class DatasetSimulation {
         }
     }
 
-    public void persist(final String rowKeyStr, final String data, final Map<String, String> meta, final String dataMeta) throws HBaseException {
+    public void persist(final String rowKeyStr, final String data, final Map<String, String> meta, final String dataMeta, final boolean createNew) throws HBaseException {
         final RowKey rowKey;
         final long actionId;
 
         rowKey = RowKey.of(rowKeyStr);
-        actionId = readIncrementActionStart(rowKey);
+        if (createNew) {
+            actionId = initializeActionStart(rowKey);
+        } else {
+            actionId = readIncrementActionStart(rowKey);
+        }
         writeData(rowKey, data, meta, dataMeta, actionId);
         writeActionComplete(rowKey, actionId);
     }
 
     public DatasetSimulation() {
-        this.ctrl = createControl();
+        final String tablesPathPrefix;
+
+        tablesPathPrefix = Util.simplify(System.getProperty(SYSPROP_PATH_MAPRTABLES));
+        if (tablesPathPrefix != null) {
+            LOG.trace("Creating HBase control using directory naming prefix: " + tablesPathPrefix);
+            this.ctrl = createControl(new DirectoryPrefixedTableNamingStrategy(tablesPathPrefix));
+        } else {
+            this.ctrl = createControl();
+        }
     }
 
     private static String next(final Scanner inScan) {
@@ -309,6 +379,7 @@ public class DatasetSimulation {
         String data;
         String dataMeta;
         String rowKeyStr;
+        String opStr;
 
         meta = new HashMap<>();
         dataSim = new DatasetSimulation();
@@ -320,6 +391,12 @@ public class DatasetSimulation {
                 dataMeta = null;
                 rowKeyStr = null;
                 meta.clear();
+
+                System.out.print("[C]reate | [R]eplace | [U]pdate | [D]elete: ");
+                opStr = next(inScan);
+                if (opStr != null) {
+                    opStr = opStr.substring(0, 1).toUpperCase();
+                }
 
                 // input row key
                 System.out.print("ROWKEY: ");
@@ -349,7 +426,7 @@ public class DatasetSimulation {
                         System.out.print("DATA: ");
                         data = next(inScan);
                         if (data != null) {
-                            dataSim.persist(rowKeyStr, data, meta, dataMeta);
+                            dataSim.persist(rowKeyStr, data, meta, dataMeta, USERINPUT_OP_CREATE.equals(opStr));
                         }
                     }
                 }

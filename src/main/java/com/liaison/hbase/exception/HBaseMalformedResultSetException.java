@@ -8,8 +8,8 @@
  */
 package com.liaison.hbase.exception;
 
-import com.liaison.hbase.api.request.impl.ColSpec;
-import com.liaison.hbase.api.request.impl.RowSpec;
+import com.liaison.hbase.dto.ColRef;
+import com.liaison.hbase.dto.RowRef;
 
 /**
  * TODO
@@ -19,13 +19,13 @@ public class HBaseMalformedResultSetException extends HBaseColumnException {
 
     private static final long serialVersionUID = -3755663314725727956L;
     
-    public HBaseMalformedResultSetException(RowSpec<?> rowSpec, ColSpec<?, ?> colSpec, String message) {
-        super(rowSpec, colSpec, message);
+    public HBaseMalformedResultSetException(RowRef rowRef, ColRef colRef, String message) {
+        super(rowRef, colRef, message);
     }
-    public HBaseMalformedResultSetException(RowSpec<?> rowSpec, ColSpec<?, ?> colSpec, String message, Throwable cause) {
-        super(rowSpec, colSpec, message, cause);
+    public HBaseMalformedResultSetException(RowRef rowRef, ColRef colRef, String message, Throwable cause) {
+        super(rowRef, colRef, message, cause);
     }
-    public HBaseMalformedResultSetException(RowSpec<?> rowSpec, ColSpec<?, ?> colSpec, String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
-        super(rowSpec, colSpec, message, cause, enableSuppression, writableStackTrace);
+    public HBaseMalformedResultSetException(RowRef rowRef, ColRef colRef, String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
+        super(rowRef, colRef, message, cause, enableSuppression, writableStackTrace);
     }
 }

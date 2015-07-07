@@ -102,7 +102,7 @@ public class ColSpecWrite<P extends OperationSpec<P>> extends ColSpec<ColSpecWri
     protected void validate() throws SpecValidationException {
         super.validate();
         SpecUtil.validateRequired(getFamily(), this, "fam", FamilyModel.class);
-        SpecUtil.validateRequired(getColumn(), this, "qual", QualModel.class);
+        SpecUtil.validateRequired(getColumn(), this, "column", QualModel.class);
         SpecUtil.validateRequired(getValue(), this, "value", NullableValue.class);
     }
     

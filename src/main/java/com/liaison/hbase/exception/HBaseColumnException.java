@@ -8,29 +8,29 @@
  */
 package com.liaison.hbase.exception;
 
-import com.liaison.hbase.api.request.impl.ColSpec;
-import com.liaison.hbase.api.request.impl.RowSpec;
+import com.liaison.hbase.dto.ColRef;
+import com.liaison.hbase.dto.RowRef;
 
 public class HBaseColumnException extends HBaseTableRowException {
     
     private static final long serialVersionUID = 7523928044172073564L;
     
-    private final ColSpec<?,?> colSpec;
+    private final ColRef colRef;
     
-    public ColSpec<?,?> getColSpec() {
-        return this.colSpec;
+    public ColRef getColRef() {
+        return this.colRef;
     }
     
-    public HBaseColumnException(final RowSpec<?> rowSpec, final ColSpec<?,?> colSpec, String message) {
-        super(rowSpec, message);
-        this.colSpec = colSpec;
+    public HBaseColumnException(final RowRef rowRef, final ColRef colRef, String message) {
+        super(rowRef, message);
+        this.colRef = colRef;
     }
-    public HBaseColumnException(final RowSpec<?> rowSpec, final ColSpec<?,?> colSpec, String message, Throwable cause) {
-        super(rowSpec, message, cause);
-        this.colSpec = colSpec;
+    public HBaseColumnException(final RowRef rowRef, final ColRef colRef, String message, Throwable cause) {
+        super(rowRef, message, cause);
+        this.colRef = colRef;
     }
-    public HBaseColumnException(final RowSpec<?> rowSpec, final ColSpec<?,?> colSpec, String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
-        super(rowSpec, message, cause, enableSuppression, writableStackTrace);
-        this.colSpec = colSpec;
+    public HBaseColumnException(final RowRef rowRef, final ColRef colRef, String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
+        super(rowRef, message, cause, enableSuppression, writableStackTrace);
+        this.colRef = colRef;
     }
 }

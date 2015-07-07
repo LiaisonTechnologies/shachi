@@ -8,15 +8,12 @@
  */
 package com.liaison.hbase.api.request.frozen;
 
-import com.liaison.hbase.model.FamilyModel;
-import com.liaison.hbase.model.QualModel;
+import com.liaison.hbase.dto.ColRef;
 
 /**
  * TODO
  * @author Branden Smith; Liaison Technologies, Inc.
  */
-public interface ColSpecFrozen {
+public interface ColSpecFrozen extends ColRef {
     Object getHandle();
-    FamilyModel getFamily();
-    QualModel getColumn();
 }

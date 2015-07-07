@@ -132,7 +132,7 @@ public final class ColSpecRead<P extends OperationSpec<P>> extends ColSpec<ColSp
             FamilyQualifierPair
                 .getBuilder()
                 .family(getFamily())
-                .qual(getColumn())
+                .column(getColumn())
                 .optional(this.optional);
         if (description != null) {
             fqpBuild.description(description);

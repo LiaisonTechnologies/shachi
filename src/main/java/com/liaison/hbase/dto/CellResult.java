@@ -15,6 +15,8 @@ import java.io.Serializable;
 
 public class CellResult<X> implements Serializable {
 
+    private static final long serialVersionUID = 6677599252592241754L;
+
     private final X content;
     private final HBaseException exc;
 
@@ -31,37 +33,57 @@ public class CellResult<X> implements Serializable {
         return this.exc;
     }
 
+    public int hashCodeSubord() {
+        // no-op in default implementation
+        return 0;
+    }
+
     @Override
-    public int hashCode() {
+    public final int hashCode() {
+        int hCode;
         if (this.hc == null) {
-            this.hc = Integer.valueOf(Util.hashCode(this.content) ^ Util.hashCode(this.exc));
+            hCode = Util.hashCode(this.content);
+            hCode ^= Util.hashCode(this.exc);
+            hCode ^= hashCodeSubord();
+            this.hc = Integer.valueOf(hCode);
         }
         return this.hc.intValue();
     }
 
+    public boolean equalsSubord(final CellResult otherCR) {
+        // no-op in default implementation
+        return true;
+    }
     @Override
-    public boolean equals(final Object otherObj) {
+    public final boolean equals(final Object otherObj) {
         final CellResult otherCR;
-        if (otherObj instanceof CellResult) {
+        if (this == otherObj) {
+            return true;
+        } else if (otherObj instanceof CellResult) {
             otherCR = (CellResult) otherObj;
             return (Util.refEquals(this.exc, otherCR.exc)
-                    && Util.refEquals(this.content, otherCR.content));
+                    && Util.refEquals(this.content, otherCR.content)
+                    && equalsSubord(otherCR));
         }
         return false;
     }
 
+    public void toStringSubord(final StringBuilder strGen) {
+        // do nothing in default implementation
+    }
     @Override
-    public String toString() {
+    public final String toString() {
         final StringBuilder strGen;
         if (this.strRep == null) {
             strGen = new StringBuilder();
-            strGen.append("{=");
+            strGen.append(getClass().getSimpleName());
+            strGen.append("(");
+            toStringSubord(strGen);
+            strGen.append("):{");
             if (this.content != null) {
                 strGen.append(this.content);
             } else if (this.exc != null) {
                 strGen.append(this.exc);
-            } else {
-                strGen.append("--");
             }
             strGen.append("}");
             this.strRep = strGen.toString();
