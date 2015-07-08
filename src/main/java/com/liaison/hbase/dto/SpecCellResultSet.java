@@ -42,7 +42,7 @@ public class SpecCellResultSet extends CellResult<List<SingleCellResult>> {
                         + "); exactly 1 must be defined";
                 throw new IllegalArgumentException(logMsg);
             }
-            if (this.resultList.isEmpty()) {
+            if (!this.resultList.isEmpty()) {
                 return new SpecCellResultSet(this.resultList);
             } else if (this.exc != null) {
                 return new SpecCellResultSet(this.exc);
