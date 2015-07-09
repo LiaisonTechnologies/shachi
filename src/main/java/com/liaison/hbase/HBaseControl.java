@@ -15,6 +15,7 @@ import com.liaison.commons.DefensiveCopyStrategy;
 import com.liaison.commons.Util;
 import com.liaison.commons.log.LogMeMaybe;
 import com.liaison.hbase.api.request.OperationController;
+import com.liaison.hbase.api.request.fluid.LongValueSpecFluid;
 import com.liaison.hbase.api.request.frozen.ColSpecFrozen;
 import com.liaison.hbase.api.request.frozen.ColSpecWriteFrozen;
 import com.liaison.hbase.api.request.frozen.LongValueSpecFrozen;
@@ -314,16 +315,31 @@ public class HBaseControl implements HBaseStart<OpResultSet>, Closeable {
         }
 
         private LongValueSpecFrozen getQualifierBasedVersion(final ColSpecRead<ReadOpSpecDefault> colSpec, final FamilyHB colFam, final QualHB colQual) {
-            final LongValueSpecFrozen version;
+            LongValueSpec<ColSpecRead<ReadOpSpecDefault>> versionUnrestricted;
+            LongValueSpecFrozen version;
             EnumSet<VersioningModel> versioningScheme;
 
-            version = colSpec.getVersion();
-            if (version != null) {
-                versioningScheme = determineVersioningScheme(colFam, colQual);
-                if (VersioningModel.isQualifierBased(versioningScheme)) {
+            versioningScheme = determineVersioningScheme(colFam, colQual);
+            if (VersioningModel.isQualifierBased(versioningScheme)) {
+                version = colSpec.getVersion();
+                if (version != null) {
                     return version;
+                } else {
+                    /*
+                     * If this column uses qualifier-based versioning, then any column qualifiers
+                     * will be written to HBase with version numbers appended, so there is no way
+                     * to query solely by the "stem" qualifier name itself. Therefore, we need to
+                     * query using ColumnRanges and Filters to bound the *range* of qualifiers,
+                     * even in the case where the read itself does not specify a version range. In
+                     * that case, mock up an unrestricted ("all versions") version long spec:
+                     */
+                    versionUnrestricted = VersioningModel.buildLongValueSpecForQualVersioning(colSpec);
+                    versionUnrestricted.freezeRecursive();
+                    return versionUnrestricted;
                 }
             }
+
+
             return null;
         }
 
