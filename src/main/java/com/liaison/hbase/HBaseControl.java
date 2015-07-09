@@ -15,7 +15,6 @@ import com.liaison.commons.DefensiveCopyStrategy;
 import com.liaison.commons.Util;
 import com.liaison.commons.log.LogMeMaybe;
 import com.liaison.hbase.api.request.OperationController;
-import com.liaison.hbase.api.request.fluid.LongValueSpecFluid;
 import com.liaison.hbase.api.request.frozen.ColSpecFrozen;
 import com.liaison.hbase.api.request.frozen.ColSpecWriteFrozen;
 import com.liaison.hbase.api.request.frozen.LongValueSpecFrozen;
@@ -39,11 +38,11 @@ import com.liaison.hbase.exception.HBaseException;
 import com.liaison.hbase.exception.HBaseMultiColumnException;
 import com.liaison.hbase.exception.HBaseRuntimeException;
 import com.liaison.hbase.exception.HBaseTableRowException;
+import com.liaison.hbase.model.ColumnRange;
 import com.liaison.hbase.model.FamilyHB;
 import com.liaison.hbase.model.Name;
 import com.liaison.hbase.model.QualHB;
 import com.liaison.hbase.model.QualModel;
-import com.liaison.hbase.model.ColumnRange;
 import com.liaison.hbase.model.VersioningModel;
 import com.liaison.hbase.resmgr.HBaseResourceManager;
 import com.liaison.hbase.resmgr.res.ManagedTable;
@@ -54,7 +53,6 @@ import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.filter.BinaryComparator;
-import org.apache.hadoop.hbase.filter.ByteArrayComparable;
 import org.apache.hadoop.hbase.filter.Filter;
 import org.apache.hadoop.hbase.filter.FilterList;
 import org.apache.hadoop.hbase.filter.QualifierFilter;
@@ -754,6 +752,7 @@ public class HBaseControl implements HBaseStart<OpResultSet>, Closeable {
             readGet = new Get(rowRef.getRowKey().getValue(dcs));
             readGet.addFamily(colRange.getFamily().getName().getValue(dcs));
             readGet.setFilter(combinedFilter);
+            LOG.trace(logMethodName, ()->"get:", ()->readGet);
             LOG.leave(logMethodName);
             return readGet;
         }
@@ -844,28 +843,33 @@ public class HBaseControl implements HBaseStart<OpResultSet>, Closeable {
             LOG.trace(logMethodName, ()->"building Get objects...");
             allReadGets = new HashSet<>();
 
-            LOG.trace(logMethodName,
-                      ()->"building main Get object for columns which require NO filter...");
-            readGet = new Get(tableRowSpec.getRowKey().getValue(dcs));
-            for (FamilyHB family : gcg.getFamilySet()) {
-                readGet.addFamily(family.getName().getValue(dcs));
+            if ((gcg.hasFamilies()) || (gcg.hasFQPs())) {
+                LOG.trace(logMethodName,
+                          () -> "building main Get object for columns which require NO filter...");
+                readGet = new Get(tableRowSpec.getRowKey().getValue(dcs));
+                for (FamilyHB family : gcg.getFamilySet()) {
+                    readGet.addFamily(family.getName().getValue(dcs));
+                }
+                for (FamilyQualifierPair fqp : gcg.getFQPSet()) {
+                    readGet.addColumn(fqp.getFamily().getName().getValue(dcs),
+                                      fqp.getColumn().getName().getValue(dcs));
+                }
+                allReadGets.add(readGet);
+                LOG.trace(logMethodName,
+                          () -> "main (unfiltered) Get: ",
+                          () -> readGet);
             }
-            for (FamilyQualifierPair fqp : gcg.getFQPSet()) {
-                readGet.addColumn(fqp.getFamily().getName().getValue(dcs),
-                                  fqp.getColumn().getName().getValue(dcs));
-            }
-            allReadGets.add(readGet);
-            LOG.trace(logMethodName,
-                      ()->"main (unfiltered) Get: ",
-                      ()->readGet);
 
-            LOG.trace(logMethodName,
-                      ()->"building separate Get objects for columns requiring a filter for ",
-                      ()->ColumnRange.class.getSimpleName(),
-                      ()->"...");
-            for (ColumnRange colRange : gcg.getColumnRangeSet()) {
-                allReadGets.add(buildGet(tableRowSpec, colRange, dcs));
+            if (gcg.hasColumnRanges()) {
+                LOG.trace(logMethodName,
+                          () -> "building separate Get objects for columns requiring a filter for ",
+                          () -> ColumnRange.class.getSimpleName(),
+                          () -> "...");
+                for (ColumnRange colRange : gcg.getColumnRangeSet()) {
+                    allReadGets.add(buildGet(tableRowSpec, colRange, dcs));
+                }
             }
+
             LOG.trace(logMethodName, ()->"ALL Get objects: ", ()->allReadGets);
 
             for (Get getForSetup : allReadGets) {

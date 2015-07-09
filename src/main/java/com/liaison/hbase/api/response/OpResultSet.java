@@ -178,8 +178,8 @@ public class OpResultSet implements Serializable {
                 }
                 /*
                  * For any column specifications which are associated with this data cell based
-                 * upon the *combination* of family and qualifier (i.e. column specs which
-                 * specified both), add this data cell to the result list for the column spec.
+                 * upon column family *only* (i.e. column specs which are reading from the full
+                 * family), add this data cell to the result list for the column spec.
                  */
                 for (ColSpecReadFrozen colSpec : readSpec.getColumnAssoc(fqp.getFamily())) {
                     addToResultBuilderIndexedToColumn(readResBuild,
@@ -189,6 +189,24 @@ public class OpResultSet implements Serializable {
                                                       cellIndex,
                                                       cellTotalCount,
                                                       fqp.getFamily(),
+                                                      logMethodName);
+                }
+
+                /*
+                 * For any column specifications which are associated with this data cell based
+                 * upon (a) column family and (b) column qualifier being within a ColumnRange
+                 * associated with this column, add this data cell to the result list for the
+                 * column spec. (The getColumnRangeAssoc will check the given family-qualifier pair
+                 * against the defined column ranges.)
+                 */
+                for (ColSpecReadFrozen colSpec : readSpec.getColumnRangeAssoc(fqp)) {
+                    addToResultBuilderIndexedToColumn(readResBuild,
+                                                      colSpec,
+                                                      datum,
+                                                      fqp,
+                                                      cellIndex,
+                                                      cellTotalCount,
+                                                      fqp,
                                                       logMethodName);
                 }
             }
@@ -255,7 +273,6 @@ public class OpResultSet implements Serializable {
         try {
             opResBuild = ReadOpResult.getBuilder().origin(readSpec);
             populateContent(opResBuild, readSpec, res);
-
 
             for (ColSpecRead<ReadOpSpecDefault> readColSpec : readSpec.getWithColumn()) {
                 readColSpecResult = opResBuild.getDataBySpec(readColSpec);

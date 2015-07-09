@@ -12,7 +12,6 @@ import com.liaison.hbase.api.request.impl.ReadOpSpecDefault;
 import com.liaison.hbase.dto.FamilyQualifierPair;
 import com.liaison.hbase.model.ColumnRange;
 import com.liaison.hbase.model.FamilyHB;
-import com.liaison.hbase.model.FamilyModel;
 import com.liaison.hbase.model.VersioningModel;
 
 import java.util.EnumSet;

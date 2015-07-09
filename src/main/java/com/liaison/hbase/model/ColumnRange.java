@@ -3,7 +3,6 @@ package com.liaison.hbase.model;
 import com.liaison.commons.DefensiveCopyStrategy;
 import com.liaison.commons.Util;
 import com.liaison.hbase.api.request.frozen.LongValueSpecFrozen;
-import com.liaison.hbase.dto.FamilyQualifierPair;
 import com.liaison.hbase.util.HBaseUtil;
 import org.apache.hadoop.hbase.filter.CompareFilter;
 import org.apache.hadoop.hbase.util.Bytes;
@@ -227,7 +226,7 @@ public class ColumnRange implements Serializable {
             strGen.append(":");
             strGen.append(this.lower);
             strGen.append(",");
-            strGen.append(this.lowerComparator);
+            strGen.append(this.higherComparator);
             strGen.append(":");
             strGen.append(this.higher);
             strGen.append(")");

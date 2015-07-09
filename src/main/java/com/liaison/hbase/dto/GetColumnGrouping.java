@@ -3,7 +3,6 @@ package com.liaison.hbase.dto;
 import com.liaison.commons.Util;
 import com.liaison.hbase.model.ColumnRange;
 import com.liaison.hbase.model.FamilyHB;
-import com.liaison.hbase.model.FamilyModel;
 
 import java.util.Collections;
 import java.util.HashSet;
@@ -53,6 +52,16 @@ public class GetColumnGrouping {
     }
     public Set<ColumnRange> getColumnRangeSet() {
         return Collections.unmodifiableSet(this.columnRangeSet);
+    }
+
+    public boolean hasFamilies() {
+        return !this.familySet.isEmpty();
+    }
+    public boolean hasFQPs() {
+        return !this.fqpSet.isEmpty();
+    }
+    public boolean hasColumnRanges() {
+        return !this.columnRangeSet.isEmpty();
     }
 
     public GetColumnGrouping() {

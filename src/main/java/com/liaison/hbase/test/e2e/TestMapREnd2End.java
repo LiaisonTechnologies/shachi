@@ -15,6 +15,7 @@ import com.liaison.hbase.api.response.OpResultSet;
 import com.liaison.hbase.context.DirectoryPrefixedTableNamingStrategy;
 import com.liaison.hbase.context.MapRHBaseContext;
 import com.liaison.hbase.context.TableNamingStrategy;
+import com.liaison.hbase.dto.CellDatum;
 import com.liaison.hbase.dto.RowKey;
 import com.liaison.hbase.dto.Value;
 import com.liaison.hbase.exception.HBaseException;
@@ -392,15 +393,98 @@ public class TestMapREnd2End implements Closeable {
                                 .tbl(tbl)
                                 .row(RowKey.of(rowKeyStr))
                                 .and()
-                            .with()
+                            .with("everything")
                                 .fam(fam)
                                 .qual(qual)
                                 .and()
                             .then()
                         .exec();
 
-            LOG.info(testPrefix + "read complete!");
-            LOG.info(testPrefix + "read results: " + opResSet.getResultsByHandle());
+            LOG.info(testPrefix + "read complete! results (everything): ");
+
+            for (CellDatum datum : opResSet.getReadResult("READ").getData("everything")) {
+                LOG.info("retrieved: " + datum.getDatum());
+            }
+
+            LOG.info(testPrefix + "starting read...");
+
+            opResSet =
+                this.ctrl
+                    .begin()
+                        .read("READ")
+                            .from()
+                                .tbl(tbl)
+                                .row(RowKey.of(rowKeyStr))
+                                .and()
+                            .with("ge2")
+                                .fam(fam)
+                                .qual(qual)
+                                .version()
+                                    .ge(2)
+                                    .and()
+                                .and()
+                            .then()
+                        .exec();
+
+            opResSet.getReadResult("READ");
+
+            LOG.info(testPrefix + "read complete! results (ge2): ");
+
+            for (CellDatum datum : opResSet.getReadResult("READ").getData("ge2")) {
+                LOG.info("retrieved: " + datum.getDatum());
+            }
+
+            LOG.info(testPrefix + "starting read...");
+
+            opResSet =
+                this.ctrl
+                    .begin()
+                        .read("READ")
+                            .from()
+                                .tbl(tbl)
+                                .row(RowKey.of(rowKeyStr))
+                                .and()
+                            .with("le2")
+                                .fam(fam)
+                                .qual(qual)
+                                .version()
+                                    .le(2)
+                                    .and()
+                                .and()
+                            .then()
+                        .exec();
+
+            opResSet.getReadResult("READ");
+
+            LOG.info(testPrefix + "read complete! results (le2): ");
+
+            for (CellDatum datum : opResSet.getReadResult("READ").getData("le2")) {
+                LOG.info("retrieved: " + datum.getDatum());
+            }
+
+            LOG.info(testPrefix + "starting read...");
+
+            opResSet =
+                this.ctrl
+                    .begin()
+                        .read("READ")
+                            .from()
+                                .tbl(tbl)
+                                .row(RowKey.of(rowKeyStr))
+                                .and()
+                            .with("2")
+                                .fam(fam)
+                                .qual(qual)
+                                .version(2)
+                                .and()
+                            .then()
+                        .exec();
+
+            LOG.info(testPrefix + "read complete! results (2): ");
+
+            for (CellDatum datum : opResSet.getReadResult("READ").getData("2")) {
+                LOG.info("retrieved: " + datum.getDatum());
+            }
         } catch (Exception exc) {
             LOG.error(testPrefix + " was BAD! and you should feel bad! " + exc, exc);
         }

@@ -17,9 +17,7 @@ import com.liaison.hbase.dto.RowKey;
 import com.liaison.hbase.dto.Value;
 import com.liaison.hbase.exception.SpecValidationException;
 import com.liaison.hbase.model.FamilyHB;
-import com.liaison.hbase.model.FamilyModel;
 import com.liaison.hbase.model.QualHB;
-import com.liaison.hbase.model.QualModel;
 import com.liaison.hbase.util.SpecUtil;
 import com.liaison.hbase.util.StringRepFormat;
 

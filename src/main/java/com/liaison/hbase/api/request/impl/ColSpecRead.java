@@ -14,13 +14,10 @@ import com.liaison.hbase.api.request.frozen.ColSpecReadFrozen;
 import com.liaison.hbase.dto.FamilyQualifierPair;
 import com.liaison.hbase.exception.SpecValidationException;
 import com.liaison.hbase.model.FamilyHB;
-import com.liaison.hbase.model.FamilyModel;
 import com.liaison.hbase.model.VersioningModel;
 import com.liaison.hbase.util.SpecUtil;
 
 import java.io.Serializable;
-import java.util.Collections;
-import java.util.Set;
 
 /**
  * TODO

@@ -9,9 +9,6 @@
 package com.liaison.hbase.api.request.frozen;
 
 import com.liaison.hbase.api.request.impl.LongValueSpec;
-import com.liaison.hbase.dto.FamilyQualifierPair;
-
-import java.util.Set;
 
 /**
  * TODO
