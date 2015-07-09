@@ -9,6 +9,7 @@
 package com.liaison.hbase.api.response;
 
 import com.liaison.commons.Util;
+import com.liaison.commons.log.LogMeMaybe;
 import com.liaison.hbase.api.request.frozen.ColSpecReadFrozen;
 import com.liaison.hbase.api.request.impl.ColSpecRead;
 import com.liaison.hbase.api.request.impl.ReadOpSpecDefault;
@@ -38,10 +39,17 @@ public class ReadOpResult extends OpResult<ReadOpSpecDefault> {
      * TODO: javadoc
      */
     public static class ReadOpResultBuilder extends OpResultBuilder<ReadOpSpecDefault, ReadOpResult, ReadOpResultBuilder> {
+
+        private static final LogMeMaybe LOG;
+
         /**
          * TODO: javadoc
          */
         private static final String CLOSURENAME_ADD = ReadOpResultBuilder.class.getSimpleName() + "#add";
+
+        static {
+            LOG = new LogMeMaybe(ReadOpResultBuilder.class);
+        }
 
         /**
          * literal data set; stores references to the literal cells retrieved from HBase
@@ -84,6 +92,9 @@ public class ReadOpResult extends OpResult<ReadOpSpecDefault> {
         }
         private SingleCellResult.Builder singleCellBuilder(final ColSpecReadFrozen spec, final FamilyQualifierPair fqp) {
             return singleCellBuilder(fqp).spec(spec);
+        }
+        private SingleCellResult.Builder singleCellBuilder(final ColSpecReadFrozen spec) {
+            return singleCellBuilder().spec(spec);
         }
 
         /**
@@ -134,7 +145,7 @@ public class ReadOpResult extends OpResult<ReadOpSpecDefault> {
         public ReadOpResultBuilder add(final ColSpecReadFrozen colSpec, final HBaseException exc) throws IllegalArgumentException {
             Util.ensureNotNull(colSpec, CLOSURENAME_ADD, "colSpec", ColSpecReadFrozen.class);
             Util.ensureNotNull(exc, CLOSURENAME_ADD, "exc", HBaseException.class);
-            return addCellResult(colSpec, singleCellBuilder().exc(exc).build());
+            return addCellResult(colSpec, singleCellBuilder(colSpec).exc(exc).build());
         }
 
         /**
@@ -222,7 +233,28 @@ public class ReadOpResult extends OpResult<ReadOpSpecDefault> {
          * @return
          */
         public SpecCellResultSet getDataBySpec(final ColSpecReadFrozen colSpec) {
-            return this.dataBySpec.get(colSpec).build();
+            final SpecCellResultSet.Builder cellResultSetBuilder;
+            final SpecCellResultSet cellResultSet;
+            final String logMethodName;
+
+            logMethodName = LOG.enter(()->"getDataBySpec(colSpec=", ()->colSpec);
+            LOG.trace(logMethodName,
+                      ()->"this.dataBySpec=",
+                      ()->this.dataBySpec);
+            cellResultSetBuilder = this.dataBySpec.get(colSpec);
+            if (cellResultSetBuilder != null) {
+                cellResultSet = cellResultSetBuilder.build();
+                LOG.trace(logMethodName,
+                          () -> "result=",
+                          () -> cellResultSet);
+            } else {
+                cellResultSet = null;
+                LOG.trace(logMethodName,
+                          () -> " (no result)");
+            }
+            LOG.leave(logMethodName);
+
+            return cellResultSet;
         }
 
         /**

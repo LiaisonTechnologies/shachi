@@ -30,15 +30,19 @@ import com.liaison.hbase.api.request.impl.WriteOpSpecDefault;
 import com.liaison.hbase.api.response.OpResultSet;
 import com.liaison.hbase.context.HBaseContext;
 import com.liaison.hbase.dto.FamilyQualifierPair;
+import com.liaison.hbase.dto.GetColumnGrouping;
 import com.liaison.hbase.dto.NullableValue;
 import com.liaison.hbase.dto.RowKey;
+import com.liaison.hbase.dto.RowRef;
 import com.liaison.hbase.exception.HBaseException;
 import com.liaison.hbase.exception.HBaseMultiColumnException;
 import com.liaison.hbase.exception.HBaseRuntimeException;
 import com.liaison.hbase.exception.HBaseTableRowException;
-import com.liaison.hbase.model.FamilyModel;
+import com.liaison.hbase.model.FamilyHB;
 import com.liaison.hbase.model.Name;
+import com.liaison.hbase.model.QualHB;
 import com.liaison.hbase.model.QualModel;
+import com.liaison.hbase.model.ColumnRange;
 import com.liaison.hbase.model.VersioningModel;
 import com.liaison.hbase.resmgr.HBaseResourceManager;
 import com.liaison.hbase.resmgr.res.ManagedTable;
@@ -48,6 +52,11 @@ import org.apache.hadoop.hbase.client.Get;
 import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.client.Result;
+import org.apache.hadoop.hbase.filter.BinaryComparator;
+import org.apache.hadoop.hbase.filter.ByteArrayComparable;
+import org.apache.hadoop.hbase.filter.Filter;
+import org.apache.hadoop.hbase.filter.FilterList;
+import org.apache.hadoop.hbase.filter.QualifierFilter;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -100,7 +109,7 @@ public class HBaseControl implements HBaseStart<OpResultSet>, Closeable {
          * @param colQual
          * @return
          */
-        private EnumSet<VersioningModel> determineVersioningScheme(final FamilyModel colFam, final QualModel colQual) {
+        private EnumSet<VersioningModel> determineVersioningScheme(final FamilyHB colFam, final QualHB colQual) {
             EnumSet<VersioningModel> versioningScheme;
 
             versioningScheme = colQual.getVersioning();
@@ -122,13 +131,34 @@ public class HBaseControl implements HBaseStart<OpResultSet>, Closeable {
          * @param colQual
          * @param multiVersion
          */
-        private void addVersioningDerivedQualifiers(final Set<FamilyQualifierPair> fqpSet, final EnumSet<VersioningModel> versioningScheme, final FamilyModel colFam, final QualModel colQual, final LongValueSpecFrozen multiVersion) {
-            final String logMsg;
-            // TODO: figure out how to implement this (only needed for reads)
-            logMsg = "Read spec specifies a range of version numbers "
-                     + multiVersion
-                     + "; not yet supported";
-            throw new UnsupportedOperationException(logMsg);
+        private void buildVersioningDerivedQualifiers(final Set<ColumnRange> colRangeSet, final EnumSet<VersioningModel> versioningScheme, final FamilyHB colFam, final QualHB colQual, final LongValueSpecFrozen multiVersion) {
+            final String logMethodName;
+            String logMsg;
+            final byte[] qualValueBase;
+            ColumnRange qualForWrite;
+            byte[] qualBytes;
+
+            logMethodName =
+                LOG.enter(()->"buildVersioningDerivedQualifiers(colRangeSet=",
+                          ()->colRangeSet,
+                          ()->",scheme=",
+                          ()->versioningScheme,
+                          ()->",ver=",
+                          ()->multiVersion,
+                          ()->")");
+
+            /*
+             * For each versioning scheme specified by the model, add a qualifier to the
+             * read spec, modified to accommodate the versioning scheme, if necessary.
+             * TODO: does this work for multiple overlapping versioning schemes?
+             */
+            for (VersioningModel verModel : versioningScheme) {
+                // create a new qualifier range representing the core qualifier with version info
+                // appended per the range of version specification
+                colRangeSet.add(ColumnRange.from(colFam, colQual, verModel, multiVersion));
+                LOG.trace(logMethodName, ()->"colRangeSet=", ()->colRangeSet);
+            }
+            LOG.leave(logMethodName);
         }
 
         /**
@@ -139,15 +169,19 @@ public class HBaseControl implements HBaseStart<OpResultSet>, Closeable {
          * @param colQual
          * @param singleVersion
          */
-        private void addVersioningDerivedQualifiers(final Set<FamilyQualifierPair> fqpSet, final EnumSet<VersioningModel> versioningScheme, final FamilyModel colFam, final QualModel colQual, final Long singleVersion) {
+        private void buildVersioningDerivedQualifiers(final Set<FamilyQualifierPair> fqpSet, final EnumSet<VersioningModel> versioningScheme, final FamilyHB colFam, final QualHB colQual, final Long singleVersion) {
             final String logMethodName;
             final byte[] qualValueBase;
             QualModel qualForWrite;
             byte[] qualBytes;
 
             logMethodName =
-                LOG.enter(()->"addVersioningDerivedQualifiers(fqpSet=",
+                LOG.enter(()->"buildVersioningDerivedQualifiers(fqpSet=",
                           ()->fqpSet,
+                          ()->",scheme=",
+                          ()->versioningScheme,
+                          ()->",ver=",
+                          ()->singleVersion,
                           ()->")");
 
             // we're going to be creating new byte arrays here via concatenation anyway, so
@@ -157,16 +191,14 @@ public class HBaseControl implements HBaseStart<OpResultSet>, Closeable {
             /*
              * For each versioning scheme specified by the model, add a qualifier to the
              * read spec, modified to accommodate the versioning scheme, if necessary.
-             * TODO (important): not clear whether the Set is able to provide uniqueness
-             *     guarantees with byte[] type; investigate/correct, if not
              * TODO: does this work for multiple overlapping versioning schemes?
              */
             for (VersioningModel verModel : versioningScheme) {
                 // create a new qualifier with the version number appended
                 qualBytes =
                     HBaseUtil.appendVersionToQual(qualValueBase,
-                        singleVersion.longValue(),
-                        verModel);
+                                                  singleVersion.longValue(),
+                                                  verModel);
                 qualForWrite = QualModel.of(Name.of(qualBytes, DefensiveCopyStrategy.NEVER));
                 // create a new family+qualifier pair pairing the existing column family
                 // with the newly-created qualifier
@@ -183,7 +215,7 @@ public class HBaseControl implements HBaseStart<OpResultSet>, Closeable {
          * @param colQual
          * @return
          */
-        private Set<FamilyQualifierPair> prepareHBaseOpQualifierSet(final Set<FamilyQualifierPair> fqpSet, final FamilyModel colFam, final QualModel colQual) {
+        private Set<FamilyQualifierPair> prepareHBaseOpQualifierSet(final Set<FamilyQualifierPair> fqpSet, final FamilyHB colFam, final QualHB colQual) {
             /*
              * Intended for the case where the logic to add versioning-derived qualifiers indicates
              * that qualifier versioning is not in use; in that case, adds a single pair using the
@@ -203,7 +235,7 @@ public class HBaseControl implements HBaseStart<OpResultSet>, Closeable {
          * @param dcs
          * @return
          */
-        private Set<FamilyQualifierPair> getVersionAdjustedQualifiersForWrite(final ColSpecWriteFrozen colSpec, final FamilyModel colFam, final QualModel colQual, final DefensiveCopyStrategy dcs) {
+        private Set<FamilyQualifierPair> getVersionAdjustedQualifiersForWrite(final ColSpecWriteFrozen colSpec, final FamilyHB colFam, final QualHB colQual, final DefensiveCopyStrategy dcs) {
             final String logMethodName;
             final Set<FamilyQualifierPair> fqpSet;
             final Long singleVersion;
@@ -215,7 +247,7 @@ public class HBaseControl implements HBaseStart<OpResultSet>, Closeable {
                           colSpec::toString,
                           ()->")");
 
-            fqpSet = new HashSet<FamilyQualifierPair>();
+            fqpSet = new HashSet<>();
             singleVersion = colSpec.getVersion();
             LOG.trace(logMethodName, ()->"version=", ()->singleVersion);
 
@@ -224,11 +256,11 @@ public class HBaseControl implements HBaseStart<OpResultSet>, Closeable {
                 LOG.trace(logMethodName, ()->"version-scheme=", ()->versioningScheme);
 
                 if (VersioningModel.isQualifierBased(versioningScheme)) {
-                    addVersioningDerivedQualifiers(fqpSet,
-                                                   versioningScheme,
-                                                   colFam,
-                                                   colQual,
-                                                   singleVersion);
+                    buildVersioningDerivedQualifiers(fqpSet,
+                                                     versioningScheme,
+                                                     colFam,
+                                                     colQual,
+                                                     singleVersion);
                 }
             }
 
@@ -249,7 +281,7 @@ public class HBaseControl implements HBaseStart<OpResultSet>, Closeable {
          * @param dcs
          * @return
          */
-        private Set<FamilyQualifierPair> getVersionAdjustedQualifiersForRead(final ColSpecRead<ReadOpSpecDefault> colSpec, final FamilyModel colFam, final QualModel colQual, final DefensiveCopyStrategy dcs) {
+        private Set<FamilyQualifierPair> getVersionAdjustedQualifiersForRead(final ColSpecRead<ReadOpSpecDefault> colSpec, final FamilyHB colFam, final QualHB colQual, final DefensiveCopyStrategy dcs) {
             final Set<FamilyQualifierPair> fqpSet;
             final LongValueSpec<?> version;
             final Long singleVersion;
@@ -263,27 +295,36 @@ public class HBaseControl implements HBaseStart<OpResultSet>, Closeable {
                     singleVersion = version.singleValue();
                     if (singleVersion == null) {
                         /*
-                         * TODO
-                         * Per the API, a null value here means that the version number specified
-                         * for reading is a range, not a single version value. That feature is not
-                         * currently implemented, so for now throw an UnsupportedOpExc. Determine
-                         * how to make this work at a later time.
-                         */
-                        addVersioningDerivedQualifiers(fqpSet,
-                                                       versioningScheme,
-                                                       colFam,
-                                                       colQual,
-                                                       version);
+                        buildVersioningDerivedQualifiers(fqpSet,
+                                                         versioningScheme,
+                                                         colFam,
+                                                         colQual,
+                                                         version);
+                                                         */
                     } else {
-                        addVersioningDerivedQualifiers(fqpSet,
-                                                       versioningScheme,
-                                                       colFam,
-                                                       colQual,
-                                                       singleVersion);
+                        buildVersioningDerivedQualifiers(fqpSet,
+                                                         versioningScheme,
+                                                         colFam,
+                                                         colQual,
+                                                         singleVersion);
                     }
                 }
             }
             return prepareHBaseOpQualifierSet(fqpSet, colFam, colQual);
+        }
+
+        private LongValueSpecFrozen getQualifierBasedVersion(final ColSpecRead<ReadOpSpecDefault> colSpec, final FamilyHB colFam, final QualHB colQual) {
+            final LongValueSpecFrozen version;
+            EnumSet<VersioningModel> versioningScheme;
+
+            version = colSpec.getVersion();
+            if (version != null) {
+                versioningScheme = determineVersioningScheme(colFam, colQual);
+                if (VersioningModel.isQualifierBased(versioningScheme)) {
+                    return version;
+                }
+            }
+            return null;
         }
 
         /**
@@ -295,8 +336,11 @@ public class HBaseControl implements HBaseStart<OpResultSet>, Closeable {
          */
         private void addColumn(final String logMethodName, final DefensiveCopyStrategy dcs, final Get readGet, final ColSpecRead<ReadOpSpecDefault> colSpec) {
             final ReadOpSpecFrozen readOpSpec;
-            final FamilyModel colFam;
-            final QualModel colQual;
+            final FamilyHB colFam;
+            final QualHB colQual;
+            FamilyHB readFam;
+            QualHB readQual;
+            ColumnRange readColumnRange;
             final byte[] famValue;
             final Set<FamilyQualifierPair> fqpSet;
 
@@ -312,10 +356,9 @@ public class HBaseControl implements HBaseStart<OpResultSet>, Closeable {
                         // qualifier values as needed
                         fqpSet =
                             getVersionAdjustedQualifiersForRead(colSpec, colFam, colQual, dcs);
-                        // Update the column specification to associate it with the set of
-                        // generated family-qualifier pairs being added to the HBase Get
-                        colSpec.setResultColumnAssoc(fqpSet);
                         for (FamilyQualifierPair fqp : fqpSet) {
+                            readFam = fqp.getFamily();
+                            readQual = fqp.getColumn();
                             /*
                              * TODO
                              * it might be worth investigating modifying
@@ -356,6 +399,103 @@ public class HBaseControl implements HBaseStart<OpResultSet>, Closeable {
                     }
                 }
             }
+        }
+
+        private void updateGetColumnGroupings(final GetColumnGrouping gcg, final DefensiveCopyStrategy dcs, final ColSpecRead<ReadOpSpecDefault> colSpec) {
+            final String logMethodName;
+            final ReadOpSpecFrozen readOpSpec;
+            final FamilyHB colFam;
+            final QualHB colQual;
+            final byte[] famValue;
+            final LongValueSpecFrozen version;
+            final Set<FamilyQualifierPair> fqpSet;
+            final Set<ColumnRange> colRangeSet;
+            final FamilyQualifierPair fqp;
+
+            logMethodName =
+                LOG.enter(()->"updateGetColumnGroupings(colSpec=",
+                          ()->colSpec,
+                          ()->")");
+
+            if (colSpec != null) {
+                readOpSpec = colSpec.getParent();
+                colFam = colSpec.getFamily();
+                colQual = colSpec.getColumn();
+                if (colFam != null) {
+                    famValue = colFam.getName().getValue(dcs);
+                    if (colQual != null) {
+                        version = getQualifierBasedVersion(colSpec, colFam, colQual);
+                        if (version == null) {
+                            fqp = FamilyQualifierPair.of(colFam, colQual);
+                            gcg.addFQP(fqp);
+                            // Update the parent read operation spec to associate it with this
+                            // family-qualifier pair
+                            readOpSpec.addColumnAssoc(fqp, colSpec);
+                            LOG.trace(logMethodName,
+                                      ()->"adding to get-group: family=",
+                                      fqp::getFamily,
+                                      ()->", column=",
+                                      fqp::getColumn,
+                                      ()->" --> ",
+                                      ()->colSpec);
+                        } else if (version.isSingleValue()) {
+                            fqpSet = new HashSet<>();
+                            buildVersioningDerivedQualifiers(
+                                fqpSet,
+                                readOpSpec.getCommonVersioningConfig(),
+                                colFam,
+                                colQual,
+                                version.singleValue());
+                            gcg.addAllFQP(fqpSet);
+                            for (FamilyQualifierPair fqpDerived : fqpSet) {
+                                // Update the parent read operation spec to associate it with this
+                                // family-qualifier pair
+                                readOpSpec.addColumnAssoc(fqpDerived, colSpec);
+                                LOG.trace(logMethodName,
+                                          ()->"adding to get-group: family=",
+                                          fqpDerived::getFamily,
+                                          ()->", column=",
+                                          fqpDerived::getColumn,
+                                          ()->" --> ",
+                                          ()->colSpec);
+                            }
+                        } else {
+                            colRangeSet = new HashSet<>();
+                            buildVersioningDerivedQualifiers(
+                                colRangeSet,
+                                readOpSpec.getCommonVersioningConfig(),
+                                colFam,
+                                colQual,
+                                version);
+                            gcg.addAllColumnRange(colRangeSet);
+                            for (ColumnRange colRangeDerived : colRangeSet) {
+                                readOpSpec.addColumnRangeAssoc(colRangeDerived, colSpec);
+                                LOG.trace(logMethodName,
+                                          ()->"adding to get-group: family=",
+                                          colRangeDerived::getFamily,
+                                          ()->", column-range=",
+                                          colRangeDerived::toString,
+                                          ()->" --> ",
+                                          ()->colSpec);
+                            }
+                        }
+                    } else {
+                        /*
+                         * TODO: versioning on qualifier when reading from a full family?
+                         */
+                        gcg.addFamily(colFam);
+                        // Update the parent read operation spec to associate it with this
+                        // column family reference
+                        readOpSpec.addColumnAssoc(colFam, colSpec);
+                        LOG.trace(logMethodName,
+                                  ()->"adding to get-group: family=",
+                                  ()->colFam,
+                                  ()->" --> ",
+                                  ()->colSpec);
+                    }
+                }
+            }
+            LOG.leave(logMethodName);
         }
 
         /**
@@ -399,8 +539,8 @@ public class HBaseControl implements HBaseStart<OpResultSet>, Closeable {
          */
         private void addColumn(final String logMethodName, final DefensiveCopyStrategy dcs, final Put writePut, final ColSpecWriteFrozen colSpec) {
             final Long writeTS;
-            final FamilyModel colFam;
-            final QualModel colQual;
+            final FamilyHB colFam;
+            final QualHB colQual;
             final NullableValue colValue;
             final Set<FamilyQualifierPair> fqpSet;
             
@@ -457,8 +597,8 @@ public class HBaseControl implements HBaseStart<OpResultSet>, Closeable {
             final String logMsg;
             final NullableValue condPossibleValue;
             final RowKey rowKey;
-            final FamilyModel fam;
-            final QualModel qual;
+            final FamilyHB fam;
+            final QualHB qual;
             final boolean writeCompleted;
             
             try {
@@ -513,7 +653,7 @@ public class HBaseControl implements HBaseStart<OpResultSet>, Closeable {
          * @param tableRowSpec
          * @throws HBaseTableRowException
          */
-        private void setReadTimestamp(final String logMethodName, final Get readGet, final ReadOpSpecDefault readSpec, final RowSpec<?> tableRowSpec) throws HBaseTableRowException {
+        private void setReadTimestamp(final String logMethodName, final Get readGet, final ReadOpSpecFrozen readSpec, final RowRef tableRowSpec) throws HBaseTableRowException {
             String logMsg;
             final LongValueSpecFrozen commonVer;
             final EnumSet<VersioningModel> commonVerConf;
@@ -567,6 +707,64 @@ public class HBaseControl implements HBaseStart<OpResultSet>, Closeable {
             }
         }
 
+        private Get buildGet(final RowRef rowRef, final ColumnRange colRange, final DefensiveCopyStrategy dcs) {
+            final String logMethodName;
+            final Get readGet;
+            final Filter combinedFilter;
+            final Filter lowerFilter;
+            final Filter higherFilter;
+
+            logMethodName =
+                LOG.enter(()->"buildGet(rowRef=",
+                          ()->rowRef,
+                          ()->",colRange=",
+                          ()->colRange,
+                          ()->")");
+            lowerFilter =
+                new QualifierFilter(colRange.getLowerComparator(),
+                                    new BinaryComparator(
+                                        colRange
+                                            .getLower()
+                                            .getName()
+                                            .getValue(dcs)));
+            higherFilter =
+                new QualifierFilter(colRange.getHigherComparator(),
+                                    new BinaryComparator(
+                                        colRange
+                                            .getHigher()
+                                            .getName()
+                                            .getValue(dcs)));
+            combinedFilter = new FilterList(lowerFilter, higherFilter);
+            readGet = new Get(rowRef.getRowKey().getValue(dcs));
+            readGet.addFamily(colRange.getFamily().getName().getValue(dcs));
+            readGet.setFilter(combinedFilter);
+            LOG.leave(logMethodName);
+            return readGet;
+        }
+
+        private void addSetupParamsToGet(final Get getForSetup, final ReadOpSpecFrozen readSpec, final RowRef tableRowSpec) throws HBaseTableRowException {
+            final String logMethodName;
+            final Integer maxResultsPerFamily;
+
+            logMethodName =
+                LOG.enter(()->"addSetupParamsToGet(get=",
+                          ()->getForSetup,
+                          ()->",readSpec=",
+                          ()->readSpec,
+                          ()->",row=",
+                          ()->tableRowSpec,
+                          ()->")");
+            maxResultsPerFamily = readSpec.getMaxEntriesPerFamily();
+            if (maxResultsPerFamily != null) {
+                getForSetup.setMaxResultsPerColumnFamily(maxResultsPerFamily.intValue());
+                LOG.trace(logMethodName,
+                          () -> "applied maximum number of columns to read per family: ",
+                          () -> maxResultsPerFamily);
+            }
+            setReadTimestamp(logMethodName, getForSetup, readSpec, tableRowSpec);
+            LOG.leave(logMethodName);
+        }
+
         /**
          * TODO
          * @param readSpec
@@ -580,10 +778,11 @@ public class HBaseControl implements HBaseStart<OpResultSet>, Closeable {
             final String logMethodName;
             final DefensiveCopyStrategy dcs;
             final RowSpec<?> tableRowSpec;
-            final Integer maxResultsPerFamily;
-            final Get readGet;
+            final GetColumnGrouping gcg;
+            final Set<Get> allReadGets;
+            Get readGet;
             final List<ColSpecRead<ReadOpSpecDefault>> colReadList;
-            final Result res;
+            Result res;
             
             Util.ensureNotNull(readSpec, this, "readSpec", ReadOpSpecDefault.class);
             
@@ -604,47 +803,87 @@ public class HBaseControl implements HBaseStart<OpResultSet>, Closeable {
             LOG.trace(logMethodName,
                       ()->"table-row: ",
                       ()->tableRowSpec);
-            
+
+            colReadList = readSpec.getWithColumn();
+            LOG.trace(logMethodName,
+                      ()->"columns: ",
+                      ()->colReadList,
+                      ()->"; determining column groupings...");
+            gcg = new GetColumnGrouping();
+            if (colReadList != null) {
+                for (ColSpecRead<ReadOpSpecDefault> colSpec : colReadList) {
+                    updateGetColumnGroupings(gcg, dcs, colSpec);
+                }
+            }
+            LOG.trace(logMethodName,
+                      ()->"column associations (full family): ",
+                      readSpec::getFullFamilyAssoc);
+            LOG.trace(logMethodName,
+                      ()->"column associations (family+qualifier): ",
+                      readSpec::getFamilyQualifierAssoc);
+            LOG.trace(logMethodName,
+                      ()->"column associations (range): ",
+                      readSpec::getColumnRangeAssoc);
+
+            LOG.trace(logMethodName, ()->"building Get objects...");
+            allReadGets = new HashSet<>();
+
+            LOG.trace(logMethodName,
+                      ()->"building main Get object for columns which require NO filter...");
+            readGet = new Get(tableRowSpec.getRowKey().getValue(dcs));
+            for (FamilyHB family : gcg.getFamilySet()) {
+                readGet.addFamily(family.getName().getValue(dcs));
+            }
+            for (FamilyQualifierPair fqp : gcg.getFQPSet()) {
+                readGet.addColumn(fqp.getFamily().getName().getValue(dcs),
+                                  fqp.getColumn().getName().getValue(dcs));
+            }
+            allReadGets.add(readGet);
+            LOG.trace(logMethodName,
+                      ()->"main (unfiltered) Get: ",
+                      ()->readGet);
+
+            LOG.trace(logMethodName,
+                      ()->"building separate Get objects for columns requiring a filter for ",
+                      ()->ColumnRange.class.getSimpleName(),
+                      ()->"...");
+            for (ColumnRange colRange : gcg.getColumnRangeSet()) {
+                allReadGets.add(buildGet(tableRowSpec, colRange, dcs));
+            }
+            LOG.trace(logMethodName, ()->"ALL Get objects: ", ()->allReadGets);
+
+            for (Get getForSetup : allReadGets) {
+                addSetupParamsToGet(getForSetup, readSpec, tableRowSpec);
+            }
+
             try (ManagedTable readFromTable =
-                    resMgr.borrow(HBaseControl.this.context, tableRowSpec.getTable())) {
-                
+                     resMgr.borrow(HBaseControl.this.context, tableRowSpec.getTable())) {
+
                 LOG.trace(logMethodName, ()->"table obtained");
-                
-                readGet = new Get(tableRowSpec.getRowKey().getValue(dcs));
 
-                maxResultsPerFamily = readSpec.getMaxEntriesPerFamily();
-                if (maxResultsPerFamily != null) {
-                    readGet.setMaxResultsPerColumnFamily(maxResultsPerFamily.intValue());
-                    LOG.trace(logMethodName,
-                              ()->"applied maximum number of columns to read per family: ",
-                              ()->maxResultsPerFamily);
-                }
-
-                setReadTimestamp(logMethodName, readGet, readSpec, tableRowSpec);
-                
-                colReadList = readSpec.getWithColumn();
-                LOG.trace(logMethodName,
-                          ()->"columns: ",
-                          ()->colReadList);
-                if (colReadList != null) {
-                    for (ColSpecRead<ReadOpSpecDefault> colSpec : colReadList) {
-                        addColumn(logMethodName, dcs, readGet, colSpec);
+                res = null;
+                for (Get getToExec : allReadGets) {
+                    LOG.trace(logMethodName, () -> "performing read (using: ", ()->getToExec);
+                    try {
+                        // perform the HBase READ operation and return the result
+                        if (res == null) {
+                            /*
+                             * If res does not yet exist (no result from a previous Get), then
+                             * assign res to the result of executing this Get.
+                             */
+                            res = readFromTable.use().get(getToExec);
+                        } else {
+                            /*
+                             * If res already exists (containing the results of a previous Get),
+                             * then copy the result of executing this Get into the existing Result.
+                             */
+                            res.copyFrom(readFromTable.use().get(getToExec));
+                        }
+                    } catch (IOException ioExc) {
+                        logMsg = "READ failed; " + ioExc;
+                        LOG.error(logMethodName, logMsg, ioExc);
+                        throw new HBaseMultiColumnException(tableRowSpec, colReadList, logMsg, ioExc);
                     }
-                }
-                LOG.trace(logMethodName,
-                          ()->"column associations (full family): ",
-                          readSpec::getFullFamilyAssoc);
-                LOG.trace(logMethodName,
-                          ()->"column associations (family+qualifier): ",
-                          readSpec::getFamilyQualifierAssoc);
-
-                LOG.trace(logMethodName, ()->"performing read...");
-                try {
-                    res = readFromTable.use().get(readGet);
-                } catch (IOException ioExc) {
-                    logMsg = "READ failed; " + ioExc;
-                    LOG.error(logMethodName, logMsg, ioExc);
-                    throw new HBaseMultiColumnException(tableRowSpec, colReadList, logMsg, ioExc);
                 }
 
                 /*

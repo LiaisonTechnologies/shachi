@@ -30,16 +30,4 @@ public interface ColSpecReadFrozen extends ColSpecFrozen {
      * @return
      */
     boolean isOptional();
-
-    /**
-     * TODO
-     * @return
-     */
-    public Set<FamilyQualifierPair> getResultColumnAssoc();
-
-    /**
-     * TODO
-     * @param resultSetKeyAssoc
-     */
-    public void setResultColumnAssoc(Set<FamilyQualifierPair> resultSetKeyAssoc);
 }

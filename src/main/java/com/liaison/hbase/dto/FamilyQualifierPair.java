@@ -9,7 +9,9 @@
 package com.liaison.hbase.dto;
 
 import com.liaison.commons.Util;
+import com.liaison.hbase.model.FamilyHB;
 import com.liaison.hbase.model.FamilyModel;
+import com.liaison.hbase.model.QualHB;
 import com.liaison.hbase.model.QualModel;
 
 import java.io.Serializable;
@@ -19,16 +21,16 @@ public class FamilyQualifierPair implements ColRef, Serializable {
     private static final long serialVersionUID = -3126811569021715389L;
 
     public static final class Builder {
-        private FamilyModel family;
-        private QualModel column;
+        private FamilyHB family;
+        private QualHB column;
         private String description;
         private boolean optional;
         
-        public Builder family(final FamilyModel family) {
+        public Builder family(final FamilyHB family) {
             this.family = family;
             return this;
         }
-        public Builder column(final QualModel column) {
+        public Builder column(final QualHB column) {
             this.column = column;
             return this;
         }
@@ -57,12 +59,12 @@ public class FamilyQualifierPair implements ColRef, Serializable {
     public static FamilyQualifierPair of(final FamilyModel fam, final QualModel qual, final String description) throws IllegalArgumentException {
         return getBuilder().family(fam).column(qual).description(description).build();
     }
-    public static FamilyQualifierPair of(final FamilyModel fam, final QualModel qual) throws IllegalArgumentException {
+    public static FamilyQualifierPair of(final FamilyHB fam, final QualHB qual) throws IllegalArgumentException {
         return getBuilder().family(fam).column(qual).build();
     }
     
-    private final FamilyModel family;
-    private final QualModel column;
+    private final FamilyHB family;
+    private final QualHB column;
     /**
      * description is an optional field, so it is important that it NOT be included in hashCode
      * and equals implementations, so that instances with and without a description (or with
@@ -80,11 +82,11 @@ public class FamilyQualifierPair implements ColRef, Serializable {
     private String strRep;
 
     @Override
-    public FamilyModel getFamily() {
+    public FamilyHB getFamily() {
         return this.family;
     }
     @Override
-    public QualModel getColumn() {
+    public QualHB getColumn() {
         return this.column;
     }
     public String getDescription() {

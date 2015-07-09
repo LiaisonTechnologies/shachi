@@ -11,7 +11,9 @@ package com.liaison.hbase.api.request.impl;
 import com.liaison.commons.Util;
 import com.liaison.hbase.api.request.fluid.ColSpecFluid;
 import com.liaison.hbase.api.request.frozen.ColSpecFrozen;
+import com.liaison.hbase.model.FamilyHB;
 import com.liaison.hbase.model.FamilyModel;
+import com.liaison.hbase.model.QualHB;
 import com.liaison.hbase.model.QualModel;
 import com.liaison.hbase.util.StringRepFormat;
 
@@ -68,11 +70,11 @@ public abstract class ColSpec<C extends ColSpec<C, P>, P extends OperationSpec<P
         return this.handle;
     }
     @Override
-    public FamilyModel getFamily() {
+    public FamilyHB getFamily() {
         return this.family;
     }
     @Override
-    public QualModel getColumn() {
+    public QualHB getColumn() {
         return this.column;
     }
     

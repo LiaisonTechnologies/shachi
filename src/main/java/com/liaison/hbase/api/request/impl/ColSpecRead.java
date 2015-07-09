@@ -13,6 +13,7 @@ import com.liaison.hbase.api.request.fluid.fluent.ColSpecReadFluent;
 import com.liaison.hbase.api.request.frozen.ColSpecReadFrozen;
 import com.liaison.hbase.dto.FamilyQualifierPair;
 import com.liaison.hbase.exception.SpecValidationException;
+import com.liaison.hbase.model.FamilyHB;
 import com.liaison.hbase.model.FamilyModel;
 import com.liaison.hbase.util.SpecUtil;
 
@@ -35,17 +36,6 @@ public final class ColSpecRead<P extends OperationSpec<P>> extends ColSpec<ColSp
 
     private LongValueSpec<ColSpecRead<P>> version;
     private boolean optional;
-
-    /**
-     * Set of FamilyQualifierPair entries generated from this spec when it is translated to a Get
-     * object for HBase execution. Indicates the correspondence between this source specification
-     * and the family/qualifier combinations which key the result set, and used in order to
-     * re-associate the spec with the result in the OpResultSet.
-     *
-     * Note that this field is not populated until the parent ReadOpSpec transitions from FLUID
-     * state to FROZEN.
-     */
-    private Set<FamilyQualifierPair> resultColumnAssoc;
     
     // ||----(instance properties)---------------------------------------------------------------||
     
@@ -57,7 +47,13 @@ public final class ColSpecRead<P extends OperationSpec<P>> extends ColSpec<ColSp
     public LongValueSpec<ColSpecRead<P>> version() throws IllegalStateException, IllegalArgumentException {
         prepMutation();
         Util.validateExactlyOnce("atTime", LongValueSpec.class, this.version);
-        this.version = new LongValueSpec<>(this);
+        /*
+         * For version numbers, there should be a hard lower limit of zero, to accommodate
+         * versioning schemes (like VersioningModel.QUALIFIER_LATEST) which subtract the number
+         * from the maximum value in order to invert the sort order within HBase. The maximum value
+         * is set to null here so that it will default to Long.MAX_VALUE.
+         */
+        this.version = new LongValueSpec<>(this, Long.valueOf(0), null);
         addSubordinate(this.version);
         return this.version;
     }
@@ -94,23 +90,6 @@ public final class ColSpecRead<P extends OperationSpec<P>> extends ColSpec<ColSp
     @Override
     public boolean isOptional() {
         return this.optional;
-    }
-
-    @Override
-    public void setResultColumnAssoc(final Set<FamilyQualifierPair> resultColumnAssoc) {
-        prepPostFreezeOp("setResultColumnAssoc");
-        Util.validateExactlyOnceParam(resultColumnAssoc,
-                                      this,
-                                      "resultColumnAssoc",
-                                      Set.class,
-                                      this.resultColumnAssoc);
-        this.resultColumnAssoc = Collections.unmodifiableSet(resultColumnAssoc);
-    }
-
-    @Override
-    public Set<FamilyQualifierPair> getResultColumnAssoc() {
-        prepPostFreezeOp("getResultColumnAssoc");
-        return this.resultColumnAssoc;
     }
     
     // ||----(instance methods: API: frozen)-----------------------------------------------------||
@@ -178,7 +157,7 @@ public final class ColSpecRead<P extends OperationSpec<P>> extends ColSpec<ColSp
     @Override
     protected void validate() throws SpecValidationException {
         super.validate();
-        SpecUtil.validateRequired(getFamily(), this, "fam", FamilyModel.class);
+        SpecUtil.validateRequired(getFamily(), this, "fam", FamilyHB.class);
     }
     
     // ||----(instance methods: utility)---------------------------------------------------------||
@@ -190,7 +169,6 @@ public final class ColSpecRead<P extends OperationSpec<P>> extends ColSpec<ColSp
     public ColSpecRead(final P parent, final Object handle) {
         super(parent, handle);
         this.optional = false;
-        this.resultColumnAssoc = null;
     }
     public ColSpecRead(final P parent) {
         this(parent, null);

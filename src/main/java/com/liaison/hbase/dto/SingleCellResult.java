@@ -81,10 +81,6 @@ public class SingleCellResult extends CellResult<CellDatum> implements Serializa
                            SingleCellResult.class.getSimpleName(),
                            "tableRow",
                            TableRow.class);
-        Util.ensureNotNull(build.tableColumn,
-                           SingleCellResult.class.getSimpleName(),
-                           "tableColumn",
-                           FamilyQualifierPair.class);
         // note: spec is optional
     }
 
@@ -109,7 +105,7 @@ public class SingleCellResult extends CellResult<CellDatum> implements Serializa
     @Override
     public int hashCodeSubord() {
         // note: spec not included in hashCode
-        return Util.hashCode(tableRow) ^ Util.hashCode(tableColumn);
+        return Util.hashCode(this.tableRow) ^ Util.hashCode(this.tableColumn);
     }
 
     @Override

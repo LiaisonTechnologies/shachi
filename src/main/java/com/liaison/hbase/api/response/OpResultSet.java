@@ -23,6 +23,7 @@ import com.liaison.hbase.api.request.impl.WriteOpSpecDefault;
 import com.liaison.hbase.api.response.ReadOpResult.ReadOpResultBuilder;
 import com.liaison.hbase.dto.Datum;
 import com.liaison.hbase.dto.FamilyQualifierPair;
+import com.liaison.hbase.dto.SpecCellResultSet;
 import com.liaison.hbase.exception.HBaseNoCellException;
 import com.liaison.hbase.exception.HBaseTableRowException;
 import com.liaison.hbase.model.FamilyModel;
@@ -248,6 +249,7 @@ public class OpResultSet implements Serializable {
         String logMsg;
         final ReadOpResultBuilder opResBuild;
         final RowSpec<ReadOpSpecDefault> rowSpec;
+        SpecCellResultSet readColSpecResult;
 
         rowSpec = readSpec.getTableRow();
         try {
@@ -256,8 +258,9 @@ public class OpResultSet implements Serializable {
 
 
             for (ColSpecRead<ReadOpSpecDefault> readColSpec : readSpec.getWithColumn()) {
+                readColSpecResult = opResBuild.getDataBySpec(readColSpec);
                 if ((!readColSpec.isOptional())
-                    && (opResBuild.getDataBySpec(readColSpec).isEmpty())) {
+                    && ((readColSpecResult == null) || (readColSpecResult.isEmpty()))) {
                     logMsg = "READ (handle:'"
                              + readSpec.getHandle()
                              + "') returned no Cell for table/row "

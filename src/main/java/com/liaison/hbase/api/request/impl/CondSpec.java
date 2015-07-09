@@ -16,7 +16,9 @@ import com.liaison.hbase.dto.NullableValue;
 import com.liaison.hbase.dto.RowKey;
 import com.liaison.hbase.dto.Value;
 import com.liaison.hbase.exception.SpecValidationException;
+import com.liaison.hbase.model.FamilyHB;
 import com.liaison.hbase.model.FamilyModel;
+import com.liaison.hbase.model.QualHB;
 import com.liaison.hbase.model.QualModel;
 import com.liaison.hbase.util.SpecUtil;
 import com.liaison.hbase.util.StringRepFormat;
@@ -138,8 +140,8 @@ public final class CondSpec<P extends OperationSpec<P>> extends ColSpec<CondSpec
     protected void validate() throws SpecValidationException {
         super.validate();
         SpecUtil.validateRequired(getRowKey(), this, "row", RowKey.class);
-        SpecUtil.validateRequired(getFamily(), this, "fam", FamilyModel.class);
-        SpecUtil.validateRequired(getColumn(), this, "column", QualModel.class);
+        SpecUtil.validateRequired(getFamily(), this, "fam", FamilyHB.class);
+        SpecUtil.validateRequired(getColumn(), this, "column", QualHB.class);
         SpecUtil.validateRequired(getValue(), this, "value/empty", NullableValue.class);
     }
     

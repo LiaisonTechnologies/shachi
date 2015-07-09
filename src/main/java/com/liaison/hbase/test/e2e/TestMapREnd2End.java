@@ -22,6 +22,7 @@ import com.liaison.hbase.model.FamilyModel;
 import com.liaison.hbase.model.Name;
 import com.liaison.hbase.model.QualModel;
 import com.liaison.hbase.model.TableModel;
+import com.liaison.hbase.model.VersioningModel;
 import com.liaison.hbase.resmgr.SimpleHBaseResourceManager;
 import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.slf4j.Logger;
@@ -324,6 +325,87 @@ public class TestMapREnd2End implements Closeable {
         }
     }
 
+    public void test4() {
+        final String testPrefix;
+        OpResultSet opResSet;
+        String rowKeyStr;
+        String randomData;
+        String tableName;
+        FamilyModel fam;
+        QualModel qual;
+        TableModel tbl;
+
+        testPrefix = "[test4] ";
+        try {
+            LOG.info(testPrefix + "starting...");
+
+            randomData = UUID.randomUUID().toString();
+            tableName = TestMapREnd2End.class.getSimpleName() + "-" + randomData;
+            rowKeyStr = Long.toString(System.currentTimeMillis());
+            fam = FamilyModel.of(Name.of("A"));
+            qual =
+                QualModel
+                    .with(Name.of("B"))
+                    .versionWith(VersioningModel.QUALIFIER_LATEST)
+                    .build();
+            tbl = TableModel.with(Name.of(tableName)).family(fam).build();
+
+            LOG.info(testPrefix + "starting write...");
+            opResSet =
+                this.ctrl
+                    .begin()
+                        .write("WRITE")
+                            .on()
+                                .tbl(tbl)
+                                .row(RowKey.of(rowKeyStr))
+                                .and()
+                            .with("ATVER1")
+                                .fam(fam)
+                                .qual(qual)
+                                .version(1)
+                                .value(Value.of(randomData))
+                                .and()
+                            .with("ATVER2")
+                                .fam(fam)
+                                .qual(qual)
+                                .version(2)
+                                .value(Value.of(randomData))
+                                .and()
+                            .with("ATVER3")
+                                .fam(fam)
+                                .qual(qual)
+                                .version(3)
+                                .value(Value.of(randomData))
+                                .and()
+                            .then()
+                        .exec();
+            LOG.info(testPrefix + "write complete!");
+            LOG.info(testPrefix + "write results: " + opResSet.getResultsByHandle());
+
+            LOG.info(testPrefix + "starting read...");
+
+            opResSet =
+                this.ctrl
+                    .begin()
+                        .read("READ")
+                            .from()
+                                .tbl(tbl)
+                                .row(RowKey.of(rowKeyStr))
+                                .and()
+                            .with()
+                                .fam(fam)
+                                .qual(qual)
+                                .and()
+                            .then()
+                        .exec();
+
+            LOG.info(testPrefix + "read complete!");
+            LOG.info(testPrefix + "read results: " + opResSet.getResultsByHandle());
+        } catch (Exception exc) {
+            LOG.error(testPrefix + " was BAD! and you should feel bad! " + exc, exc);
+        }
+    }
+
     @Override
     public void close() {
         this.ctrl.close();
@@ -345,7 +427,7 @@ public class TestMapREnd2End implements Closeable {
         try (final TestMapREnd2End test = new TestMapREnd2End()) {
             test.test1();
             test.test2();
-            test.test3();
+            test.test4();
         }
     }
 }
