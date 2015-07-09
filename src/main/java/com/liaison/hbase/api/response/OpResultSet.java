@@ -36,7 +36,6 @@ import org.apache.hadoop.hbase.client.Result;
 import java.io.Serializable;
 import java.util.Collections;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 
 public class OpResultSet implements Serializable {

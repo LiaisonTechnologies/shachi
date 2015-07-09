@@ -15,7 +15,6 @@ import com.liaison.commons.DefensiveCopyStrategy;
 import com.liaison.commons.Util;
 import com.liaison.commons.log.LogMeMaybe;
 import com.liaison.hbase.api.request.OperationController;
-import com.liaison.hbase.api.request.frozen.ColSpecFrozen;
 import com.liaison.hbase.api.request.frozen.ColSpecWriteFrozen;
 import com.liaison.hbase.api.request.frozen.LongValueSpecFrozen;
 import com.liaison.hbase.api.request.frozen.ReadOpSpecFrozen;
