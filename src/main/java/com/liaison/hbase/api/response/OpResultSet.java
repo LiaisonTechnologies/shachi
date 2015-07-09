@@ -36,6 +36,7 @@ import org.apache.hadoop.hbase.client.Result;
 import java.io.Serializable;
 import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 public class OpResultSet implements Serializable {
@@ -263,7 +264,7 @@ public class OpResultSet implements Serializable {
      * @param res
      * @throws HBaseTableRowException
      */
-    public void assimilate(final ReadOpSpecDefault readSpec, final Result res) throws HBaseTableRowException {
+    public void assimilate(final ReadOpSpecDefault readSpec, final Iterable<Result> resList) throws HBaseTableRowException {
         String logMsg;
         final ReadOpResultBuilder opResBuild;
         final RowSpec<ReadOpSpecDefault> rowSpec;
@@ -272,7 +273,9 @@ public class OpResultSet implements Serializable {
         rowSpec = readSpec.getTableRow();
         try {
             opResBuild = ReadOpResult.getBuilder().origin(readSpec);
-            populateContent(opResBuild, readSpec, res);
+            for (Result res : resList) {
+                populateContent(opResBuild, readSpec, res);
+            }
 
             for (ColSpecRead<ReadOpSpecDefault> readColSpec : readSpec.getWithColumn()) {
                 readColSpecResult = opResBuild.getDataBySpec(readColSpec);

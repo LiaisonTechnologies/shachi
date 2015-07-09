@@ -29,6 +29,7 @@ import com.liaison.hbase.api.request.impl.RowSpec;
 import com.liaison.hbase.api.request.impl.WriteOpSpecDefault;
 import com.liaison.hbase.api.response.OpResultSet;
 import com.liaison.hbase.context.HBaseContext;
+import com.liaison.hbase.dto.ApplicableVersion;
 import com.liaison.hbase.dto.FamilyQualifierPair;
 import com.liaison.hbase.dto.GetColumnGrouping;
 import com.liaison.hbase.dto.NullableValue;
@@ -48,6 +49,7 @@ import com.liaison.hbase.resmgr.HBaseResourceManager;
 import com.liaison.hbase.resmgr.res.ManagedTable;
 import com.liaison.hbase.util.HBaseUtil;
 import com.liaison.hbase.util.ReadUtils;
+import com.liaison.hbase.util.SpecUtil;
 import org.apache.hadoop.hbase.client.Get;
 import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.client.Put;
@@ -62,6 +64,7 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -104,33 +107,13 @@ public class HBaseControl implements HBaseStart<OpResultSet>, Closeable {
 
         /**
          * TODO: javadoc
-         * @param colFam
-         * @param colQual
-         * @return
-         */
-        private EnumSet<VersioningModel> determineVersioningScheme(final FamilyHB colFam, final QualHB colQual) {
-            EnumSet<VersioningModel> versioningScheme;
-
-            versioningScheme = colQual.getVersioning();
-            if (versioningScheme == null) {
-                versioningScheme = colFam.getVersioning();
-            }
-            return versioningScheme;
-        }
-
-        private EnumSet<VersioningModel> determineVersioningScheme(final ColSpecFrozen colSpec) {
-            return determineVersioningScheme(colSpec.getFamily(), colSpec.getColumn());
-        }
-
-        /**
-         * TODO: javadoc
          * @param fqpSet
          * @param versioningScheme
          * @param colFam
          * @param colQual
          * @param multiVersion
          */
-        private void buildVersioningDerivedQualifiers(final Set<ColumnRange> colRangeSet, final EnumSet<VersioningModel> versioningScheme, final FamilyHB colFam, final QualHB colQual, final LongValueSpecFrozen multiVersion) {
+        private void buildVersioningDerivedQualifiers(final Set<ColumnRange> colRangeSet, final Set<VersioningModel> versioningScheme, final FamilyHB colFam, final QualHB colQual, final LongValueSpecFrozen multiVersion) {
             final String logMethodName;
             String logMsg;
             final byte[] qualValueBase;
@@ -168,7 +151,7 @@ public class HBaseControl implements HBaseStart<OpResultSet>, Closeable {
          * @param colQual
          * @param singleVersion
          */
-        private void buildVersioningDerivedQualifiers(final Set<FamilyQualifierPair> fqpSet, final EnumSet<VersioningModel> versioningScheme, final FamilyHB colFam, final QualHB colQual, final Long singleVersion) {
+        private void buildVersioningDerivedQualifiers(final Set<FamilyQualifierPair> fqpSet, final Set<VersioningModel> versioningScheme, final FamilyHB colFam, final QualHB colQual, final Long singleVersion) {
             final String logMethodName;
             final byte[] qualValueBase;
             QualModel qualForWrite;
@@ -251,7 +234,7 @@ public class HBaseControl implements HBaseStart<OpResultSet>, Closeable {
             LOG.trace(logMethodName, ()->"version=", ()->singleVersion);
 
             if (singleVersion != null) {
-                versioningScheme = determineVersioningScheme(colFam, colQual);
+                versioningScheme = SpecUtil.determineVersioningScheme(colFam, colQual);
                 LOG.trace(logMethodName, ()->"version-scheme=", ()->versioningScheme);
 
                 if (VersioningModel.isQualifierBased(versioningScheme)) {
@@ -289,7 +272,7 @@ public class HBaseControl implements HBaseStart<OpResultSet>, Closeable {
             fqpSet = new HashSet<>();
             version = colSpec.getVersion();
             if (version != null) {
-                versioningScheme = determineVersioningScheme(colFam, colQual);
+                versioningScheme = SpecUtil.determineVersioningScheme(colFam, colQual);
                 if (VersioningModel.isQualifierBased(versioningScheme)) {
                     singleVersion = version.singleValue();
                     if (singleVersion == null) {
@@ -312,16 +295,16 @@ public class HBaseControl implements HBaseStart<OpResultSet>, Closeable {
             return prepareHBaseOpQualifierSet(fqpSet, colFam, colQual);
         }
 
-        private LongValueSpecFrozen getQualifierBasedVersion(final ColSpecRead<ReadOpSpecDefault> colSpec, final FamilyHB colFam, final QualHB colQual) {
+        private ApplicableVersion getQualifierBasedVersion(final ColSpecRead<ReadOpSpecDefault> colSpec, final FamilyHB colFam, final QualHB colQual) {
             LongValueSpec<ColSpecRead<ReadOpSpecDefault>> versionUnrestricted;
             LongValueSpecFrozen version;
             EnumSet<VersioningModel> versioningScheme;
 
-            versioningScheme = determineVersioningScheme(colFam, colQual);
+            versioningScheme = SpecUtil.determineVersioningScheme(colFam, colQual);
             if (VersioningModel.isQualifierBased(versioningScheme)) {
                 version = colSpec.getVersion();
                 if (version != null) {
-                    return version;
+                    return new ApplicableVersion(versioningScheme, version);
                 } else {
                     /*
                      * If this column uses qualifier-based versioning, then any column qualifiers
@@ -333,11 +316,9 @@ public class HBaseControl implements HBaseStart<OpResultSet>, Closeable {
                      */
                     versionUnrestricted = VersioningModel.buildLongValueSpecForQualVersioning(colSpec);
                     versionUnrestricted.freezeRecursive();
-                    return versionUnrestricted;
+                    return new ApplicableVersion(versioningScheme, versionUnrestricted);
                 }
             }
-
-
             return null;
         }
 
@@ -421,7 +402,7 @@ public class HBaseControl implements HBaseStart<OpResultSet>, Closeable {
             final FamilyHB colFam;
             final QualHB colQual;
             final byte[] famValue;
-            final LongValueSpecFrozen version;
+            final ApplicableVersion version;
             final Set<FamilyQualifierPair> fqpSet;
             final Set<ColumnRange> colRangeSet;
             final FamilyQualifierPair fqp;
@@ -452,14 +433,14 @@ public class HBaseControl implements HBaseStart<OpResultSet>, Closeable {
                                       fqp::getColumn,
                                       ()->" --> ",
                                       ()->colSpec);
-                        } else if (version.isSingleValue()) {
+                        } else if (version.getVersion().isSingleValue()) {
                             fqpSet = new HashSet<>();
                             buildVersioningDerivedQualifiers(
                                 fqpSet,
-                                readOpSpec.getCommonVersioningConfig(),
+                                version.getScheme(),
                                 colFam,
                                 colQual,
-                                version.singleValue());
+                                version.getVersion().singleValue());
                             gcg.addAllFQP(fqpSet);
                             for (FamilyQualifierPair fqpDerived : fqpSet) {
                                 // Update the parent read operation spec to associate it with this
@@ -477,10 +458,10 @@ public class HBaseControl implements HBaseStart<OpResultSet>, Closeable {
                             colRangeSet = new HashSet<>();
                             buildVersioningDerivedQualifiers(
                                 colRangeSet,
-                                readOpSpec.getCommonVersioningConfig(),
+                                version.getScheme(),
                                 colFam,
                                 colQual,
-                                version);
+                                version.getVersion());
                             gcg.addAllColumnRange(colRangeSet);
                             for (ColumnRange colRangeDerived : colRangeSet) {
                                 readOpSpec.addColumnRangeAssoc(colRangeDerived, colSpec);
@@ -519,10 +500,11 @@ public class HBaseControl implements HBaseStart<OpResultSet>, Closeable {
          */
         private Long determineWriteTimestamp(final ColSpecWriteFrozen colSpec) {
             final Long version;
+            final EnumSet<VersioningModel> verScheme;
 
             version = colSpec.getVersion();
-            if ((version != null)
-                && (VersioningModel.isTimestampBased(determineVersioningScheme(colSpec)))) {
+            verScheme = SpecUtil.determineVersioningScheme(colSpec);
+            if ((version != null) && (VersioningModel.isTimestampBased(verScheme))) {
                 /*
                  * (NOTE: this list of TODOs copied from setReadTimestamp, because the issues they
                  * reference will need to addressed concurrently on both the read and write sides)
@@ -788,16 +770,16 @@ public class HBaseControl implements HBaseStart<OpResultSet>, Closeable {
          * @throws HBaseException
          * @throws HBaseRuntimeException
          */
-        public Result exec(final ReadOpSpecDefault readSpec) throws IllegalArgumentException, HBaseException, HBaseRuntimeException {
+        public Iterable<Result> exec(final ReadOpSpecDefault readSpec) throws IllegalArgumentException, HBaseException, HBaseRuntimeException {
             String logMsg;
             final String logMethodName;
             final DefensiveCopyStrategy dcs;
             final RowSpec<?> tableRowSpec;
             final GetColumnGrouping gcg;
-            final Set<Get> allReadGets;
+            final List<Get> allReadGets;
             Get readGet;
             final List<ColSpecRead<ReadOpSpecDefault>> colReadList;
-            Result res;
+            final List<Result> resList;
             
             Util.ensureNotNull(readSpec, this, "readSpec", ReadOpSpecDefault.class);
             
@@ -841,7 +823,7 @@ public class HBaseControl implements HBaseStart<OpResultSet>, Closeable {
                       readSpec::getColumnRangeAssoc);
 
             LOG.trace(logMethodName, ()->"building Get objects...");
-            allReadGets = new HashSet<>();
+            allReadGets = new LinkedList<>();
 
             if ((gcg.hasFamilies()) || (gcg.hasFQPs())) {
                 LOG.trace(logMethodName,
@@ -881,24 +863,12 @@ public class HBaseControl implements HBaseStart<OpResultSet>, Closeable {
 
                 LOG.trace(logMethodName, ()->"table obtained");
 
-                res = null;
+                resList = new LinkedList<>();
                 for (Get getToExec : allReadGets) {
                     LOG.trace(logMethodName, () -> "performing read (using: ", ()->getToExec);
                     try {
                         // perform the HBase READ operation and return the result
-                        if (res == null) {
-                            /*
-                             * If res does not yet exist (no result from a previous Get), then
-                             * assign res to the result of executing this Get.
-                             */
-                            res = readFromTable.use().get(getToExec);
-                        } else {
-                            /*
-                             * If res already exists (containing the results of a previous Get),
-                             * then copy the result of executing this Get into the existing Result.
-                             */
-                            res.copyFrom(readFromTable.use().get(getToExec));
-                        }
+                        resList.add(readFromTable.use().get(getToExec));
                     } catch (IOException ioExc) {
                         logMsg = "READ failed; " + ioExc;
                         LOG.error(logMethodName, logMsg, ioExc);
@@ -930,7 +900,7 @@ public class HBaseControl implements HBaseStart<OpResultSet>, Closeable {
             } finally {
                 LOG.leave(logMethodName);
             }
-            return res;
+            return resList;
         }
         
         /**

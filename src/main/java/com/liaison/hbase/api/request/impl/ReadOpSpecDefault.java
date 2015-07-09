@@ -338,24 +338,7 @@ public final class ReadOpSpecDefault extends TableRowOpSpec<ReadOpSpecDefault> i
                      * Get the version range/number specified for the current column.
                      */
                     currentReadVersionSpec = readColSpec.getVersion();
-
-                    /*
-                     * Determine the versioning configuration for the current read column spec. If
-                     * a versioning configuration is declared at the qualifier level, use it;
-                     * otherwise, default to the family level, if a configuration is defined there.
-                     * Note that in some cases, neither the family model nor the qualifier model
-                     * will define a versioning configuration, so currentVersioningConfig may
-                     * remain null after this logic block.
-                     */
-                    colQualModel = readColSpec.getColumn();
-                    if (colQualModel != null) {
-                        currentVersioningConfig = colQualModel.getVersioning();
-                    } else {
-                        colFamilyModel = readColSpec.getFamily();
-                        if (colFamilyModel != null) {
-                            currentVersioningConfig = colFamilyModel.getVersioning();
-                        }
-                    }
+                    currentVersioningConfig = SpecUtil.determineVersioningScheme(readColSpec);
 
                     /*
                      * If the "established" versioning configuration and version number for this
