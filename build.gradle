@@ -67,6 +67,7 @@ if (project.hasProperty('env') && project.getProperty('env') == 'mapr') {
 }
 
 jar {
+    dependsOn quasarInstrumentation
     manifest {
         attributes 'Implementation-Title': 'Gradle Quickstart', 'Implementation-Version': version
     }
@@ -92,6 +93,11 @@ task fatJar(type: Jar) {
         }
     }
     with jar
+}
+
+task copyToLib( type: Copy ) {
+    into "$buildDir/libs/lib"
+    from configurations.runtime
 }
 
 test {
