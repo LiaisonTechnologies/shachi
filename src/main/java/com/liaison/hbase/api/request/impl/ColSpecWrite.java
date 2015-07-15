@@ -8,6 +8,7 @@
  */
 package com.liaison.hbase.api.request.impl;
 
+import com.liaison.commons.DefensiveCopyStrategy;
 import com.liaison.commons.Util;
 import com.liaison.hbase.api.request.fluid.fluent.ColSpecWriteFluent;
 import com.liaison.hbase.api.request.frozen.ColSpecWriteFrozen;
@@ -17,12 +18,13 @@ import com.liaison.hbase.dto.Value;
 import com.liaison.hbase.exception.SpecValidationException;
 import com.liaison.hbase.model.FamilyHB;
 import com.liaison.hbase.model.QualHB;
+import com.liaison.hbase.model.ser.CellSerializer;
 import com.liaison.hbase.util.SpecUtil;
 import com.liaison.hbase.util.StringRepFormat;
 
 import java.io.Serializable;
 
-public class ColSpecWrite<P extends OperationSpec<P>> extends ColSpec<ColSpecWrite<P>, P> implements ColSpecWriteFluent<ColSpecWrite<P>, P>, ColSpecWriteFrozen, Serializable {
+public class ColSpecWrite<P extends TableRowOpSpec<P>> extends ColSpec<ColSpecWrite<P>, P> implements ColSpecWriteFluent<ColSpecWrite<P>, P>, ColSpecWriteFrozen, Serializable {
 
     private static final long serialVersionUID = -194106227851821468L;
 
@@ -32,6 +34,15 @@ public class ColSpecWrite<P extends OperationSpec<P>> extends ColSpec<ColSpecWri
 
     private Long version;
     private Long ts;
+    /**
+     * "Prototype" of the value to be written; can store either a NullableValue which stores the
+     * literal value to be written to HBase, or another kind of Object which must be serialized
+     * prior to persistence. The type is ambiguous while the write spec is in a FLUID state; when
+     * the spec moves to FROZEN state, the validate() method populates the NullableValue value
+     * field with the literal bytes to be written, performing serialization using the Serializer if
+     * needed.
+     */
+    private Object valueProto;
     private NullableValue value;
     
     // ||----(instance properties)---------------------------------------------------------------||
@@ -60,13 +71,22 @@ public class ColSpecWrite<P extends OperationSpec<P>> extends ColSpec<ColSpecWri
     @Override
     public ColSpecWrite<P> value(final Value value) throws IllegalStateException, IllegalArgumentException {
         prepMutation();
-        this.value = Util.validateExactlyOnceParam(value, this, "value", Value.class, this.value);
+        this.valueProto =
+            Util.validateExactlyOnceParam(value, this, "value", Value.class, this.valueProto);
         return self();
     }
     @Override
     public ColSpecWrite<P> empty(final Empty empty) throws IllegalStateException, IllegalArgumentException {
         prepMutation();
-        this.value = Util.validateExactlyOnceParam(empty, this, "empty", Empty.class, this.value);
+        this.valueProto =
+            Util.validateExactlyOnceParam(empty, this, "empty", Empty.class, this.valueProto);
+        return self();
+    }
+    @Override
+    public ColSpecWrite<P> content(final Object dataObj) throws IllegalStateException, IllegalArgumentException {
+        prepMutation();
+        this.valueProto =
+            Util.validateExactlyOnceParam(dataObj, this, "dataObj", Object.class, this.valueProto);
         return self();
     }
     
@@ -86,6 +106,7 @@ public class ColSpecWrite<P extends OperationSpec<P>> extends ColSpec<ColSpecWri
     }
     @Override
     public NullableValue getValue() {
+        prepPostFreezeOp("getValue");
         return this.value;
     }
     
@@ -100,10 +121,35 @@ public class ColSpecWrite<P extends OperationSpec<P>> extends ColSpec<ColSpecWri
 
     @Override
     protected void validate() throws SpecValidationException {
+        String logMsg;
+        final RowSpec<?> rowSpec;
+        final CellSerializer cellSer;
+
         super.validate();
         SpecUtil.validateRequired(getFamily(), this, "fam", FamilyHB.class);
         SpecUtil.validateRequired(getColumn(), this, "column", QualHB.class);
-        SpecUtil.validateRequired(getValue(), this, "value", NullableValue.class);
+        SpecUtil.validateRequired(this.valueProto, this, "value", Object.class);
+
+        if (this.valueProto instanceof NullableValue) {
+            this.value = (NullableValue) this.valueProto;
+        } else {
+            rowSpec = getParent().getTableRow();
+            cellSer =
+                SpecUtil.identifySerializer(getColumn(),
+                                            getFamily(),
+                                            ((rowSpec == null)?null:rowSpec.getTable()));
+            if (cellSer != null) {
+                this.value =
+                    Value.of(cellSer.serialize(this.valueProto), DefensiveCopyStrategy.NEVER);
+            } else {
+                logMsg = "Value for column "
+                         + toString()
+                         + " is not of type "
+                         + NullableValue.class.getSimpleName()
+                         + " and therefore requires serialization, but no serializer is defined";
+                throw new SpecValidationException(SpecState.FLUID, SpecState.FROZEN, this, logMsg);
+            }
+        }
     }
     
     @Override

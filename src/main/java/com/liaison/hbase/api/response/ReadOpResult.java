@@ -20,6 +20,7 @@ import com.liaison.hbase.dto.FamilyQualifierPair;
 import com.liaison.hbase.dto.SingleCellResult;
 import com.liaison.hbase.dto.SpecCellResultSet;
 import com.liaison.hbase.exception.HBaseException;
+import com.liaison.hbase.util.SpecUtil;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -50,15 +51,6 @@ public class ReadOpResult extends OpResult<ReadOpSpecDefault> {
         static {
             LOG = new LogMeMaybe(ReadOpResultBuilder.class);
         }
-
-        /**
-         * literal data set; stores references to the literal cells retrieved from HBase
-         * TODO: The data map really needs to be Map<FamilyQualifierPair, List<SingleCellResult>
-         * in order to accommodate cases where a range of timestamps is retrieved (all of which
-         * bear the same family and qualifier)
-         * TODO: javadoc
-         */
-        private Map<FamilyQualifierPair, SingleCellResult> data;
 
         /**
          * data set linking the retrieved data to the spec which caused it to be queried. data in
@@ -95,18 +87,6 @@ public class ReadOpResult extends OpResult<ReadOpSpecDefault> {
         }
         private SingleCellResult.Builder singleCellBuilder(final ColSpecReadFrozen spec) {
             return singleCellBuilder().spec(spec);
-        }
-
-        /**
-         * TODO: javadoc
-         * @param fqp
-         * @param cellResult
-         * @return
-         */
-        private ReadOpResultBuilder addCellResult(final FamilyQualifierPair fqp, final SingleCellResult cellResult) {
-            Util.ensureNotNull(fqp, CLOSURENAME_ADD, "fqp", FamilyQualifierPair.class);
-            this.data.put(fqp, cellResult);
-            return self();
         }
 
         /**
@@ -150,19 +130,6 @@ public class ReadOpResult extends OpResult<ReadOpSpecDefault> {
 
         /**
          * TODO: javadoc
-         * @param fqp
-         * @param exc
-         * @return
-         * @throws IllegalArgumentException
-         */
-        public ReadOpResultBuilder add(final FamilyQualifierPair fqp, final HBaseException exc) throws IllegalArgumentException {
-            Util.ensureNotNull(fqp, CLOSURENAME_ADD, "fqp", FamilyQualifierPair.class);
-            Util.ensureNotNull(exc, CLOSURENAME_ADD, "exc", HBaseException.class);
-            return addCellResult(fqp, singleCellBuilder(fqp).exc(exc).build());
-        }
-
-        /**
-         * TODO: javadoc
          * @param colSpec
          * @param exc
          * @return
@@ -174,27 +141,6 @@ public class ReadOpResult extends OpResult<ReadOpSpecDefault> {
             Util.ensureNotNull(fqp, CLOSURENAME_ADD, "fqp", FamilyQualifierPair.class);
             Util.ensureNotNull(exc, CLOSURENAME_ADD, "exc", HBaseException.class);
             return addCellResult(colSpec, singleCellBuilder(colSpec, fqp).exc(exc).build());
-        }
-
-        /**
-         * TODO: javadoc
-         * @param fqp
-         * @param datum
-         * @return
-         * @throws IllegalArgumentException
-         */
-        public ReadOpResultBuilder add(final FamilyQualifierPair fqp, final Datum datum) throws IllegalArgumentException {
-            Util.ensureNotNull(fqp, CLOSURENAME_ADD, "fqp", FamilyQualifierPair.class);
-            Util.ensureNotNull(datum, CLOSURENAME_ADD, "datum", Datum.class);
-            return addCellResult(fqp,
-                                 singleCellBuilder(fqp)
-                                     .datum(CellDatum
-                                                .getBuilder()
-                                                .datum(datum)
-                                                .column(fqp)
-                                                .row(getTableRow())
-                                                .build())
-                                     .build());
         }
 
         /**
@@ -215,17 +161,14 @@ public class ReadOpResult extends OpResult<ReadOpSpecDefault> {
                                                 .getBuilder()
                                                 .datum(datum)
                                                 .column(fqp)
+                                                .deserializer(
+                                                    SpecUtil.identifyDeserializer(
+                                                        colSpec.getColumn(),
+                                                        colSpec.getFamily(),
+                                                        getTableRow().getTable()))
                                                 .row(getTableRow())
                                                 .build())
                                      .build());
-        }
-
-        /**
-         * TODO: javadoc
-         * @return
-         */
-        public SingleCellResult getData(final FamilyQualifierPair fqp) {
-            return this.data.get(fqp);
         }
 
         /**
@@ -271,11 +214,6 @@ public class ReadOpResult extends OpResult<ReadOpSpecDefault> {
          */
         private ReadOpResultBuilder() {
             super();
-            /*
-             * IMPORTANT: This *must* be a LinkedHashMap (rather than a simple HashMap) in order to
-             * preserve the order of data elements as retrieved by HBase.
-             */
-            this.data = new LinkedHashMap<>();
             this.dataBySpec = new HashMap<>();
             this.dataBySpecHandle = new HashMap<>();
         }
@@ -313,12 +251,6 @@ public class ReadOpResult extends OpResult<ReadOpSpecDefault> {
     }
 
     /**
-     * literal data set; stores references to the literal cells retrieved from HBase
-     * TODO: javadoc
-     */
-    private final Map<FamilyQualifierPair, SingleCellResult> data;
-
-    /**
      * data set linking the retrieved data to the spec which caused it to be queried. data in
      * order retrieved from HBase
      * TODO: javadoc
@@ -341,24 +273,6 @@ public class ReadOpResult extends OpResult<ReadOpSpecDefault> {
             result = cellRes.getContent();
         }
         return result;
-    }
-
-    /**
-     * TODO: javadoc
-     * @return
-     */
-    public Map<FamilyQualifierPair, SingleCellResult> getData() {
-        return Collections.unmodifiableMap(this.data);
-    }
-
-    /**
-     * TODO: javadoc
-     * @param fqp
-     * @return
-     * @throws HBaseException
-     */
-    public CellDatum getData(final FamilyQualifierPair fqp) throws HBaseException {
-        return toContent(this.data.get(fqp));
     }
 
     /**
@@ -433,7 +347,7 @@ public class ReadOpResult extends OpResult<ReadOpSpecDefault> {
         final ReadOpResult otherReadOpResult;
         if (otherOpResult instanceof ReadOpResult) {
             otherReadOpResult = (ReadOpResult) otherOpResult;
-            return Util.refEquals(this.data, otherReadOpResult.data);
+            return Util.refEquals(this.dataBySpec, otherReadOpResult.dataBySpec);
         }
         return false;
     }
@@ -446,7 +360,7 @@ public class ReadOpResult extends OpResult<ReadOpSpecDefault> {
     @Override
     protected void prepareStrRepAdditional(StringBuilder strGen) {
         strGen.append("{data=");
-        strGen.append(this.data);
+        strGen.append(this.dataBySpec);
         strGen.append("}");
     }
     
@@ -457,7 +371,7 @@ public class ReadOpResult extends OpResult<ReadOpSpecDefault> {
         final Map<Object, SpecCellResultSet> dataBySpecHandleTemp;
         String logMsg;
         
-        if ((this.getException() != null) && (build.data.size() > 0)) {
+        if ((this.getException() != null) && (build.dataBySpec.size() > 0)) {
             logMsg = 
                 OpResult.class.getSimpleName()
                 + " may not reference both a row-level exception and a non-empty data result set";
@@ -473,7 +387,6 @@ public class ReadOpResult extends OpResult<ReadOpSpecDefault> {
         }
         */
 
-        this.data = Collections.unmodifiableMap(build.data);
         this.dataBySpec = buildResultMapFromMutableResultMap(build.dataBySpec);
         this.dataBySpecHandle = buildResultMapFromMutableResultMap(build.dataBySpecHandle);
     }

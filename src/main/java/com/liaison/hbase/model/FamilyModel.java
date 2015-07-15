@@ -11,6 +11,8 @@ package com.liaison.hbase.model;
 
 
 import com.liaison.commons.Util;
+import com.liaison.hbase.model.ser.CellDeserializer;
+import com.liaison.hbase.model.ser.CellSerializer;
 
 import java.util.Collections;
 import java.util.EnumSet;
@@ -26,6 +28,8 @@ public final class FamilyModel extends NamedEntityDefault implements FamilyHB {
         private LinkedHashMap<Name, QualModel> quals;
         private boolean closedQualSet;
         private EnumSet<VersioningModel> versioning;
+        private CellSerializer serializer;
+        private CellDeserializer deserializer;
 
         public Builder versionWith(final VersioningModel verModel) throws IllegalArgumentException {
             Util.ensureNotNull(verModel, this, "verModel", VersioningModel.class);
@@ -43,6 +47,14 @@ public final class FamilyModel extends NamedEntityDefault implements FamilyHB {
         }
         public Builder closedQualSet(final boolean closedQualSet) {
             this.closedQualSet = closedQualSet;
+            return this;
+        }
+        public Builder serializer(final CellSerializer serializer) {
+            this.serializer = serializer;
+            return this;
+        }
+        public Builder deserializer(final CellDeserializer deserializer) {
+            this.deserializer = deserializer;
             return this;
         }
         
@@ -69,7 +81,17 @@ public final class FamilyModel extends NamedEntityDefault implements FamilyHB {
     private final Map<Name, QualModel> quals;
     private final boolean closedQualSet;
     private final EnumSet<VersioningModel> versioning;
-    
+    private final CellSerializer serializer;
+    private final CellDeserializer deserializer;
+
+    @Override
+    public CellSerializer getSerializer() {
+        return this.serializer;
+    }
+    @Override
+    public CellDeserializer getDeserializer() {
+        return this.deserializer;
+    }
     @Override
     public Map<Name, QualModel> getQuals() {
         return this.quals;
@@ -143,5 +165,8 @@ public final class FamilyModel extends NamedEntityDefault implements FamilyHB {
          */
         Util.ensureNotNull(build.versioning, this, "versioning", EnumSet.class);
         this.versioning = build.versioning;
+
+        this.serializer = build.serializer;
+        this.deserializer = build.deserializer;
     }
 }

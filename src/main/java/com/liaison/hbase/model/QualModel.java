@@ -9,6 +9,8 @@
 package com.liaison.hbase.model;
 
 import com.liaison.commons.Util;
+import com.liaison.hbase.model.ser.CellDeserializer;
+import com.liaison.hbase.model.ser.CellSerializer;
 
 import java.util.EnumSet;
 
@@ -19,6 +21,8 @@ public final class QualModel extends NamedEntityDefault implements QualHB {
     public static final class Builder {
         private Name name;
         private EnumSet<VersioningModel> versioning;
+        private CellSerializer serializer;
+        private CellDeserializer deserializer;
 
         public Builder versionWith(final VersioningModel verModel) throws IllegalArgumentException {
             Util.ensureNotNull(verModel, this, "verModel", VersioningModel.class);
@@ -28,6 +32,14 @@ public final class QualModel extends NamedEntityDefault implements QualHB {
 
         public Builder name(final Name name) {
             this.name = name;
+            return this;
+        }
+        public Builder serializer(final CellSerializer serializer) {
+            this.serializer = serializer;
+            return this;
+        }
+        public Builder deserializer(final CellDeserializer deserializer) {
+            this.deserializer = deserializer;
             return this;
         }
 
@@ -50,7 +62,17 @@ public final class QualModel extends NamedEntityDefault implements QualHB {
     }
 
     private final EnumSet<VersioningModel> versioning;
-    
+    private final CellSerializer serializer;
+    private final CellDeserializer deserializer;
+
+    @Override
+    public CellSerializer getSerializer() {
+        return this.serializer;
+    }
+    @Override
+    public CellDeserializer getDeserializer() {
+        return this.deserializer;
+    }
     @Override
     protected String getEntityTitle() {
         return ENTITY_TITLE;
@@ -86,5 +108,8 @@ public final class QualModel extends NamedEntityDefault implements QualHB {
          */
         Util.ensureNotNull(build.versioning, this, "versioning", EnumSet.class);
         this.versioning = build.versioning;
+
+        this.serializer = build.serializer;
+        this.deserializer = build.deserializer;
     }
 }

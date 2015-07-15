@@ -16,10 +16,15 @@ import com.liaison.hbase.api.request.impl.StatefulSpec;
 import com.liaison.hbase.exception.SpecValidationException;
 import com.liaison.hbase.model.FamilyHB;
 import com.liaison.hbase.model.QualHB;
+import com.liaison.hbase.model.TableHB;
 import com.liaison.hbase.model.VersioningModel;
+import com.liaison.hbase.model.ser.CellDeserializer;
+import com.liaison.hbase.model.ser.CellSerializable;
+import com.liaison.hbase.model.ser.CellSerializer;
 
 import java.util.Collection;
 import java.util.EnumSet;
+import java.util.function.Function;
 
 /**
  * TODO
@@ -78,6 +83,32 @@ public final class SpecUtil extends Uninstantiable {
 
     public static EnumSet<VersioningModel> determineVersioningScheme(final ColSpecFrozen colSpec) {
         return determineVersioningScheme(colSpec.getFamily(), colSpec.getColumn());
+    }
+
+    private static <S> S identifySerializationComponent(final QualHB qualModel, final FamilyHB famModel, final TableHB tableModel, final Function<CellSerializable, S> componentGetter) {
+        S component = null;
+        if (qualModel != null) {
+            component = componentGetter.apply(qualModel);
+        }
+        if ((component == null) && (famModel != null)) {
+            component = componentGetter.apply(famModel);
+        }
+        if ((component == null) && (tableModel != null)) {
+            component = componentGetter.apply(tableModel);
+        }
+        return component;
+    }
+    public static CellDeserializer identifyDeserializer(final QualHB qualModel, final FamilyHB famModel, final TableHB tableModel) {
+        return identifySerializationComponent(qualModel,
+                                              famModel,
+                                              tableModel,
+                                              CellSerializable::getDeserializer);
+    }
+    public static CellSerializer identifySerializer(final QualHB qualModel, final FamilyHB famModel, final TableHB tableModel) {
+        return identifySerializationComponent(qualModel,
+                                              famModel,
+                                              tableModel,
+                                              CellSerializable::getSerializer);
     }
 
     private SpecUtil() {}

@@ -148,19 +148,8 @@ public class OpResultSet implements Serializable {
                  */
                 datum =
                     Datum.of(content,
-                        contentTS.longValue(),
-                        DefensiveCopyStrategy.NEVER);
-                /*
-                 * Add this data cell to the master result list corresponding to the read spec,
-                 * i.e. the result list not segregated by source column specification
-                 */
-                readResBuild.add(fqp, datum);
-                LOG.trace(logMethodName,
-                          ()->"cell ",
-                          ()->Integer.valueOf(cellIndex),
-                          ()->"/",
-                          ()->Integer.valueOf(cellTotalCount),
-                          ()->" added to master data result set");
+                             contentTS.longValue(),
+                             DefensiveCopyStrategy.NEVER);
                 /*
                  * For any column specifications which are associated with this data cell based
                  * upon the *combination* of family and qualifier (i.e. column specs which

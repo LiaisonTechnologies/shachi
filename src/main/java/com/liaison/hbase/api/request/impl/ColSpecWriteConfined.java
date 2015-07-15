@@ -59,7 +59,12 @@ public class ColSpecWriteConfined implements ColSpecWriteFluid<ColSpecWriteConfi
         colSpecWrite.empty(empty);
         return this;
     }
-    
+    @Override
+    public ColSpecWriteConfined content(final Object dataObj) throws IllegalStateException, IllegalArgumentException {
+        colSpecWrite.content(dataObj);
+        return this;
+    }
+
     public ColSpecWriteConfined(final ColSpecWrite<WriteOpSpecDefault> colSpecWrite) {
         Util.ensureNotNull(colSpecWrite, this, "colSpecWrite", ColSpecWrite.class);
         this.colSpecWrite = colSpecWrite;

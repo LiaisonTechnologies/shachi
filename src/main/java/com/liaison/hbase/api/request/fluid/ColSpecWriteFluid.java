@@ -78,4 +78,21 @@ public interface ColSpecWriteFluid<C extends ColSpecWriteFluid<C>> extends ColSp
      * @throws IllegalArgumentException if the provided {@link Empty} is null or otherwise invalid
      */
     C empty(final Empty empty) throws IllegalStateException, IllegalArgumentException;
+
+    /**
+     * Specify an object to be serialized using the serializer associated with the model structure
+     * for this column, if there is such a serializer. This method uses SpecUtil#identifySerializer
+     * to prioritize which serializer to use to construct the byte array to be persisted, imposing
+     * the following priority:
+     * <ol>
+     *     <li>qualifier (QualModel)</li>
+     *     <li>family (FamilyModel)</li>
+     *     <li>table (TableModel)</li>
+     * </ol>
+     * @param dataObj
+     * @return
+     * @throws IllegalStateException
+     * @throws IllegalArgumentException
+     */
+    C content(final Object dataObj) throws IllegalStateException, IllegalArgumentException;
 }
