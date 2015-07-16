@@ -57,17 +57,14 @@ if (project.hasProperty('env') && project.getProperty('env') == 'mapr') {
             url "http://repository.mapr.com/maven/"
         }
     }
-    // ext.verHBase = '0.98.7-mapr-1501'
     ext.verHBase = '0.98.9-mapr-1503-m7-4.1.0'
     ext.verZookeeper = '3.4.5-mapr-1406'
 } else {
-    // ext.verHBase = '0.98.7-hadoop2'
     ext.verHBase = '0.98.9-hadoop2'
     ext.verZookeeper = '3.4.5'
 }
 
 jar {
-    dependsOn quasarInstrumentation
     manifest {
         attributes 'Implementation-Title': 'Gradle Quickstart', 'Implementation-Version': version
     }

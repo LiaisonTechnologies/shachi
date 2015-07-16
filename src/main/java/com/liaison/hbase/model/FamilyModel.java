@@ -16,6 +16,7 @@ import com.liaison.hbase.model.ser.CellSerializer;
 
 import java.util.Collections;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -25,7 +26,9 @@ public final class FamilyModel extends NamedEntityDefault implements FamilyHB {
 
     public static final class Builder {
         private Name name;
-        private LinkedHashMap<Name, QualModel> quals;
+        private final LinkedHashMap<Name, QualModel> quals;
+        private final Map<QualHB, CellSerializer> qualSerializers;
+        private final Map<QualHB, CellDeserializer> qualDeserializers;
         private boolean closedQualSet;
         private EnumSet<VersioningModel> versioning;
         private CellSerializer serializer;
@@ -41,8 +44,21 @@ public final class FamilyModel extends NamedEntityDefault implements FamilyHB {
             return this;
         }
         public Builder qual(final QualModel qual) throws IllegalArgumentException {
+            final CellSerializer cellSer;
+            final CellDeserializer cellDeser;
+
             Util.ensureNotNull(qual, this, "column", QualModel.class);
             this.quals.put(qual.getName(), qual);
+
+            cellSer = qual.getSerializer();
+            cellDeser = qual.getDeserializer();
+            if (cellSer != null) {
+                this.qualSerializers.put(qual, cellSer);
+            }
+            if (cellDeser != null) {
+                this.qualDeserializers.put(qual, cellDeser);
+            }
+
             return this;
         }
         public Builder closedQualSet(final boolean closedQualSet) {
@@ -65,6 +81,8 @@ public final class FamilyModel extends NamedEntityDefault implements FamilyHB {
             this.closedQualSet = false;
             this.name = null;
             this.quals = new LinkedHashMap<>();
+            this.qualSerializers = new HashMap<>();
+            this.qualDeserializers = new HashMap<>();
             this.versioning = EnumSet.noneOf(VersioningModel.class);
         }
     }
@@ -79,10 +97,31 @@ public final class FamilyModel extends NamedEntityDefault implements FamilyHB {
     }
     
     private final Map<Name, QualModel> quals;
+    private final Map<QualHB, CellSerializer> qualSerializers;
+    private final Map<QualHB, CellDeserializer> qualDeserializers;
     private final boolean closedQualSet;
     private final EnumSet<VersioningModel> versioning;
     private final CellSerializer serializer;
     private final CellDeserializer deserializer;
+
+    private <S> S getSerializationComponentDeferToQual(final QualHB forQualInstance, final Map<QualHB, S> qualSerComponentMap, final S defaultComponentForFamily) {
+        S serComponent;
+        serComponent = qualSerComponentMap.get(forQualInstance);
+        if (serComponent == null) {
+            serComponent = defaultComponentForFamily;
+        }
+        return serComponent;
+    }
+    public CellSerializer getSerializer(final QualHB forQualInstance) {
+        return getSerializationComponentDeferToQual(forQualInstance,
+                                                    this.qualSerializers,
+                                                    this.serializer);
+    }
+    public CellDeserializer getDeserializer(final QualHB forQualInstance) {
+        return getSerializationComponentDeferToQual(forQualInstance,
+                                                    this.qualDeserializers,
+                                                    this.deserializer);
+    }
 
     @Override
     public CellSerializer getSerializer() {
@@ -158,6 +197,10 @@ public final class FamilyModel extends NamedEntityDefault implements FamilyHB {
 
         Util.ensureNotNull(build.quals, this, "quals", LinkedHashMap.class);
         this.quals = Collections.unmodifiableMap(build.quals);
+        Util.ensureNotNull(build.qualSerializers, this, "qualSerializers", HashMap.class);
+        this.qualSerializers = Collections.unmodifiableMap(build.qualSerializers);
+        Util.ensureNotNull(build.qualDeserializers, this, "qualDeserializers", HashMap.class);
+        this.qualDeserializers = Collections.unmodifiableMap(build.qualDeserializers);
 
         /*
         versioning should never be null, even if no versioning scheme is enabled; in that case, the

@@ -13,6 +13,7 @@ import com.liaison.commons.Util;
 import com.liaison.hbase.api.request.fluid.fluent.ColSpecWriteFluent;
 import com.liaison.hbase.api.request.frozen.ColSpecWriteFrozen;
 import com.liaison.hbase.dto.Empty;
+import com.liaison.hbase.dto.FamilyQualifierPair;
 import com.liaison.hbase.dto.NullableValue;
 import com.liaison.hbase.dto.Value;
 import com.liaison.hbase.exception.SpecValidationException;
@@ -135,7 +136,8 @@ public class ColSpecWrite<P extends TableRowOpSpec<P>> extends ColSpec<ColSpecWr
         } else {
             rowSpec = getParent().getTableRow();
             cellSer =
-                SpecUtil.identifySerializer(getColumn(),
+                SpecUtil.identifySerializer(FamilyQualifierPair.of(getFamily(), getColumn()),
+                                            getColumn(),
                                             getFamily(),
                                             ((rowSpec == null)?null:rowSpec.getTable()));
             if (cellSer != null) {

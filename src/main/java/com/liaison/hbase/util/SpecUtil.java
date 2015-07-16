@@ -13,6 +13,7 @@ import com.liaison.commons.Util;
 import com.liaison.hbase.api.request.frozen.ColSpecFrozen;
 import com.liaison.hbase.api.request.impl.SpecState;
 import com.liaison.hbase.api.request.impl.StatefulSpec;
+import com.liaison.hbase.dto.FamilyQualifierPair;
 import com.liaison.hbase.exception.SpecValidationException;
 import com.liaison.hbase.model.FamilyHB;
 import com.liaison.hbase.model.QualHB;
@@ -24,6 +25,7 @@ import com.liaison.hbase.model.ser.CellSerializer;
 
 import java.util.Collection;
 import java.util.EnumSet;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 
 /**
@@ -85,30 +87,46 @@ public final class SpecUtil extends Uninstantiable {
         return determineVersioningScheme(colSpec.getFamily(), colSpec.getColumn());
     }
 
-    private static <S> S identifySerializationComponent(final QualHB qualModel, final FamilyHB famModel, final TableHB tableModel, final Function<CellSerializable, S> componentGetter) {
+    private static <S> S identifySerializationComponent(final FamilyQualifierPair toUseForCell, final QualHB qualModel, final FamilyHB famModel, final TableHB tableModel, final Function<CellSerializable, S> componentGetter, final BiFunction<FamilyHB, QualHB, S> familyQualSpecificComponentGetter) {
         S component = null;
         if (qualModel != null) {
             component = componentGetter.apply(qualModel);
         }
         if ((component == null) && (famModel != null)) {
-            component = componentGetter.apply(famModel);
+            if (toUseForCell != null) {
+                component =
+                    familyQualSpecificComponentGetter.apply(famModel, toUseForCell.getColumn());
+            }
+            if (component == null) {
+                component = componentGetter.apply(famModel);
+            }
         }
         if ((component == null) && (tableModel != null)) {
             component = componentGetter.apply(tableModel);
         }
         return component;
     }
-    public static CellDeserializer identifyDeserializer(final QualHB qualModel, final FamilyHB famModel, final TableHB tableModel) {
-        return identifySerializationComponent(qualModel,
+    public static CellDeserializer identifyDeserializer(final FamilyQualifierPair toUseForCell, final QualHB qualModel, final FamilyHB famModel, final TableHB tableModel) {
+        return identifySerializationComponent(toUseForCell,
+                                              qualModel,
                                               famModel,
                                               tableModel,
-                                              CellSerializable::getDeserializer);
+                                              CellSerializable::getDeserializer,
+                                              FamilyHB::getDeserializer);
+    }
+    public static CellDeserializer identifyDeserializer(final QualHB qualModel, final FamilyHB famModel, final TableHB tableModel) {
+        return identifyDeserializer(null, qualModel, famModel, tableModel);
+    }
+    public static CellSerializer identifySerializer(final FamilyQualifierPair toUseForCell, final QualHB qualModel, final FamilyHB famModel, final TableHB tableModel) {
+        return identifySerializationComponent(toUseForCell,
+                                              qualModel,
+                                              famModel,
+                                              tableModel,
+                                              CellSerializable::getSerializer,
+                                              FamilyHB::getSerializer);
     }
     public static CellSerializer identifySerializer(final QualHB qualModel, final FamilyHB famModel, final TableHB tableModel) {
-        return identifySerializationComponent(qualModel,
-                                              famModel,
-                                              tableModel,
-                                              CellSerializable::getSerializer);
+        return identifySerializer(null, qualModel, famModel, tableModel);
     }
 
     private SpecUtil() {}

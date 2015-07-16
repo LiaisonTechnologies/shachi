@@ -163,6 +163,7 @@ public class ReadOpResult extends OpResult<ReadOpSpecDefault> {
                                                 .column(fqp)
                                                 .deserializer(
                                                     SpecUtil.identifyDeserializer(
+                                                        fqp,
                                                         colSpec.getColumn(),
                                                         colSpec.getFamily(),
                                                         getTableRow().getTable()))
