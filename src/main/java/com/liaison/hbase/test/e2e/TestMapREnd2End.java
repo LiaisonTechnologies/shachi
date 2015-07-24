@@ -378,6 +378,12 @@ public class TestMapREnd2End implements Closeable {
                                 .version(3)
                                 .value(Value.of(randomData))
                                 .and()
+                            .given()
+                                .row(RowKey.of(rowKeyStr))
+                                .fam(fam)
+                                .qual(QualModel.of(Name.of("NON-EXISTENT")))
+                                .empty()
+                                .and()
                             .then()
                         .exec();
             LOG.info(testPrefix + "write complete!");
