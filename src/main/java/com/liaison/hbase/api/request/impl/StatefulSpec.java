@@ -124,7 +124,9 @@ public abstract class StatefulSpec<A extends StatefulSpec<A, P>, P extends TreeN
             currentSpec = subordSpecQueue.removeFirst();
             if (!currentSpec.isFrozen()) {
                 currentSpec.validate();
+                System.out.println("Setting state of " + currentSpec.getClass() + " from " + getState() + " to FROZEN...");
                 currentSpec.state = SpecState.FROZEN;
+                System.out.println("State of " + currentSpec.getClass() + " set: " + getState());
                 subordSpecQueue.addAll(currentSpec.subordSpecList);
             }
         }
@@ -135,7 +137,7 @@ public abstract class StatefulSpec<A extends StatefulSpec<A, P>, P extends TreeN
      * @param subordSpec
      * @throws IllegalArgumentException
      */
-    protected final void addSubordinate(final StatefulSpec<?,?> subordSpec) throws IllegalArgumentException {
+    private final void addSubordinate(final StatefulSpec<?,?> subordSpec) throws IllegalArgumentException {
         Util.ensureNotNull(subordSpec, this, "subordSpec", StatefulSpec.class);
         this.subordSpecList.add(subordSpec);
     }
@@ -231,9 +233,17 @@ public abstract class StatefulSpec<A extends StatefulSpec<A, P>, P extends TreeN
      */
     public StatefulSpec(final P parent) throws IllegalArgumentException {
         super(parent);
+
+        final StatefulSpec<?, ?> parentSpec;
+
         this.state = SpecState.FLUID;
         this.subordSpecList = new LinkedList<>();
         this.strRep = new ConcurrentHashMap<>();
+
+        if (parent instanceof StatefulSpec) {
+            parentSpec = (StatefulSpec<?, ?>) parent;
+            parentSpec.addSubordinate(this);
+        }
     }
     
     // ||----(constructors)----------------------------------------------------------------------||

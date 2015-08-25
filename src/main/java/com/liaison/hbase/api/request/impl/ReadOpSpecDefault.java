@@ -106,7 +106,6 @@ public final class ReadOpSpecDefault extends TableRowOpSpec<ReadOpSpecDefault> i
         prepMutation();
         Util.validateExactlyOnce("atTime", LongValueSpec.class, this.atTime);
         this.atTime = new LongValueSpec<>(this);
-        addSubordinate(this.atTime);
         return this.atTime;
     }
     
@@ -124,7 +123,6 @@ public final class ReadOpSpecDefault extends TableRowOpSpec<ReadOpSpecDefault> i
         prepMutation();
         withCol = new ColSpecRead<>(this, handle);
         this.withColumn.add(withCol);
-        addSubordinate(withCol);
         return withCol;
     }
     
@@ -146,7 +144,6 @@ public final class ReadOpSpecDefault extends TableRowOpSpec<ReadOpSpecDefault> i
                 withCol = new ColSpecRead<>(this);
                 handle = dataToColumnGenerator.apply(element, new ColSpecReadConfined(withCol));
                 withCol.handle(handle);
-                addSubordinate(withCol);
                 this.withColumn.add(withCol);
             }
         }

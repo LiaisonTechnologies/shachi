@@ -52,7 +52,6 @@ public final class ColSpecRead<P extends OperationSpec<P>> extends ColSpec<ColSp
          * is set to null here so that it will default to Long.MAX_VALUE.
          */
         this.version = VersioningModel.buildLongValueSpecForQualVersioning(this);
-        addSubordinate(this.version);
         return this.version;
     }
 

@@ -34,7 +34,6 @@ public abstract class TableRowOpSpec<O extends TableRowOpSpec<O>> extends Operat
     protected void setTableRow(final RowSpec<O> tableRow) throws IllegalArgumentException, IllegalStateException {
         prepMutation();
         Util.validateExactlyOnceParam(tableRow, this, "tableRow", RowSpec.class, this.tableRow);
-        addSubordinate(tableRow);
         this.tableRow = tableRow;
     }
     

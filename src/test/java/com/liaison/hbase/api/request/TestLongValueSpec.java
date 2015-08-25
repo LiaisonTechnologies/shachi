@@ -6,10 +6,11 @@
  * accordance with the terms of the license agreement you entered into
  * with Liaison Technologies.
  */
-package com.liaison.hbase.api.opspec;
+package com.liaison.hbase.api.request;
 
 import com.liaison.hbase.api.request.impl.LongValueSpec;
 import com.liaison.hbase.api.request.impl.NoOpSpec;
+import com.liaison.hbase.testutil.TestUtil;
 import org.mockito.Mockito;
 import org.testng.Assert;
 import org.testng.annotations.Test;
@@ -21,8 +22,8 @@ public class TestLongValueSpec {
     private static final long NONBOUNDARY_LONG_LOW = 5;
     private static final long NONBOUNDARY_LONG_HIGH = 10;
     
-    private LongValueSpec<NoOpSpec> buildLongValueSpec() {
-        return new LongValueSpec<NoOpSpec>(Mockito.mock(NoOpSpec.class));
+    private static LongValueSpec<NoOpSpec> buildLongValueSpec() {
+        return new LongValueSpec<NoOpSpec>(TestUtil.mockupNoOpSpec());
     }
     
     @Test(expectedExceptions = ArithmeticException.class)
