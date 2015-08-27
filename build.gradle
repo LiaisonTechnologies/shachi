@@ -79,6 +79,14 @@ dependencies {
     compile "org.apache.commons:commons-pool2:${verPool}"
     testCompile "org.testng:testng:${verTestNG}"
     testCompile "org.mockito:mockito-all:${verMockito}"
+    // testCompile group:'org.apache.hadoop', name:'hadoop-common', version:'2.5.1-mapr-1503', type:'test-jar'
+    // testCompile group:'org.apache.hbase', name:'hbase', version:"${verHBase}", type:'test-jar'
+    // testCompile group:'org.apache.hadoop', name:'hadoop-hdfs', version:'2.5.1-mapr-1503', type:'test-jar'
+    // testCompile group:'org.apache.hadoop', name:'hadoop-hdfs', version:'2.5.1-mapr-1503'
+    testCompile group:'org.apache.hadoop', name:'hadoop-common', version:'2.5.1-mapr-1503'
+    testCompile group:'org.apache.hbase', name:'hbase', version:"${verHBase}"
+    testCompile group:'org.apache.hadoop', name:'hadoop-hdfs', version:'2.5.1-mapr-1503'
+    testCompile group:'org.apache.hadoop', name:'hadoop-hdfs', version:'2.5.1-mapr-1503'
 }
 
 task fatJar(type: Jar) {

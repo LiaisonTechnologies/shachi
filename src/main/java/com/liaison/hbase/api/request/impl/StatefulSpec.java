@@ -9,6 +9,7 @@
 package com.liaison.hbase.api.request.impl;
 
 import com.liaison.commons.Util;
+import com.liaison.commons.log.LogMeMaybe;
 import com.liaison.hbase.exception.SpecValidationException;
 import com.liaison.hbase.util.StringRepFormat;
 import com.liaison.hbase.util.TreeNode;
@@ -36,6 +37,12 @@ import java.util.concurrent.ConcurrentHashMap;
 public abstract class StatefulSpec<A extends StatefulSpec<A, P>, P extends TreeNode<P>> extends TreeNodeNonRoot<A, P> implements Serializable {
     
     private static final long serialVersionUID = -6331552111315785761L;
+
+    private static final LogMeMaybe LOG;
+
+    static {
+        LOG = new LogMeMaybe(StatefulSpec.class);
+    }
 
     // ||========================================================================================||
     // ||    INSTANCE PROPERTIES                                                                 ||
@@ -124,9 +131,16 @@ public abstract class StatefulSpec<A extends StatefulSpec<A, P>, P extends TreeN
             currentSpec = subordSpecQueue.removeFirst();
             if (!currentSpec.isFrozen()) {
                 currentSpec.validate();
-                System.out.println("Setting state of " + currentSpec.getClass() + " from " + getState() + " to FROZEN...");
+                LOG.trace(() -> "Setting state of ",
+                          () -> String.valueOf(currentSpec.getClass()),
+                          () -> " from ",
+                          () -> String.valueOf(getState()),
+                          () -> " to FROZEN...");
                 currentSpec.state = SpecState.FROZEN;
-                System.out.println("State of " + currentSpec.getClass() + " set: " + getState());
+                LOG.trace(() -> "State of ",
+                          () -> String.valueOf(currentSpec.getClass()),
+                          ()->" set: ",
+                          ()->getState());
                 subordSpecQueue.addAll(currentSpec.subordSpecList);
             }
         }
