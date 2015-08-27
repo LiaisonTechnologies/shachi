@@ -8,7 +8,7 @@
  */
 package com.liaison.hbase.context;
 
-public class DefaultHBaseContext extends CommonHBaseContext {
+public class DefaultHBaseContext extends ConfigurationDrivenHBaseContext {
 
     public static final class Builder extends AbstractHBaseContextBuilder<DefaultHBaseContext, Builder> {
         @Override

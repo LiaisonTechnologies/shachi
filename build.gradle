@@ -58,9 +58,11 @@ if (project.hasProperty('env') && project.getProperty('env') == 'mapr') {
         }
     }
     ext.verHBase = '0.98.9-mapr-1503-m7-4.1.0'
+    ext.verHadoop = '2.5.1-mapr-1503'
     ext.verZookeeper = '3.4.5-mapr-1406'
 } else {
     ext.verHBase = '0.98.9-hadoop2'
+    ext.verHadoop = '2.5.1'
     ext.verZookeeper = '3.4.5'
 }
 
@@ -77,16 +79,12 @@ dependencies {
     provided "org.apache.hbase:hbase-client:${verHBase}"
     provided "org.apache.hbase:hbase-common:${verHBase}"
     compile "org.apache.commons:commons-pool2:${verPool}"
-    testCompile "org.testng:testng:${verTestNG}"
+    compile "org.testng:testng:${verTestNG}"
     testCompile "org.mockito:mockito-all:${verMockito}"
-    // testCompile group:'org.apache.hadoop', name:'hadoop-common', version:'2.5.1-mapr-1503', type:'test-jar'
-    // testCompile group:'org.apache.hbase', name:'hbase', version:"${verHBase}", type:'test-jar'
-    // testCompile group:'org.apache.hadoop', name:'hadoop-hdfs', version:'2.5.1-mapr-1503', type:'test-jar'
-    // testCompile group:'org.apache.hadoop', name:'hadoop-hdfs', version:'2.5.1-mapr-1503'
-    testCompile group:'org.apache.hadoop', name:'hadoop-common', version:'2.5.1-mapr-1503'
-    testCompile group:'org.apache.hbase', name:'hbase', version:"${verHBase}"
-    testCompile group:'org.apache.hadoop', name:'hadoop-hdfs', version:'2.5.1-mapr-1503'
-    testCompile group:'org.apache.hadoop', name:'hadoop-hdfs', version:'2.5.1-mapr-1503'
+    testCompile group:'org.apache.hadoop', name:'hadoop-common', version:"${verHadoop}", classifier: 'tests'
+    testCompile group:'org.apache.hbase', name:'hbase-server', version:"${verHBase}", classifier: 'tests'
+    testCompile group:'org.apache.hadoop', name:'hadoop-hdfs', version:"${verHadoop}", classifier: 'tests'
+    testCompile group:'org.apache.hadoop', name:'hadoop-hdfs', version:"${verHadoop}"
 }
 
 task fatJar(type: Jar) {

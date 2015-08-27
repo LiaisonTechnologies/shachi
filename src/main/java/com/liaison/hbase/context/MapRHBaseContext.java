@@ -9,7 +9,7 @@
 package com.liaison.hbase.context;
 
 
-public class MapRHBaseContext extends CommonHBaseContext {
+public class MapRHBaseContext extends ConfigurationDrivenHBaseContext {
 
     public static final class Builder extends AbstractHBaseContextBuilder<MapRHBaseContext, Builder> {
         @Override

@@ -1,7 +1,10 @@
 package com.liaison.hbase.api.request;
 
 import com.liaison.hbase.api.request.frozen.LongValueSpecFrozen;
-import com.liaison.hbase.api.request.impl.*;
+import com.liaison.hbase.api.request.impl.ColSpecRead;
+import com.liaison.hbase.api.request.impl.LongValueSpec;
+import com.liaison.hbase.api.request.impl.NoOpSpec;
+import com.liaison.hbase.api.request.impl.SpecState;
 import com.liaison.hbase.dto.FamilyQualifierPair;
 import com.liaison.hbase.exception.SpecValidationException;
 import com.liaison.hbase.model.FamilyModel;

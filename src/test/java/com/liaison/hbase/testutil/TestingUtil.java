@@ -1,10 +1,13 @@
 package com.liaison.hbase.testutil;
 
-import com.liaison.hbase.api.request.impl.*;
+import com.liaison.hbase.api.request.impl.NoOpSpec;
+import com.liaison.hbase.api.request.impl.OperationControllerDefault;
+import com.liaison.hbase.api.request.impl.OperationSpec;
+import com.liaison.hbase.api.request.impl.RowSpec;
+import com.liaison.hbase.api.request.impl.TableRowOpSpec;
 import com.liaison.hbase.context.HBaseContext;
 import com.liaison.hbase.dto.RowKey;
 import com.liaison.hbase.model.TableModel;
-import net.sf.cglib.proxy.NoOp;
 import org.mockito.Mockito;
 
 /**

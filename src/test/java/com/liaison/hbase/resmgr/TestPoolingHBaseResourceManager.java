@@ -2,8 +2,6 @@ package com.liaison.hbase.resmgr;
 
 import org.testng.annotations.Test;
 
-import static org.testng.Assert.*;
-
 /**
  * Branden Smith; Liaison Technologies, Inc.
  * Created 2015.08.26 20:06
