@@ -116,7 +116,22 @@ public abstract class StatefulSpec<A extends StatefulSpec<A, P>, P extends TreeN
         // provide a default implementation which does nothing
         // TODO implement this in inheritors, where relevant
     }
-    
+
+    private void performCascadingStateChange(final LinkedList<StatefulSpec<?, ?>> subordSpecQueue, final StatefulSpec<?, ?> currentSpec) {
+        currentSpec.validate();
+        LOG.trace(() -> "Setting state of ",
+                  () -> String.valueOf(currentSpec.getClass()),
+                  () -> " from ",
+                  () -> String.valueOf(currentSpec.getState()),
+                  () -> " to FROZEN...");
+        currentSpec.state = SpecState.FROZEN;
+        LOG.trace(() -> "State of ",
+                  () -> String.valueOf(currentSpec.getClass()),
+                  ()->" set: ",
+                  ()->String.valueOf(currentSpec.getState()));
+        subordSpecQueue.addAll(currentSpec.subordSpecList);
+    }
+
     /**
      * TODO
      * @throws SpecValidationException
@@ -130,18 +145,7 @@ public abstract class StatefulSpec<A extends StatefulSpec<A, P>, P extends TreeN
         while (!subordSpecQueue.isEmpty()) {
             currentSpec = subordSpecQueue.removeFirst();
             if (!currentSpec.isFrozen()) {
-                currentSpec.validate();
-                LOG.trace(() -> "Setting state of ",
-                          () -> String.valueOf(currentSpec.getClass()),
-                          () -> " from ",
-                          () -> String.valueOf(getState()),
-                          () -> " to FROZEN...");
-                currentSpec.state = SpecState.FROZEN;
-                LOG.trace(() -> "State of ",
-                          () -> String.valueOf(currentSpec.getClass()),
-                          ()->" set: ",
-                          ()->getState());
-                subordSpecQueue.addAll(currentSpec.subordSpecList);
+                performCascadingStateChange(subordSpecQueue, currentSpec);
             }
         }
     }
