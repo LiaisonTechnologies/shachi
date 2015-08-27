@@ -106,6 +106,47 @@ public final class SpecUtil extends Uninstantiable {
         }
         return component;
     }
+
+    /**
+     * Identifies the deserializer to be used for a given cell, based on a given combination of the
+     * models for column qualifier, column family, and table. The method for selecting the
+     * deserializer is as follows, in descending order of priority (the logic proceeds from first
+     * to last until a non-null deserializer is selected, or all possibilities are exhausted):
+     * <ol>
+     *     <li><strong>Column Qualifier Model:</strong> If the column qualifier model
+     *     (<code>qualModel</code>) is provided and if it specifies a deserializer, then use it.
+     *     </li>
+     *     <li><strong>Column Family Model (for specific qualifier):</strong> If the column family
+     *     model (<code>famModel</code>) is provided and if it specifies a deserializer intended to
+     *     <em>apply to a particular column qualifier</em> which matches the <em>actual</em> column
+     *     qualifier for the cell in question (from <code>toUseForCell</code>), then use said
+     *     qualifier in combination with the column family model to find the deserializer. (Note
+     *     that, depending on the structure of the models, and in particular whether qualifier-based
+     *     versioning is in use, the column qualifier of the actual cell may not exactly match the
+     *     column qualifier model -- hence the need to provide the actual cell FamilyQualifierPair
+     *     (<code>toUseForCell</code>) to this method.</li>
+     *     <li><strong>Column Family Model:</strong> If the column family model
+     *     (<code>famModel</code>) is provided and if it specifies a <em>default</em> deserializer
+     *     to use in the event that no qualifier-specific deserializer can be found, then use that
+     *     deserializer.</li>
+     *     <li><strong>Table Model:</strong> If the table model (<code>tableModel</code>) is
+     *     provided and if it specifies a deserializer, then use it.</li>
+     * </ol>
+     * @param toUseForCell FamilyQualifierPair representing the concrete column family and qualifier
+     *                     of a given cell, if available. Note that the qualifier defined in this
+     *                     pair may differ from the qualifier model provided, for example if the
+     *                     QualModel specifies a range of qualifiers, or if it indicates the use of
+     *                     qualifier-based versioning (which would mutate the concrete form of the
+     *                     qualifier value).
+     * @param qualModel QualModel representing the column qualifier model pertinent to a value for
+     *                  which the deserializer must be identified.
+     * @param famModel FamilyModel representing the column family model pertinent to a value for
+     *                 which the deserializer must be identified.
+     * @param tableModel TableModel representing the table model pertinent to a value for which the
+     *                   deserialier must be identified.
+     * @return CellDeserializer identified according to the priority logic indicated above, or null
+     * if no CellDeserializer could be found.
+     */
     public static CellDeserializer identifyDeserializer(final FamilyQualifierPair toUseForCell, final QualHB qualModel, final FamilyHB famModel, final TableHB tableModel) {
         return identifySerializationComponent(toUseForCell,
                                               qualModel,
@@ -114,9 +155,55 @@ public final class SpecUtil extends Uninstantiable {
                                               CellSerializable::getDeserializer,
                                               FamilyHB::getDeserializer);
     }
+
+    /**
+     * Equivalent to {@link #identifyDeserializer(null, QualHB, FamilyHB, TableHB)}
+     * @see #identifyDeserializer(FamilyQualifierPair, QualHB, FamilyHB, TableHB)
+     */
     public static CellDeserializer identifyDeserializer(final QualHB qualModel, final FamilyHB famModel, final TableHB tableModel) {
         return identifyDeserializer(null, qualModel, famModel, tableModel);
     }
+
+    /**
+     * Identifies the serializer to be used for a given cell, based on a given combination of the
+     * models for column qualifier, column family, and table. The method for selecting the
+     * serializer is as follows, in descending order of priority (the logic proceeds from first
+     * to last until a non-null serializer is selected, or all possibilities are exhausted):
+     * <ol>
+     *     <li><strong>Column Qualifier Model:</strong> If the column qualifier model
+     *     (<code>qualModel</code>) is provided and if it specifies a serializer, then use it.
+     *     </li>
+     *     <li><strong>Column Family Model (for specific qualifier):</strong> If the column family
+     *     model (<code>famModel</code>) is provided and if it specifies a serializer intended to
+     *     <em>apply to a particular column qualifier</em> which matches the <em>actual</em> column
+     *     qualifier for the cell in question (from <code>toUseForCell</code>), then use said
+     *     qualifier in combination with the column family model to find the serializer. (Note
+     *     that, depending on the structure of the models, and in particular whether qualifier-based
+     *     versioning is in use, the column qualifier of the actual cell may not exactly match the
+     *     column qualifier model -- hence the need to provide the actual cell FamilyQualifierPair
+     *     (<code>toUseForCell</code>) to this method.</li>
+     *     <li><strong>Column Family Model:</strong> If the column family model
+     *     (<code>famModel</code>) is provided and if it specifies a <em>default</em> serializer
+     *     to use in the event that no qualifier-specific serializer can be found, then use that
+     *     serializer.</li>
+     *     <li><strong>Table Model:</strong> If the table model (<code>tableModel</code>) is
+     *     provided and if it specifies a serializer, then use it.</li>
+     * </ol>
+     * @param toUseForCell FamilyQualifierPair representing the concrete column family and qualifier
+     *                     of a given cell, if available. Note that the qualifier defined in this
+     *                     pair may differ from the qualifier model provided, for example if the
+     *                     QualModel specifies a range of qualifiers, or if it indicates the use of
+     *                     qualifier-based versioning (which would mutate the concrete form of the
+     *                     qualifier value).
+     * @param qualModel QualModel representing the column qualifier model pertinent to a value for
+     *                  which the serializer must be identified.
+     * @param famModel FamilyModel representing the column family model pertinent to a value for
+     *                 which the serializer must be identified.
+     * @param tableModel TableModel representing the table model pertinent to a value for which the
+     *                   serialier must be identified.
+     * @return CellSerializer identified according to the priority logic indicated above, or null
+     * if no CellSerializer could be found.
+     */
     public static CellSerializer identifySerializer(final FamilyQualifierPair toUseForCell, final QualHB qualModel, final FamilyHB famModel, final TableHB tableModel) {
         return identifySerializationComponent(toUseForCell,
                                               qualModel,
@@ -125,6 +212,11 @@ public final class SpecUtil extends Uninstantiable {
                                               CellSerializable::getSerializer,
                                               FamilyHB::getSerializer);
     }
+
+    /**
+     * Equivalent to {@link #identifySerializer(null, QualHB, FamilyHB, TableHB)}
+     * @see #identifySerializer(FamilyQualifierPair, QualHB, FamilyHB, TableHB)
+     */
     public static CellSerializer identifySerializer(final QualHB qualModel, final FamilyHB famModel, final TableHB tableModel) {
         return identifySerializer(null, qualModel, famModel, tableModel);
     }

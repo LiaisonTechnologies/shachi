@@ -10,8 +10,7 @@ package com.liaison.hbase.api.request;
 
 import com.liaison.hbase.api.request.impl.LongValueSpec;
 import com.liaison.hbase.api.request.impl.NoOpSpec;
-import com.liaison.hbase.testutil.TestUtil;
-import org.mockito.Mockito;
+import com.liaison.hbase.testutil.TestingUtil;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
@@ -23,7 +22,7 @@ public class TestLongValueSpec {
     private static final long NONBOUNDARY_LONG_HIGH = 10;
     
     private static LongValueSpec<NoOpSpec> buildLongValueSpec() {
-        return new LongValueSpec<NoOpSpec>(TestUtil.mockupNoOpSpec());
+        return new LongValueSpec<NoOpSpec>(TestingUtil.mockupNoOpSpec());
     }
     
     @Test(expectedExceptions = ArithmeticException.class)

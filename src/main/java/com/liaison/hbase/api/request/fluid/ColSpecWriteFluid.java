@@ -70,6 +70,12 @@ public interface ColSpecWriteFluid<C extends ColSpecWriteFluid<C>> extends ColSp
      * <strong>Cardinality:</strong> As only a single value may be written by this write
      * specification, implementations must throw IllegalStateException if a value (either null/
      * empty via this method or non-null via {@link #value(Value)}) has already been assigned.
+     * <br><br>
+     * TODO: Why does this method need a parameter? Empty is a singleton inheriting from
+     * NullableValue, so why does the client have to supply it every time? It should be sufficient
+     * to make this API call take zero parameters, and internally assign the NullableValue to the
+     * singleton instance of Empty. Should investigate making this change.
+     * <br><br>
      * @param empty {@link Empty} representing the null/empty value to be written
      * @return this instance (for fluent/chaining API)
      * @throws IllegalStateException if either a non-null value ({@link Value}) or a null value

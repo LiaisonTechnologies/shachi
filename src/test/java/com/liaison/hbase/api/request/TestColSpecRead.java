@@ -2,14 +2,12 @@ package com.liaison.hbase.api.request;
 
 import com.liaison.hbase.api.request.frozen.LongValueSpecFrozen;
 import com.liaison.hbase.api.request.impl.*;
-import com.liaison.hbase.context.HBaseContext;
 import com.liaison.hbase.dto.FamilyQualifierPair;
 import com.liaison.hbase.exception.SpecValidationException;
 import com.liaison.hbase.model.FamilyModel;
 import com.liaison.hbase.model.Name;
 import com.liaison.hbase.model.QualModel;
-import com.liaison.hbase.testutil.TestUtil;
-import org.mockito.Mockito;
+import com.liaison.hbase.testutil.TestingUtil;
 import org.testng.Assert;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
@@ -32,8 +30,12 @@ public class TestColSpecRead {
     private static final QualModel QUAL_TEST = QualModel.of(Name.of("TEST_QUALIFIER"));
     private static final String DESC_TEST = "TEST DESCRIPTION";
 
-    private static final NoOpSpec PARENT = TestUtil.mockupNoOpSpec();
+    private static final NoOpSpec PARENT = TestingUtil.mockupNoOpSpec();
 
+    /*
+     * See note below regarding the methods here which take NoOpSpec as a parameter (versus the
+     * ones which use the constant NoOpSpec PARENT instead).
+     */
     private static ColSpecRead<NoOpSpec> buildColSpecReadNoFamily(final NoOpSpec parent) {
         return new ColSpecRead<>(parent);
     }
@@ -41,6 +43,13 @@ public class TestColSpecRead {
         return buildColSpecReadNoFamily(parent).fam(FAMILY_TEST);
     }
 
+    /*
+     * For most of the test cases, we can use one of the following two methods to build the
+     * ColSpecRead to be tested using the already-built parent NoOpSpec. It is only necessary to
+     * use the foregoing methods which accept a parent NoOpSpec as a parameter if the test requires
+     * a change to the NoOpSpec parent itself (in particular, if the test requires that its state be
+     * frozen).
+     */
     private static ColSpecRead<NoOpSpec> buildColSpecReadNoFamily() {
         return new ColSpecRead<>(PARENT);
     }
@@ -176,7 +185,7 @@ public class TestColSpecRead {
         colSpecRead.freezeRecursive();
         Assert.assertEquals(colSpecRead.getState(), SpecState.FROZEN);
 
-        parent = TestUtil.mockupNoOpSpec();
+        parent = TestingUtil.mockupNoOpSpec();
         colSpecRead = buildColSpecRead(parent);
         verSpec = colSpecRead.version().ge(VERSION_MIN).lt(VERSION_MAX);
         Assert.assertEquals(colSpecRead.getState(), SpecState.FLUID);
@@ -203,7 +212,7 @@ public class TestColSpecRead {
         colSpecRead.freezeRecursive();
         Assert.assertTrue(colSpecRead.isFrozen());
 
-        parent = TestUtil.mockupNoOpSpec();
+        parent = TestingUtil.mockupNoOpSpec();
         colSpecRead = buildColSpecRead(parent);
         verSpec = colSpecRead.version().ge(VERSION_MIN).lt(VERSION_MAX);
         parent.freezeRecursive();
@@ -213,7 +222,7 @@ public class TestColSpecRead {
         final NoOpSpec parent;
         final ColSpecRead<NoOpSpec> colSpecRead;
 
-        parent = TestUtil.mockupNoOpSpec();
+        parent = TestingUtil.mockupNoOpSpec();
         colSpecRead = buildColSpecRead(parent);
 
         parent.freezeRecursive();

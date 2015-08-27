@@ -25,7 +25,7 @@ import com.liaison.hbase.util.StringRepFormat;
 
 import java.io.Serializable;
 
-public class ColSpecWrite<P extends TableRowOpSpec<P>> extends ColSpec<ColSpecWrite<P>, P> implements ColSpecWriteFluent<ColSpecWrite<P>, P>, ColSpecWriteFrozen, Serializable {
+public final class ColSpecWrite<P extends TableRowOpSpec<P>> extends ColSpec<ColSpecWrite<P>, P> implements ColSpecWriteFluent<ColSpecWrite<P>, P>, ColSpecWriteFrozen, Serializable {
 
     private static final long serialVersionUID = -194106227851821468L;
 
@@ -132,8 +132,17 @@ public class ColSpecWrite<P extends TableRowOpSpec<P>> extends ColSpec<ColSpecWr
         SpecUtil.validateRequired(this.valueProto, this, "value", Object.class);
 
         if (this.valueProto instanceof NullableValue) {
+            /*
+             * In this case, the client has already prepared a value (or empty) to be assigned as
+             * the value for this cell, so there is no need to serialize some other object.
+             */
             this.value = (NullableValue) this.valueProto;
         } else {
+            /*
+             * In this case, the assigned value is of some non-prepared type, so serialization is
+             * required in order to produce a NullableValue which the framework can write to the
+             * cell.
+             */
             rowSpec = getParent().getTableRow();
             cellSer =
                 SpecUtil.identifySerializer(FamilyQualifierPair.of(getFamily(), getColumn()),
