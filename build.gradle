@@ -112,6 +112,7 @@ test {
     useTestNG()
     systemProperty "java.net.preferIPv4Stack", "true"
     printf "!!!!!!!!!! !!!!!!!!!! CLASSPATH: ${classpath.getFiles()}"
+    printf "!!!!!!!!!! !!!!!!!!!! SYSTEM PROPERTIES: ${System.getProperties()}"
 }
 
 distributions {
