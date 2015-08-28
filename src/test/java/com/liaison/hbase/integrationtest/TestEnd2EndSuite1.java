@@ -25,9 +25,12 @@ public class TestEnd2EndSuite1 {
 
     @BeforeClass
     public void setup() throws Exception {
-
+        LOG.info("System.getProperty('java.net.preferIPv4Stack')=" + System.getProperty("java.net.preferIPv4Stack"));
+        LOG.info("Creating " + HBaseTestingUtility.class.getSimpleName() + "...");
         this.hbTestUtil = new HBaseTestingUtility();
+        LOG.info(HBaseTestingUtility.class.getSimpleName() + " created; starting mini-cluster...");
         this.hbTestUtil.startMiniCluster();
+        LOG.info("Mini-cluster started; building " + HBaseControl.class.getSimpleName() + "...");
 
         this.ctrl = new HBaseControl(
             MiniClusterTestHBaseContext
@@ -37,12 +40,17 @@ public class TestEnd2EndSuite1 {
                     .build(),
             SimpleHBaseResourceManager.INSTANCE
         );
+        LOG.info(HBaseControl.class.getSimpleName() + "built");
     }
 
     @Test
     public void test() throws Exception {
+        LOG.info("System.getProperty('java.net.preferIPv4Stack')=" + System.getProperty("java.net.preferIPv4Stack"));
+        LOG.info("Closing " + HBaseControl.class.getSimpleName() + "...");
         this.ctrl.close();
+        LOG.info(HBaseControl.class.getSimpleName() + "closed; shutting down mini-cluster...");
         this.hbTestUtil.shutdownMiniCluster();
+        LOG.info("Mini-cluster shut down");
     }
 
 }
