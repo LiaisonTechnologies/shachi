@@ -23,7 +23,7 @@ buildscript {
 
 allprojects {
     repositories {
-        mavenLocal()
+        // mavenLocal()
         mavenCentral()
         // Liaison Private Maven artifact repo (Nexus)
         maven { url releasesArtifactRepoURL }
@@ -82,9 +82,10 @@ dependencies {
     compile "org.testng:testng:${verTestNG}"
     testCompile "org.mockito:mockito-all:${verMockito}"
     testCompile group:'org.apache.hadoop', name:'hadoop-common', version:"${verHadoop}", classifier: 'tests'
+    testCompile group:'org.apache.hbase', name:'hbase-server', version:"${verHBase}"
     testCompile group:'org.apache.hbase', name:'hbase-server', version:"${verHBase}", classifier: 'tests'
-    testCompile group:'org.apache.hadoop', name:'hadoop-hdfs', version:"${verHadoop}", classifier: 'tests'
     testCompile group:'org.apache.hadoop', name:'hadoop-hdfs', version:"${verHadoop}"
+    testCompile group:'org.apache.hadoop', name:'hadoop-hdfs', version:"${verHadoop}", classifier: 'tests'
 }
 
 task fatJar(type: Jar) {
