@@ -110,7 +110,7 @@ task copyToLib( type: Copy ) {
 
 test {
     useTestNG()
-    printf classpath
+    printf "!!!!!!!!!! !!!!!!!!!! CLASSPATH: ${classpath.getFiles()}"
 }
 
 distributions {
