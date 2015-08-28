@@ -110,6 +110,7 @@ task copyToLib( type: Copy ) {
 
 test {
     useTestNG()
+    systemProperty "java.net.preferIPv4Stack", "true"
     printf "!!!!!!!!!! !!!!!!!!!! CLASSPATH: ${classpath.getFiles()}"
 }
 

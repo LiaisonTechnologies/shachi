@@ -1,5 +1,6 @@
 package com.liaison.hbase.integrationtest;
 
+import com.liaison.commons.log.LogMeMaybe;
 import com.liaison.hbase.HBaseControl;
 import com.liaison.hbase.HBaseStart;
 import com.liaison.hbase.context.MiniClusterTestHBaseContext;
@@ -14,11 +15,17 @@ import org.testng.annotations.Test;
  */
 public class TestEnd2EndSuite1 {
 
+    private static final LogMeMaybe LOG;
+    static {
+        LOG = new LogMeMaybe(TestEnd2EndSuite1.class);
+    }
+
     private HBaseTestingUtility hbTestUtil;
-    private HBaseStart ctrl;
+    private HBaseControl ctrl;
 
     @BeforeClass
     public void setup() throws Exception {
+
         this.hbTestUtil = new HBaseTestingUtility();
         this.hbTestUtil.startMiniCluster();
 
@@ -34,6 +41,8 @@ public class TestEnd2EndSuite1 {
 
     @Test
     public void test() throws Exception {
-
+        this.ctrl.close();
+        this.hbTestUtil.shutdownMiniCluster();
     }
+
 }
