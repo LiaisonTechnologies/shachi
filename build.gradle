@@ -61,7 +61,7 @@ if (project.hasProperty('env') && project.getProperty('env') == 'mapr') {
     ext.verHadoop = '2.5.1-mapr-1503'
     ext.verZookeeper = '3.4.5-mapr-1406'
 } else {
-    ext.verHBase = '0.98.9-hadoop2'
+    ext.verHBase = '0.98.13-hadoop2'
     ext.verHadoop = '2.7.1'
     ext.verZookeeper = '3.4.5'
 }
