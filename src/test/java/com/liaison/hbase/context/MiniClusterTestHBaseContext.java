@@ -17,6 +17,7 @@ public class MiniClusterTestHBaseContext extends CommonHBaseContext {
 
         public Builder hbTestUtil(final HBaseTestingUtility hbTestUtil) {
             this.hbTestUtil = hbTestUtil;
+            super.configProvider(hbTestUtil::getConfiguration);
             return this;
         }
 
