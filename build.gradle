@@ -2,9 +2,24 @@ apply plugin: 'java'
 apply plugin: 'eclipse'
 apply plugin: 'java-library-distribution'
 
+ext.libraryName = "liaison-hbase-${version}"
+// ext.verGuava = '18.0'
+ext.verGuava = '16.0.1'
+ext.verMockito = '1.10.19'
+ext.verPhoenixCommons = '0.0.1-SNAPSHOT'
+ext.verPool = '2.3'
+ext.verQuasar  = '0.6.2'
+ext.verTestNG  = '6.8.21'
+
 configurations {
     provided
     provided.extendsFrom(compile)
+    all {
+        resolutionStrategy {
+            force "com.google.guava:guava:${verGuava}"
+            forcedModules = ["com.google.guava:guava:${verGuava}"]
+        }
+    }
 }
 
 sourceSets {
@@ -39,15 +54,6 @@ apply from: file('gradle/maven.gradle')
 
 group = 'com.liaison'
 version = '0.0.1-SNAPSHOT'
-
-ext.libraryName = "liaison-hbase-${version}"
-// ext.verGuava = '18.0'
-ext.verGuava = '16.0.1'
-ext.verMockito = '1.10.19'
-ext.verPhoenixCommons = '0.0.1-SNAPSHOT'
-ext.verPool = '2.3'
-ext.verQuasar  = '0.6.2'
-ext.verTestNG  = '6.8.21'
 
 ext.classifier = ':jdk8'
 
