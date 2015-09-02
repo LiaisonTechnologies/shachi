@@ -1,39 +1,52 @@
-apply plugin: 'java'
-apply plugin: 'eclipse'
-apply plugin: 'java-library-distribution'
-
-ext.libraryName = "liaison-hbase-${version}"
-// ext.verGuava = '18.0'
-ext.verGuava = '15.0'
-ext.verMockito = '1.10.19'
-ext.verPhoenixCommons = '0.0.1-SNAPSHOT'
-ext.verPool = '2.3'
-ext.verQuasar  = '0.6.2'
-ext.verTestNG  = '6.8.21'
-
-configurations {
-    provided
-    provided.extendsFrom(compile)
-    all {
-        resolutionStrategy {
-            force "com.google.guava:guava:${verGuava}"
-            forcedModules = ["com.google.guava:guava:${verGuava}"]
-        }
-    }
-}
-
-sourceSets {
-    main.compileClasspath += configurations.provided
-    test.compileClasspath += configurations.provided
-    test.runtimeClasspath += configurations.provided
-}
-
 buildscript {
     repositories {
         mavenLocal()
         mavenCentral()
     }
     apply from: file('gradle/buildscript.gradle'), to: buildscript
+}
+
+plugins {
+    id 'org.unbroken-dome.test-sets' version '1.2.0'
+}
+
+apply plugin: 'java'
+apply plugin: 'eclipse'
+apply plugin: 'java-library-distribution'
+
+ext.libraryName = "liaison-hbase-${version}"
+ext.verGuava = '18.0'
+ext.verGuavaTEST = '15.0'
+ext.verMockito = '1.10.19'
+ext.verPhoenixCommons = '0.0.1-SNAPSHOT'
+ext.verPool = '2.3'
+ext.verQuasar  = '0.6.2'
+ext.verTestNG  = '6.8.21'
+
+testSets {
+    testUnit { dirName = 'test/unit' }
+    testIntegration { dirName = 'test/integration' }
+}
+
+configurations {
+    provided
+    provided.extendsFrom(compile)
+    testIntConf
+    testIntConf {
+        extendsFrom(provided)
+        resolutionStrategy {
+            force "com.google.guava:guava:${verGuavaTEST}"
+            forcedModules = ["com.google.guava:guava:${verGuavaTEST}"]
+        }
+    }
+}
+
+sourceSets {
+    main.compileClasspath += configurations.provided
+    testUnit.compileClasspath += configurations.provided
+    testUnit.runtimeClasspath += configurations.provided
+    testIntegration.compileClasspath += configurations.testIntConf
+    testIntegration.runtimeClasspath += configurations.testIntConf
 }
 
 allprojects {
@@ -68,9 +81,10 @@ if (project.hasProperty('env') && project.getProperty('env') == 'mapr') {
     ext.verHadoop = '2.5.1-mapr-1503'
     ext.verZookeeper = '3.4.5-mapr-1406'
 } else {
-    // ext.verHBase = '0.98.13-hadoop2'
-    ext.verHBase = '1.1.1'
-    ext.verHadoop = '2.7.1'
+    ext.verHBase = '0.98.9-hadoop2'
+    ext.verHadoop = '2.5.1'
+    //ext.verHBase = '1.1.1'
+    //ext.verHadoop = '2.7.1'
     ext.verZookeeper = '3.4.5'
 }
 
@@ -82,22 +96,21 @@ jar {
 
 dependencies {
     compile "com.liaison.phoenix:phoenix-commons:${verPhoenixCommons}"
-    compile "com.google.guava:guava:${verGuava}"
     compile "co.paralleluniverse:quasar-core:${verQuasar}${classifier}"
     provided "org.apache.hbase:hbase-client:${verHBase}"
     provided "org.apache.hbase:hbase-common:${verHBase}"
     compile "org.apache.commons:commons-pool2:${verPool}"
     compile "org.testng:testng:${verTestNG}"
     testCompile "org.mockito:mockito-all:${verMockito}"
-    testCompile group:'org.apache.hadoop', name:'hadoop-common', version:"${verHadoop}", classifier: 'tests'
-    testCompile group:'org.apache.hbase', name:'hbase-server', version:"${verHBase}"
-    testCompile group:'org.apache.hbase', name:'hbase-server', version:"${verHBase}", classifier: 'tests'
-    testCompile group:'org.apache.hbase', name:'hbase-hadoop-compat', version:"${verHBase}"
-    testCompile group:'org.apache.hbase', name:'hbase-hadoop-compat', version:"${verHBase}", classifier: 'tests'
-    testCompile group:'org.apache.hbase', name:'hbase-hadoop2-compat', version:"${verHBase}"
-    testCompile group:'org.apache.hbase', name:'hbase-hadoop2-compat', version:"${verHBase}", classifier: 'tests'
-    testCompile group:'org.apache.hadoop', name:'hadoop-hdfs', version:"${verHadoop}"
-    testCompile group:'org.apache.hadoop', name:'hadoop-hdfs', version:"${verHadoop}", classifier: 'tests'
+    testIntegrationCompile group:'org.apache.hadoop', name:'hadoop-common', version:"${verHadoop}", classifier: 'tests'
+    testIntegrationCompile group:'org.apache.hbase', name:'hbase-server', version:"${verHBase}"
+    testIntegrationCompile group:'org.apache.hbase', name:'hbase-server', version:"${verHBase}", classifier: 'tests'
+    testIntegrationCompile group:'org.apache.hbase', name:'hbase-hadoop-compat', version:"${verHBase}"
+    testIntegrationCompile group:'org.apache.hbase', name:'hbase-hadoop-compat', version:"${verHBase}", classifier: 'tests'
+    testIntegrationCompile group:'org.apache.hbase', name:'hbase-hadoop2-compat', version:"${verHBase}"
+    testIntegrationCompile group:'org.apache.hbase', name:'hbase-hadoop2-compat', version:"${verHBase}", classifier: 'tests'
+    testIntegrationCompile group:'org.apache.hadoop', name:'hadoop-hdfs', version:"${verHadoop}"
+    testIntegrationCompile group:'org.apache.hadoop', name:'hadoop-hdfs', version:"${verHadoop}", classifier: 'tests'
 }
 
 task fatJar(type: Jar) {
@@ -116,11 +129,17 @@ task copyToLib( type: Copy ) {
     from configurations.runtime
 }
 
-test {
+testUnit {
+    useTestNG()
+    println "!!!!!!!!!! UNIT !!!!!!!!!! CLASSPATH: ${classpath.getFiles().collect({it.toString()}).inject('\n') {acc, next -> acc + next + '\n'}}"
+    println "!!!!!!!!!! UNIT !!!!!!!!!! SYSTEM PROPERTIES: ${System.getProperties()}"
+}
+
+testIntegration {
     useTestNG()
     systemProperty "java.net.preferIPv4Stack", "true"
-    printf "!!!!!!!!!! !!!!!!!!!! CLASSPATH: ${classpath.getFiles()}"
-    printf "!!!!!!!!!! !!!!!!!!!! SYSTEM PROPERTIES: ${System.getProperties()}"
+    println "!!!!!!!!!! INTEGRATION !!!!!!!!!! CLASSPATH: ${classpath.getFiles().collect({it.toString()}).inject('\n') {acc, next -> acc + next + '\n'}}}"
+    println "!!!!!!!!!! INTEGRATION !!!!!!!!!! SYSTEM PROPERTIES: ${System.getProperties()}"
 }
 
 distributions {
