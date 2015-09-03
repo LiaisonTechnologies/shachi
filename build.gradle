@@ -24,7 +24,7 @@ ext.verQuasar  = '0.6.2'
 ext.verTestNG  = '6.8.21'
 
 testSets {
-    testUnit { dirName = 'test/unit' }
+    testUnit { dirName = 'test/SOMETHINGELSEunit' }
     testIntegration { dirName = 'test/integration' }
 }
 
