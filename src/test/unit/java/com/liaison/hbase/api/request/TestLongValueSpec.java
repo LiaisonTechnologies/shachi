@@ -194,7 +194,7 @@ public class TestLongValueSpec {
                             ("Failed " + summaryMsg + ": upper-bound-test"));
     }
     
-    private void singleRangeTest(final BiConsumer<LongValueSpec<?>, Long> firstArgSetter, final String firstSetterName, final BiConsumer<LongValueSpec<?>, Long> secondArgSetter, final String secondSetterName, final long firstArg, final long secondArg, final Long lowerBound, final Long upperBound) {
+    private void singleRangeTest(final BiConsumer<? super LongValueSpec<?>, Long> firstArgSetter, final String firstSetterName, final BiConsumer<LongValueSpec<?>, Long> secondArgSetter, final String secondSetterName, final long firstArg, final long secondArg, final Long lowerBound, final Long upperBound) {
         LongValueSpec<?> lvs;
 
         lvs = buildLongValueSpec();
@@ -346,6 +346,13 @@ public class TestLongValueSpec {
     
     @Test
     public void testRanges() {
+        /*
+         * Note: For some reason, IntelliJ (14.1.3) erroneously indicates a compiler error for all 8
+         * of the LongValueSpec method references here, even though the Java compiler has no problem
+         * with them, and IntelliJ's own code generation creates them as-written (e.g. if creating
+         * them to replace lambdas). Looks like an IntelliJ bug; until it is fixed, ignore the
+         * "Inferred type is not within its bound" compiler errors IntelliJ indicates here.
+         */
         // range: (5,10) -> low-bound-inc: 6, high-bound-exc: 10
         singleRangeTest(LongValueSpec::gt,
                         "gt",

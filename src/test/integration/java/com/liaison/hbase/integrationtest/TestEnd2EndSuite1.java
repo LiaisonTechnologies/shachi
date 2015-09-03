@@ -2,7 +2,6 @@ package com.liaison.hbase.integrationtest;
 
 import com.liaison.commons.log.LogMeMaybe;
 import com.liaison.hbase.HBaseControl;
-import com.liaison.hbase.HBaseStart;
 import com.liaison.hbase.context.MiniClusterTestHBaseContext;
 import com.liaison.hbase.resmgr.SimpleHBaseResourceManager;
 import org.apache.hadoop.hbase.HBaseTestingUtility;
