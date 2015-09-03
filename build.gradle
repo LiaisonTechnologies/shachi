@@ -30,7 +30,9 @@ testSets {
 
 configurations {
     provided
-    provided.extendsFrom(compile)
+    provided {
+        extendsFrom(compile)
+    }
     testIntConf
     testIntConf {
         extendsFrom(provided)
@@ -45,8 +47,10 @@ sourceSets {
     main.compileClasspath += configurations.provided
     testUnit.compileClasspath += configurations.provided
     testUnit.runtimeClasspath += configurations.provided
-    testIntegration.compileClasspath += configurations.testIntConf
-    testIntegration.runtimeClasspath += configurations.testIntConf
+    testIntegration {
+        compileClasspath = configurations.testIntConf
+    }
+    testIntegration.runtimeClasspath = configurations.testIntConf
 }
 
 allprojects {
@@ -102,6 +106,7 @@ dependencies {
     compile "org.apache.commons:commons-pool2:${verPool}"
     compile "org.testng:testng:${verTestNG}"
     testCompile "org.mockito:mockito-all:${verMockito}"
+    testIntegrationCompile group:'com.google.guava', name:'guava', version:"${verGuavaTEST}"
     testIntegrationCompile group:'org.apache.hadoop', name:'hadoop-common', version:"${verHadoop}", classifier: 'tests'
     testIntegrationCompile group:'org.apache.hbase', name:'hbase-server', version:"${verHBase}"
     testIntegrationCompile group:'org.apache.hbase', name:'hbase-server', version:"${verHBase}", classifier: 'tests'
@@ -131,15 +136,15 @@ task copyToLib( type: Copy ) {
 
 testUnit {
     useTestNG()
-    println "!!!!!!!!!! UNIT !!!!!!!!!! CLASSPATH: ${classpath.getFiles().collect({it.toString()}).inject('\n') {acc, next -> acc + next + '\n'}}"
-    println "!!!!!!!!!! UNIT !!!!!!!!!! SYSTEM PROPERTIES: ${System.getProperties()}"
+    logger.info "@@@ Classpath (UNIT testing): ${classpath.getFiles().collect({it.toString()}).inject('\n') {acc, next -> acc + next + '\n'}}"
+    logger.info "@@@ SystemProps (UNIT testing): ${System.getProperties().collect({it.toString()}).inject('\n') {acc, next -> acc + next + '\n'}}"
 }
 
 testIntegration {
     useTestNG()
     systemProperty "java.net.preferIPv4Stack", "true"
-    println "!!!!!!!!!! INTEGRATION !!!!!!!!!! CLASSPATH: ${classpath.getFiles().collect({it.toString()}).inject('\n') {acc, next -> acc + next + '\n'}}}"
-    println "!!!!!!!!!! INTEGRATION !!!!!!!!!! SYSTEM PROPERTIES: ${System.getProperties()}"
+    logger.info "@@@ Classpath (INTEGRATION testing): ${classpath.getFiles().collect({it.toString()}).inject('\n') {acc, next -> acc + next + '\n'}}"
+    logger.info "@@@ SysProps (INTEGRATION testing): ${System.getProperties().collect({it.toString()}).inject('\n') {acc, next -> acc + next + '\n'}}"
 }
 
 distributions {
