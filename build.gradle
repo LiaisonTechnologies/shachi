@@ -33,17 +33,12 @@ configurations {
     provided {
         extendsFrom(compile)
     }
-    withoutGuava
-    withoutGuava {
-        extendsFrom(compile)
-        exclude group:"com.google.guava", module:"guava"
-    }
     testIntConf
     testIntConf {
-        extendsFrom(withoutGuava)
+        extendsFrom(provided)
         resolutionStrategy {
             force "com.google.guava:guava:${verGuavaTEST}"
-            forcedModules = ["com.google.guava:guava:${verGuavaTEST}"]
+            //forcedModules = ["com.google.guava:guava:${verGuavaTEST}"]
         }
     }
 }
