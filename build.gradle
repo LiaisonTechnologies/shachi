@@ -24,7 +24,7 @@ ext.verQuasar  = '0.6.2'
 ext.verTestNG  = '6.8.21'
 
 testSets {
-    testUnit { dirName = 'test/SOMETHINGELSEunit' }
+    testUnit { dirName = 'test/unit' }
     testIntegration { dirName = 'test/integration' }
 }
 
@@ -44,13 +44,23 @@ configurations {
 }
 
 sourceSets {
+    printf "configurations.provided (type): " + configurations.provided.getClass()
+    printf "configurations.testIntConf (type): " + configurations.testIntConf.getClass()
+    printf "main.compileClasspath (type): " + main.compileClasspath.getClass()
+    printf "testUnit.compileClasspath (type): " + testUnit.compileClasspath.getClass()
+    printf "testUnit.runtimeClasspath (type): " + testUnit.runtimeClasspath.getClass()
+    printf "testIntegration.compileClasspath (type): " + testIntegration.compileClasspath.getClass()
+    printf "testIntegration.runtimeClasspath (type): " + testIntegration.runtimeClasspath.getClass()
     main.compileClasspath += configurations.provided
     testUnit.compileClasspath += configurations.provided
     testUnit.runtimeClasspath += configurations.provided
-    testIntegration {
-        compileClasspath = configurations.testIntConf
-    }
+    testIntegration.compileClasspath = configurations.testIntConf
     testIntegration.runtimeClasspath = configurations.testIntConf
+    printf "main.compileClasspath (type): " + main.compileClasspath.getClass()
+    printf "testUnit.compileClasspath (type): " + testUnit.compileClasspath.getClass()
+    printf "testUnit.runtimeClasspath (type): " + testUnit.runtimeClasspath.getClass()
+    printf "testIntegration.compileClasspath (type): " + testIntegration.compileClasspath.getClass()
+    printf "testIntegration.runtimeClasspath (type): " + testIntegration.runtimeClasspath.getClass()
 }
 
 allprojects {
