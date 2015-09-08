@@ -36,6 +36,7 @@ configurations {
     testIntConf
     testIntConf {
         extendsFrom(provided)
+        exclude group:"com.google.guava", module:"guava"
         resolutionStrategy {
             force "com.google.guava:guava:${verGuavaTEST}"
             forcedModules = ["com.google.guava:guava:${verGuavaTEST}"]
@@ -54,8 +55,8 @@ sourceSets {
     main.compileClasspath += configurations.provided
     testUnit.compileClasspath += configurations.provided
     testUnit.runtimeClasspath += configurations.provided
-    testIntegration.compileClasspath = configurations.testIntConf
-    testIntegration.runtimeClasspath = configurations.testIntConf
+    testIntegration.compileClasspath += configurations.testIntConf
+    testIntegration.runtimeClasspath += configurations.testIntConf
     printf "main.compileClasspath (type): " + main.compileClasspath.getClass()
     printf "testUnit.compileClasspath (type): " + testUnit.compileClasspath.getClass()
     printf "testUnit.runtimeClasspath (type): " + testUnit.runtimeClasspath.getClass()
