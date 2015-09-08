@@ -45,23 +45,23 @@ configurations {
 }
 
 sourceSets {
-    printf "configurations.provided (type): " + configurations.provided.getClass()
-    printf "configurations.testIntConf (type): " + configurations.testIntConf.getClass()
-    printf "main.compileClasspath (type): " + main.compileClasspath.getClass()
-    printf "testUnit.compileClasspath (type): " + testUnit.compileClasspath.getClass()
-    printf "testUnit.runtimeClasspath (type): " + testUnit.runtimeClasspath.getClass()
-    printf "testIntegration.compileClasspath (type): " + testIntegration.compileClasspath.getClass()
-    printf "testIntegration.runtimeClasspath (type): " + testIntegration.runtimeClasspath.getClass()
+    println "configurations.provided (type): " + configurations.provided.getClass()
+    println "configurations.testIntConf (type): " + configurations.testIntConf.getClass()
+    println "main.compileClasspath (type): " + main.compileClasspath.getClass()
+    println "testUnit.compileClasspath (type): " + testUnit.compileClasspath.getClass()
+    println "testUnit.runtimeClasspath (type): " + testUnit.runtimeClasspath.getClass()
+    println "testIntegration.compileClasspath (type): " + testIntegration.compileClasspath.getClass()
+    println "testIntegration.runtimeClasspath (type): " + testIntegration.runtimeClasspath.getClass()
     main.compileClasspath += configurations.provided
     testUnit.compileClasspath += configurations.provided
     testUnit.runtimeClasspath += configurations.provided
     testIntegration.compileClasspath += configurations.testIntConf
     testIntegration.runtimeClasspath += configurations.testIntConf
-    printf "main.compileClasspath (type): " + main.compileClasspath.getClass()
-    printf "testUnit.compileClasspath (type): " + testUnit.compileClasspath.getClass()
-    printf "testUnit.runtimeClasspath (type): " + testUnit.runtimeClasspath.getClass()
-    printf "testIntegration.compileClasspath (type): " + testIntegration.compileClasspath.getClass()
-    printf "testIntegration.runtimeClasspath (type): " + testIntegration.runtimeClasspath.getClass()
+    println "main.compileClasspath (type): " + main.compileClasspath.getClass()
+    println "testUnit.compileClasspath (type): " + testUnit.compileClasspath.getClass()
+    println "testUnit.runtimeClasspath (type): " + testUnit.runtimeClasspath.getClass()
+    println "testIntegration.compileClasspath (type): " + testIntegration.compileClasspath.getClass()
+    println "testIntegration.runtimeClasspath (type): " + testIntegration.runtimeClasspath.getClass()
 }
 
 allprojects {
