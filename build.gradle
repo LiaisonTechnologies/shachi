@@ -36,11 +36,6 @@ configurations {
     testIntConf
     testIntConf {
         extendsFrom(provided)
-        /*
-        extendsFrom(provided.copy {
-            exclude group:"com.google.guava", module:"guava"
-        })
-        */
         resolutionStrategy {
             force "com.google.guava:guava:${verGuavaTEST}"
             forcedModules = ["com.google.guava:guava:${verGuavaTEST}"]
