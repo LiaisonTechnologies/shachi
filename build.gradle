@@ -39,8 +39,10 @@ configurations {
             exclude group:"com.google.guava", module:"guava"
         })
         resolutionStrategy {
-            force "com.google.guava:guava:${verGuavaTEST}"
-            forcedModules = ["com.google.guava:guava:${verGuavaTEST}"]
+            force 'com.google.guava:guava:15.0'
+            forcedModules = ['com.google.guava:guava:15.0']
+            //force "com.google.guava:guava:${verGuavaTEST}"
+            //forcedModules = ["com.google.guava:guava:${verGuavaTEST}"]
         }
     }
 }
