@@ -54,13 +54,23 @@ sourceSets {
     main.compileClasspath += configurations.provided
     testUnit.compileClasspath += configurations.provided
     testUnit.runtimeClasspath += configurations.provided
+    testIntegration.compileClasspath.resolutionStrategy {
+        force "com.google.guava:guava:${verGuavaTEST}"
+        forcedModules = ["com.google.guava:guava:${verGuavaTEST}"]
+    }
+    testIntegration.runtimeClasspath.resolutionStrategy {
+        force "com.google.guava:guava:${verGuavaTEST}"
+        forcedModules = ["com.google.guava:guava:${verGuavaTEST}"]
+    }
+    logger.debug "@@@1 testIntegration.compileClasspath (type): " + testIntegration.compileClasspath.getClass()
+    logger.debug "@@@1 testIntegration.runtimeClasspath (type): " + testIntegration.runtimeClasspath.getClass()
     testIntegration.compileClasspath += configurations.testIntConf
     testIntegration.runtimeClasspath += configurations.testIntConf
-    logger.debug "@@@ main.compileClasspath (type): " + main.compileClasspath.getClass()
-    logger.debug "@@@ testUnit.compileClasspath (type): " + testUnit.compileClasspath.getClass()
-    logger.debug "@@@ testUnit.runtimeClasspath (type): " + testUnit.runtimeClasspath.getClass()
-    logger.debug "@@@ testIntegration.compileClasspath (type): " + testIntegration.compileClasspath.getClass()
-    logger.debug "@@@ testIntegration.runtimeClasspath (type): " + testIntegration.runtimeClasspath.getClass()
+    logger.debug "@@@2 main.compileClasspath (type): " + main.compileClasspath.getClass()
+    logger.debug "@@@2 testUnit.compileClasspath (type): " + testUnit.compileClasspath.getClass()
+    logger.debug "@@@2 testUnit.runtimeClasspath (type): " + testUnit.runtimeClasspath.getClass()
+    logger.debug "@@@2 testIntegration.compileClasspath (type): " + testIntegration.compileClasspath.getClass()
+    logger.debug "@@@2 testIntegration.runtimeClasspath (type): " + testIntegration.runtimeClasspath.getClass()
 }
 
 allprojects {
