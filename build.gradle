@@ -46,6 +46,9 @@ configurations {
 sourceSets {
     logger.info "@@@ configurations.provided (type): " + configurations.provided.getClass()
     logger.info "@@@ configurations.testIntConf (type): " + configurations.testIntConf.getClass()
+    configurations.testIntConf.getDependencies().each {
+        logger.info "@@@ configurations.testIntConf (content): ${it}"
+    }
     logger.info "@@@ main.compileClasspath (type): " + main.compileClasspath.getClass()
     logger.info "@@@ testUnit.compileClasspath (type): " + testUnit.compileClasspath.getClass()
     logger.info "@@@ testUnit.runtimeClasspath (type): " + testUnit.runtimeClasspath.getClass()
