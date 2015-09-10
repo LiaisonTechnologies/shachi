@@ -54,6 +54,7 @@ sourceSets {
     main.compileClasspath += configurations.provided
     testUnit.compileClasspath += configurations.provided
     testUnit.runtimeClasspath += configurations.provided
+    /*
     testIntegration.compileClasspath.resolutionStrategy {
         force "com.google.guava:guava:${verGuavaTEST}"
         forcedModules = ["com.google.guava:guava:${verGuavaTEST}"]
@@ -62,10 +63,11 @@ sourceSets {
         force "com.google.guava:guava:${verGuavaTEST}"
         forcedModules = ["com.google.guava:guava:${verGuavaTEST}"]
     }
+    */
     logger.info "@@@1 testIntegration.compileClasspath (type): " + testIntegration.compileClasspath.getClass()
     logger.info "@@@1 testIntegration.runtimeClasspath (type): " + testIntegration.runtimeClasspath.getClass()
     testIntegration.compileClasspath += configurations.testIntConf
-    testIntegration.runtimeClasspath += configurations.testIntConf
+    testIntegration.runtimeClasspath = configurations.testIntConf
     logger.info "@@@2 main.compileClasspath (type): " + main.compileClasspath.getClass()
     logger.info "@@@2 testUnit.compileClasspath (type): " + testUnit.compileClasspath.getClass()
     logger.info "@@@2 testUnit.runtimeClasspath (type): " + testUnit.runtimeClasspath.getClass()
