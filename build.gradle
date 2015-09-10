@@ -33,6 +33,7 @@ configurations {
     provided {
         extendsFrom(compile)
     }
+    testIntConf
     testIntConf = provided.copyRecursive()
     testIntConf {
         //extendsFrom(provided)
