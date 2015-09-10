@@ -33,6 +33,7 @@ configurations {
     provided {
         extendsFrom(compile)
     }
+    /*
     testIntConf
     testIntConf = provided.copyRecursive()
     testIntConf {
@@ -42,6 +43,7 @@ configurations {
             forcedModules = ["com.google.guava:guava:${verGuavaTEST}"]
         }
     }
+    */
 }
 
 sourceSets {
