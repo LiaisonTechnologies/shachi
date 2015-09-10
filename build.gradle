@@ -63,7 +63,7 @@ sourceSets {
     }
 
     testIntegration.compileClasspath += configurations.testIntConf
-    testIntegration.runtimeClasspath = configurations.testIntConf
+    testIntegration.runtimeClasspath += configurations.testIntConf
 
     logger.info "@@@1 testIntegration.runtimeClasspath FILES ~start~"
     logger.info "@@@1 testIntegration.runtimeClasspath.getFiles(): ${testIntegration.runtimeClasspath.getFiles()}"
