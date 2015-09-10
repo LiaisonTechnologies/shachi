@@ -46,18 +46,20 @@ configurations {
 sourceSets {
     logger.info "@@@ configurations.provided (type): " + configurations.provided.getClass()
     logger.info "@@@ configurations.testIntConf (type): " + configurations.testIntConf.getClass()
-    configurations.testIntConf.getDependencies().each {
+    logger.info "@@@ configurations.testIntConf DEPENDENCIES ~start~"
+    configurations.testIntConf.getDependencies().iterator().each {
         logger.info "@@@ configurations.testIntConf (dependency): ${it}"
     }
-    configurations.testIntConf.getAllDependencies().each {
+    configurations.testIntConf.getAllDependencies().iterator().each {
         logger.info "@@@ configurations.testIntConf (allDependency): ${it}"
     }
-    configurations.testIntConf.getArtifacts().each {
+    configurations.testIntConf.getArtifacts().iterator().each {
         logger.info "@@@ configurations.testIntConf (artifact): ${it}"
     }
-    configurations.testIntConf.getAllArtifacts().each {
+    configurations.testIntConf.getAllArtifacts().iterator().each {
         logger.info "@@@ configurations.testIntConf (allArtifact): ${it}"
     }
+    logger.info "@@@ configurations.testIntConf DEPENDENCIES ~complete~"
     logger.info "@@@ main.compileClasspath (type): " + main.compileClasspath.getClass()
     logger.info "@@@ testUnit.compileClasspath (type): " + testUnit.compileClasspath.getClass()
     logger.info "@@@ testUnit.runtimeClasspath (type): " + testUnit.runtimeClasspath.getClass()
