@@ -47,6 +47,10 @@ sourceSets {
     logger.info "@@@ configurations.provided (type): " + configurations.provided.getClass()
     logger.info "@@@ configurations.testIntConf (type): " + configurations.testIntConf.getClass()
     logger.info "@@@ configurations.testIntConf DEPENDENCIES ~start~"
+    logger.info "@@@ configurations.testIntConf.getDependencies(): ${configurations.testIntConf.getDependencies()}"
+    logger.info "@@@ configurations.testIntConf.getAllDependencies(): ${configurations.testIntConf.getAllDependencies()}"
+    logger.info "@@@ configurations.testIntConf.getArtifacts(): ${configurations.testIntConf.getArtifacts()}"
+    logger.info "@@@ configurations.testIntConf.getAllArtifacts(): ${configurations.testIntConf.getAllArtifacts()}"
     configurations.testIntConf.getDependencies().iterator().each {
         logger.info "@@@ configurations.testIntConf (dependency): ${it}"
     }
