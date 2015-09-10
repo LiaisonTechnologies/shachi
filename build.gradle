@@ -168,6 +168,7 @@ testUnit {
 testIntegration {
     useTestNG()
     systemProperty "java.net.preferIPv4Stack", "true"
+    logger.info "@@@ Classpath type (INTEGRATION testing): ${classpath.getFiles().getClass()}"
     logger.info "@@@ Classpath (INTEGRATION testing): ${classpath.getFiles().collect({it.toString()}).inject('\n') {acc, next -> acc + next + '\n'}}"
     logger.info "@@@ SysProps (INTEGRATION testing): ${System.getProperties().collect({it.toString()}).inject('\n') {acc, next -> acc + next + '\n'}}"
 }
