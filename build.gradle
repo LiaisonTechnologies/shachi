@@ -66,8 +66,12 @@ sourceSets {
     */
     logger.info "@@@1 testIntegration.compileClasspath (type): " + testIntegration.compileClasspath.getClass()
     logger.info "@@@1 testIntegration.runtimeClasspath (type): " + testIntegration.runtimeClasspath.getClass()
+    testIntegration.runtimeClasspath.each {
+        logger.info "@@@1 testIntegration.runtimeClasspath (content): ${it}"
+    }
     testIntegration.compileClasspath += configurations.testIntConf
     testIntegration.runtimeClasspath = configurations.testIntConf
+
     logger.info "@@@2 main.compileClasspath (type): " + main.compileClasspath.getClass()
     logger.info "@@@2 testUnit.compileClasspath (type): " + testUnit.compileClasspath.getClass()
     logger.info "@@@2 testUnit.runtimeClasspath (type): " + testUnit.runtimeClasspath.getClass()
