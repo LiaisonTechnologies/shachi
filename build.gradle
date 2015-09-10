@@ -45,26 +45,35 @@ configurations {
 }
 
 sourceSets {
+    testIntConf = configurations.provided.copyRecursive()
+    testIntConf {
+        //extendsFrom(provided)
+        resolutionStrategy {
+            force "com.google.guava:guava:${verGuavaTEST}"
+            forcedModules = ["com.google.guava:guava:${verGuavaTEST}"]
+        }
+    }
+
     logger.info "@@@ configurations.provided (type): " + configurations.provided.getClass()
-    logger.info "@@@ configurations.testIntConf (type): " + configurations.testIntConf.getClass()
-    logger.info "@@@ configurations.testIntConf DEPENDENCIES ~start~"
-    logger.info "@@@ configurations.testIntConf.getDependencies(): ${configurations.testIntConf.getDependencies()}"
-    logger.info "@@@ configurations.testIntConf.getAllDependencies(): ${configurations.testIntConf.getAllDependencies()}"
-    logger.info "@@@ configurations.testIntConf.getArtifacts(): ${configurations.testIntConf.getArtifacts()}"
-    logger.info "@@@ configurations.testIntConf.getAllArtifacts(): ${configurations.testIntConf.getAllArtifacts()}"
-    configurations.testIntConf.getDependencies().iterator().each {
-        logger.info "@@@ configurations.testIntConf (dependency): ${it}"
+    logger.info "@@@ testIntConf (type): " + testIntConf.getClass()
+    logger.info "@@@ testIntConf DEPENDENCIES ~start~"
+    logger.info "@@@ testIntConf.getDependencies(): ${testIntConf.getDependencies()}"
+    logger.info "@@@ testIntConf.getAllDependencies(): ${testIntConf.getAllDependencies()}"
+    logger.info "@@@ testIntConf.getArtifacts(): ${testIntConf.getArtifacts()}"
+    logger.info "@@@ testIntConf.getAllArtifacts(): ${testIntConf.getAllArtifacts()}"
+    testIntConf.getDependencies().iterator().each {
+        logger.info "@@@ testIntConf (dependency): ${it}"
     }
-    configurations.testIntConf.getAllDependencies().iterator().each {
-        logger.info "@@@ configurations.testIntConf (allDependency): ${it}"
+    testIntConf.getAllDependencies().iterator().each {
+        logger.info "@@@ testIntConf (allDependency): ${it}"
     }
-    configurations.testIntConf.getArtifacts().iterator().each {
-        logger.info "@@@ configurations.testIntConf (artifact): ${it}"
+    testIntConf.getArtifacts().iterator().each {
+        logger.info "@@@ testIntConf (artifact): ${it}"
     }
-    configurations.testIntConf.getAllArtifacts().iterator().each {
-        logger.info "@@@ configurations.testIntConf (allArtifact): ${it}"
+    testIntConf.getAllArtifacts().iterator().each {
+        logger.info "@@@ testIntConf (allArtifact): ${it}"
     }
-    logger.info "@@@ configurations.testIntConf DEPENDENCIES ~complete~"
+    logger.info "@@@ testIntConf DEPENDENCIES ~complete~"
     logger.info "@@@ main.compileClasspath (type): " + main.compileClasspath.getClass()
     logger.info "@@@ testUnit.compileClasspath (type): " + testUnit.compileClasspath.getClass()
     logger.info "@@@ testUnit.runtimeClasspath (type): " + testUnit.runtimeClasspath.getClass()
@@ -88,8 +97,8 @@ sourceSets {
     testIntegration.runtimeClasspath.iterator().each {
         logger.info "@@@1 testIntegration.runtimeClasspath (content): ${it}"
     }
-    testIntegration.compileClasspath += configurations.testIntConf
-    testIntegration.runtimeClasspath = configurations.testIntConf
+    testIntegration.compileClasspath += testIntConf
+    testIntegration.runtimeClasspath = testIntConf
 
     logger.info "@@@2 main.compileClasspath (type): " + main.compileClasspath.getClass()
     logger.info "@@@2 testUnit.compileClasspath (type): " + testUnit.compileClasspath.getClass()
