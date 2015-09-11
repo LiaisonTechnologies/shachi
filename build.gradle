@@ -45,38 +45,11 @@ configurations {
 }
 
 sourceSets {
-    /*
-    logger.info "@@@ configurations.provided (type): " + configurations.provided.getClass()
-    logger.info "@@@ configurations.testIntConf (type): " + configurations.testIntConf.getClass()
-    logger.info "@@@ main.compileClasspath (type): " + main.compileClasspath.getClass()
-    logger.info "@@@ testUnit.compileClasspath (type): " + testUnit.compileClasspath.getClass()
-    logger.info "@@@ testUnit.runtimeClasspath (type): " + testUnit.runtimeClasspath.getClass()
-    logger.info "@@@ testIntegration.compileClasspath (type): " + testIntegration.compileClasspath.getClass()
-    logger.info "@@@ testIntegration.runtimeClasspath (type): " + testIntegration.runtimeClasspath.getClass()
-*/
     main.compileClasspath += configurations.provided
     testUnit.compileClasspath += configurations.provided
     testUnit.runtimeClasspath += configurations.provided
-/*
-    logger.info "@@@1 testIntegration.compileClasspath (type): " + testIntegration.compileClasspath.getClass()
-    logger.info "@@@1 testIntegration.runtimeClasspath (type): " + testIntegration.runtimeClasspath.getClass()
-*/
     testIntegration.compileClasspath += configurations.testIntConf
     testIntegration.runtimeClasspath += configurations.testIntConf
-/*
-    logger.info "@@@1 testIntegration.runtimeClasspath FILES ~start~"
-    logger.info "@@@1 testIntegration.runtimeClasspath.getFiles(): ${testIntegration.runtimeClasspath.getFiles()}"
-    testIntegration.runtimeClasspath.getFiles().each {
-        logger.info "@@@1 testIntegration.runtimeClasspath (file): ${it}"
-    }
-    logger.info "@@@1 testIntegration.runtimeClasspath FILES ~complete~"
-
-    logger.info "@@@2 main.compileClasspath (type): " + main.compileClasspath.getClass()
-    logger.info "@@@2 testUnit.compileClasspath (type): " + testUnit.compileClasspath.getClass()
-    logger.info "@@@2 testUnit.runtimeClasspath (type): " + testUnit.runtimeClasspath.getClass()
-    logger.info "@@@2 testIntegration.compileClasspath (type): " + testIntegration.compileClasspath.getClass()
-    logger.info "@@@2 testIntegration.runtimeClasspath (type): " + testIntegration.runtimeClasspath.getClass()
-    */
 }
 
 allprojects {
@@ -113,8 +86,6 @@ if (project.hasProperty('env') && project.getProperty('env') == 'mapr') {
 } else {
     ext.verHBase = '0.98.9-hadoop2'
     ext.verHadoop = '2.5.1'
-    //ext.verHBase = '1.1.1'
-    //ext.verHadoop = '2.7.1'
     ext.verZookeeper = '3.4.5'
 }
 
@@ -171,16 +142,6 @@ testIntegration {
     classpath = classpath.minus(configurations.guava);
     useTestNG()
     systemProperty "java.net.preferIPv4Stack", "true"
-    /*
-    logger.info "@@@ Classpath type (INTEGRATION testing): ${classpath.getFiles().getClass()}"
-    classpath.getFiles().each {
-        logger.info "@@@ Classpath elem (INTEGRATION testing) :: ${it}"
-    }
-    logger.info "@@@ configurations.guava = ${configurations.guava}"
-    configurations.guava.getFiles().each {
-        logger.info "@@@ Classpath elem (INTEGRATION testing) :: ${it}"
-    }
-    */
     logger.info "@@@ Classpath (INTEGRATION testing): ${classpath.getFiles().collect({it.toString()}).inject('\n') {acc, next -> acc + next + '\n'}}"
     logger.info "@@@ SysProps (INTEGRATION testing): ${System.getProperties().collect({it.toString()}).inject('\n') {acc, next -> acc + next + '\n'}}"
 }
