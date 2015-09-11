@@ -29,6 +29,7 @@ testSets {
 }
 
 configurations {
+    guava
     provided
     provided {
         extendsFrom(compile)
@@ -124,6 +125,7 @@ jar {
 }
 
 dependencies {
+    guava group:'com.google.guava', name:'guava', version:"${verGuava}"
     compile "com.liaison.phoenix:phoenix-commons:${verPhoenixCommons}"
     compile "co.paralleluniverse:quasar-core:${verQuasar}${classifier}"
     provided "org.apache.hbase:hbase-client:${verHBase}"
@@ -166,10 +168,15 @@ testUnit {
 }
 
 testIntegration {
+    classpath = configurations.testIntConf;
     useTestNG()
     systemProperty "java.net.preferIPv4Stack", "true"
     logger.info "@@@ Classpath type (INTEGRATION testing): ${classpath.getFiles().getClass()}"
     classpath.getFiles().each {
+        logger.info "@@@ Classpath elem (INTEGRATION testing) :: ${it}"
+    }
+    logger.info "@@@ configurations.guava = ${configurations.guava}"
+    configurations.guava.getFiles().each {
         logger.info "@@@ Classpath elem (INTEGRATION testing) :: ${it}"
     }
     logger.info "@@@ Classpath (INTEGRATION testing): ${classpath.getFiles().collect({it.toString()}).inject('\n') {acc, next -> acc + next + '\n'}}"
