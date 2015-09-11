@@ -16,7 +16,7 @@ apply plugin: 'java-library-distribution'
 
 ext.libraryName = "liaison-hbase-${version}"
 ext.verGuava = '18.0'
-ext.verGuavaTEST = '15.0'
+ext.verGuavaTEST = '14.0.1'
 ext.verMockito = '1.10.19'
 ext.verPhoenixCommons = '0.0.1-SNAPSHOT'
 ext.verPool = '2.3'
