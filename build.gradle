@@ -168,7 +168,7 @@ testUnit {
 }
 
 testIntegration {
-    classpath = configurations.testIntConf;
+    classpath = classpath.minus(configurations.testIntConf);
     useTestNG()
     systemProperty "java.net.preferIPv4Stack", "true"
     logger.info "@@@ Classpath type (INTEGRATION testing): ${classpath.getFiles().getClass()}"
