@@ -129,6 +129,7 @@ dependencies {
     compile "org.apache.commons:commons-pool2:${verPool}"
     compile "org.testng:testng:${verTestNG}"
     testCompile "org.mockito:mockito-all:${verMockito}"
+    testIntegrationCompile group:'com.google.guava', name:'guava', version:"${verGuavaTEST}"
     testIntegrationCompile group:'org.apache.hadoop', name:'hadoop-common', version:"${verHadoop}", classifier: 'tests'
     testIntegrationCompile group:'org.apache.hbase', name:'hbase-server', version:"${verHBase}"
     testIntegrationCompile group:'org.apache.hbase', name:'hbase-server', version:"${verHBase}", classifier: 'tests'
