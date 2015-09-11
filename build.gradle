@@ -58,9 +58,6 @@ sourceSets {
 
     logger.info "@@@1 testIntegration.compileClasspath (type): " + testIntegration.compileClasspath.getClass()
     logger.info "@@@1 testIntegration.runtimeClasspath (type): " + testIntegration.runtimeClasspath.getClass()
-    testIntegration.runtimeClasspath.iterator().each {
-        logger.info "@@@1 testIntegration.runtimeClasspath (content): ${it}"
-    }
 
     testIntegration.compileClasspath += configurations.testIntConf
     testIntegration.runtimeClasspath += configurations.testIntConf
