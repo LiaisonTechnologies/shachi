@@ -44,6 +44,7 @@ configurations {
 }
 
 sourceSets {
+    /*
     logger.info "@@@ configurations.provided (type): " + configurations.provided.getClass()
     logger.info "@@@ configurations.testIntConf (type): " + configurations.testIntConf.getClass()
     logger.info "@@@ main.compileClasspath (type): " + main.compileClasspath.getClass()
@@ -51,17 +52,17 @@ sourceSets {
     logger.info "@@@ testUnit.runtimeClasspath (type): " + testUnit.runtimeClasspath.getClass()
     logger.info "@@@ testIntegration.compileClasspath (type): " + testIntegration.compileClasspath.getClass()
     logger.info "@@@ testIntegration.runtimeClasspath (type): " + testIntegration.runtimeClasspath.getClass()
-
+*/
     main.compileClasspath += configurations.provided
     testUnit.compileClasspath += configurations.provided
     testUnit.runtimeClasspath += configurations.provided
-
+/*
     logger.info "@@@1 testIntegration.compileClasspath (type): " + testIntegration.compileClasspath.getClass()
     logger.info "@@@1 testIntegration.runtimeClasspath (type): " + testIntegration.runtimeClasspath.getClass()
-
+*/
     testIntegration.compileClasspath += configurations.testIntConf
     testIntegration.runtimeClasspath += configurations.testIntConf
-
+/*
     logger.info "@@@1 testIntegration.runtimeClasspath FILES ~start~"
     logger.info "@@@1 testIntegration.runtimeClasspath.getFiles(): ${testIntegration.runtimeClasspath.getFiles()}"
     testIntegration.runtimeClasspath.getFiles().each {
@@ -74,6 +75,7 @@ sourceSets {
     logger.info "@@@2 testUnit.runtimeClasspath (type): " + testUnit.runtimeClasspath.getClass()
     logger.info "@@@2 testIntegration.compileClasspath (type): " + testIntegration.compileClasspath.getClass()
     logger.info "@@@2 testIntegration.runtimeClasspath (type): " + testIntegration.runtimeClasspath.getClass()
+    */
 }
 
 allprojects {
