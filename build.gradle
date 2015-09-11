@@ -171,6 +171,7 @@ testIntegration {
     classpath = classpath.minus(configurations.guava);
     useTestNG()
     systemProperty "java.net.preferIPv4Stack", "true"
+    /*
     logger.info "@@@ Classpath type (INTEGRATION testing): ${classpath.getFiles().getClass()}"
     classpath.getFiles().each {
         logger.info "@@@ Classpath elem (INTEGRATION testing) :: ${it}"
@@ -179,6 +180,7 @@ testIntegration {
     configurations.guava.getFiles().each {
         logger.info "@@@ Classpath elem (INTEGRATION testing) :: ${it}"
     }
+    */
     logger.info "@@@ Classpath (INTEGRATION testing): ${classpath.getFiles().collect({it.toString()}).inject('\n') {acc, next -> acc + next + '\n'}}"
     logger.info "@@@ SysProps (INTEGRATION testing): ${System.getProperties().collect({it.toString()}).inject('\n') {acc, next -> acc + next + '\n'}}"
 }
