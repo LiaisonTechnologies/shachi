@@ -24,7 +24,7 @@ ext.verQuasar  = '0.6.2'
 ext.verTestNG  = '6.8.21'
 
 testSets {
-    test { dirName = 'test/unit' }
+    testUnit { dirName = 'test/unit' }
     testIntegration { dirName = 'test/integration' }
 }
 
@@ -46,8 +46,8 @@ configurations {
 
 sourceSets {
     main.compileClasspath += configurations.provided
-    test.compileClasspath += configurations.provided
-    test.runtimeClasspath += configurations.provided
+    testUnit.compileClasspath += configurations.provided
+    testUnit.runtimeClasspath += configurations.provided
     testIntegration.compileClasspath += configurations.testIntConf
     testIntegration.runtimeClasspath += configurations.testIntConf
 }
@@ -132,7 +132,7 @@ task copyToLib( type: Copy ) {
     from configurations.runtime
 }
 
-test {
+testUnit {
     useTestNG()
     logger.info "@@@ Classpath (UNIT testing): ${classpath.getFiles().collect({it.toString()}).inject('\n') {acc, next -> acc + next + '\n'}}"
     logger.info "@@@ SystemProps (UNIT testing): ${System.getProperties().collect({it.toString()}).inject('\n') {acc, next -> acc + next + '\n'}}"
