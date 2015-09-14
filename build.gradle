@@ -146,6 +146,8 @@ testIntegration {
     logger.info "@@@ SysProps (INTEGRATION testing): ${System.getProperties().collect({it.toString()}).inject('\n') {acc, next -> acc + next + '\n'}}"
 }
 
+test.dependsOn testUnit
+
 distributions {
     main {
         baseName = "${libraryName}"
