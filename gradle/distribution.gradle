@@ -1,0 +1,64 @@
+apply plugin: 'application'
+apply plugin: 'com.github.johnrengelman.shadow'
+
+// Configure the shadow jar task
+shadowJar {
+    mergeServiceFiles()
+    exclude 'META-INF/*.DSA'
+    exclude 'META-INF/*.RSA'
+}
+
+// inject javaagent into the distribution
+applicationDefaultJvmArgs = [
+        "-javaagent:\$APP_HOME/lib/quasar-core-$quasarVersion"+".jar",
+        "-server",
+        "-Xmx1024m",
+        '-Dco.paralleluniverse.fibers.verifyInstrumentation=false'
+]
+
+
+// $ symbol gets escaped in script anyway:( so we need to replace it.
+
+startScripts {
+    doLast {
+        unixScript.text = unixScript.text.replace('\\$APP_HOME', '\$APP_HOME')
+        windowsScript.text = windowsScript.text.replace('\$APP_HOME', '%APP_HOME%')
+
+        if (project.hasProperty('env') && project.getProperty('env') == 'mapr') {
+            unixScript.text = unixScript.text.replace('"\$CLASSPATH"', '"\$CLASSPATH:`hbase classpath`"')
+            windowsScript.text = windowsScript.text.replace('"%CLASSPATH%"', '"%CLASSPATH%;`hbase classpath`"')
+        }
+
+    }
+}
+
+distZip {
+    into(project.name) {
+        from 'conf/*'
+        include 'conf/*'
+    }
+
+    into(project.name) {
+        from 'bin/*'
+        include 'bin/*'
+    }
+}
+
+// don't know why there is old version of netty, simply exclude here.
+applicationDistribution.with {
+    exclude 'netty-3.2.*.jar'
+}
+
+applicationDistribution.from('conf') {
+    include '*'
+    into "conf"
+}
+
+applicationDistribution.from('bin') {
+    include '*'
+    into "bin"
+    fileMode 0755
+}
+
+
+
