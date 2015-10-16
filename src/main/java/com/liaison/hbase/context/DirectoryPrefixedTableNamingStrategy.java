@@ -8,10 +8,10 @@
  */
 package com.liaison.hbase.context;
 
-import com.liaison.commons.BytesUtil;
-import com.liaison.commons.DefensiveCopyStrategy;
 import com.liaison.hbase.model.Name;
 import com.liaison.hbase.model.TableModel;
+import com.liaison.serialization.BytesUtil;
+import com.liaison.serialization.DefensiveCopyStrategy;
 
 import java.nio.charset.Charset;
 

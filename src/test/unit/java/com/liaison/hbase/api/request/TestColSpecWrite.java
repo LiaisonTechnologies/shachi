@@ -1,6 +1,5 @@
 package com.liaison.hbase.api.request;
 
-import com.liaison.commons.BytesUtil;
 import com.liaison.hbase.api.request.impl.ColSpecWrite;
 import com.liaison.hbase.api.request.impl.SpecState;
 import com.liaison.hbase.api.request.impl.TableRowOpSpec;
@@ -14,6 +13,7 @@ import com.liaison.hbase.model.QualModel;
 import com.liaison.hbase.model.TableModel;
 import com.liaison.hbase.model.ser.CellSerializer;
 import com.liaison.hbase.testutil.TestingUtil;
+import com.liaison.serialization.BytesUtil;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
@@ -28,7 +28,7 @@ public class TestColSpecWrite {
     private static final Long VERSION_TEST = Long.valueOf(5);
 
     private static final CellSerializer ABC_PREFIX_SERIALIZER =
-        (str)->BytesUtil.toBytes("ABC-" + String.valueOf(str));
+        (str)-> BytesUtil.toBytes("ABC-" + String.valueOf(str));
     private static final CellSerializer DEF_PREFIX_SERIALIZER =
         (str)->BytesUtil.toBytes("DEF-" + String.valueOf(str));
     private static final CellSerializer GHI_PREFIX_SERIALIZER =

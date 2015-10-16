@@ -8,7 +8,6 @@
  */
 package com.liaison.hbase.api.request.impl;
 
-import com.liaison.commons.DefensiveCopyStrategy;
 import com.liaison.commons.Util;
 import com.liaison.hbase.api.request.fluid.fluent.ColSpecWriteFluent;
 import com.liaison.hbase.api.request.frozen.ColSpecWriteFrozen;
@@ -22,6 +21,7 @@ import com.liaison.hbase.model.QualHB;
 import com.liaison.hbase.model.ser.CellSerializer;
 import com.liaison.hbase.util.SpecUtil;
 import com.liaison.hbase.util.StringRepFormat;
+import com.liaison.serialization.DefensiveCopyStrategy;
 
 import java.io.Serializable;
 

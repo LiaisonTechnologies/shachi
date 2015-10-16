@@ -1,8 +1,12 @@
+repos
 .classpath
 .gradle/**
 .project
 .settings/**
 **/*.orig
+
+# Ignore generated Maven POM
+pom.xml
 
 ### JetBrains template
 # Covers JetBrains IDEs: IntelliJ, RubyMine, PhpStorm, AppCode, PyCharm
@@ -57,7 +61,6 @@ crashlytics-build.properties
 ### Gradle template
 .gradle
 build/
-repos/
 
 # Ignore Gradle GUI config
 gradle-app.setting
@@ -103,5 +106,3 @@ local.properties
 
 # TeXlipse plugin
 .texlipse
-
-

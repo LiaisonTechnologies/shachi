@@ -8,8 +8,6 @@
  */
 package com.liaison.hbase.api.response;
 
-import com.liaison.commons.BytesUtil;
-import com.liaison.commons.DefensiveCopyStrategy;
 import com.liaison.commons.log.LogMeMaybe;
 import com.liaison.hbase.api.request.frozen.ColSpecReadFrozen;
 import com.liaison.hbase.api.request.frozen.ReadOpSpecFrozen;
@@ -29,6 +27,8 @@ import com.liaison.hbase.exception.HBaseTableRowException;
 import com.liaison.hbase.model.FamilyModel;
 import com.liaison.hbase.model.Name;
 import com.liaison.hbase.model.QualModel;
+import com.liaison.serialization.BytesUtil;
+import com.liaison.serialization.DefensiveCopyStrategy;
 import org.apache.hadoop.hbase.Cell;
 import org.apache.hadoop.hbase.CellUtil;
 import org.apache.hadoop.hbase.client.Result;

@@ -1,9 +1,9 @@
 package com.liaison.hbase.dto;
 
-import com.liaison.commons.DefensiveCopyStrategy;
 import com.liaison.commons.Util;
 import com.liaison.hbase.exception.CellDeserializationException;
 import com.liaison.hbase.model.ser.CellDeserializer;
+import com.liaison.serialization.DefensiveCopyStrategy;
 
 import java.io.Serializable;
 

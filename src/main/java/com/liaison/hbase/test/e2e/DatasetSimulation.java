@@ -1,7 +1,5 @@
 package com.liaison.hbase.test.e2e;
 
-import com.liaison.commons.BytesUtil;
-import com.liaison.commons.DefensiveCopyStrategy;
 import com.liaison.commons.Util;
 import com.liaison.commons.log.LogMeMaybe;
 import com.liaison.hbase.HBaseControl;
@@ -20,6 +18,8 @@ import com.liaison.hbase.model.QualModel;
 import com.liaison.hbase.model.TableModel;
 import com.liaison.hbase.model.VersioningModel;
 import com.liaison.hbase.resmgr.SimpleHBaseResourceManager;
+import com.liaison.serialization.BytesUtil;
+import com.liaison.serialization.DefensiveCopyStrategy;
 import org.apache.hadoop.hbase.HBaseConfiguration;
 
 import java.util.HashMap;

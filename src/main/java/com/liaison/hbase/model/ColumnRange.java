@@ -1,9 +1,9 @@
 package com.liaison.hbase.model;
 
-import com.liaison.commons.DefensiveCopyStrategy;
 import com.liaison.commons.Util;
 import com.liaison.hbase.api.request.frozen.LongValueSpecFrozen;
 import com.liaison.hbase.util.HBaseUtil;
+import com.liaison.serialization.DefensiveCopyStrategy;
 import org.apache.hadoop.hbase.filter.CompareFilter;
 import org.apache.hadoop.hbase.util.Bytes;
 
