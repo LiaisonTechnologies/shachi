@@ -92,7 +92,7 @@ ext.libraryName = "${rootProject.name}-${version}"
 
 jar {
     manifest {
-        attributes 'Implementation-Title': 'Gradle Quickstart', 'Implementation-Version': version
+        attributes 'Implementation-Title': 'HBase Client', 'Implementation-Version': version
     }
 }
 
