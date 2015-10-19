@@ -166,7 +166,6 @@ uploadArchives {
 task createPom  {
     pom {
         project {
-            groupId group
             artifactId artifact
             version version
             inceptionYear '2015'
@@ -179,9 +178,21 @@ task createPom  {
             }
         }
     }.withXml { root ->
+        def propsNode
         def children = root.asNode().children()
-        def versionIndex = children.indexOf(children.find {it.name().localPart == 'version'})
-        children.add(versionIndex + 1, new Node(null, 'classifier', classifier))
+        def versionIndex
+
+        versionIndex = children.indexOf(children.find {it.name().localPart == 'properties'})
+        if (versionIndex >= 0) {
+            propsNode = children.elementAt(versionIndex);
+        } else {
+            versionIndex = children.indexOf(children.find {it.name().localPart == 'inceptionYear'})
+            propsNode = new Node(null, 'properties')
+            children.add(versionIndex + 1, propsNode)
+        }
+        propsNode.children().add(0, new Node(null, 'classifier', classifier))
+
+        versionIndex = children.indexOf(children.find {it.name().localPart == 'version'})
         children.add(versionIndex + 1, new Node(null, 'packaging', packaging))
     }.writeTo("pom.xml")
 }
