@@ -282,7 +282,7 @@ public class TestColSpecWrite {
     @Test
     public void testStateTransition() throws Exception {
         final TestingUtil.MockupConcreteTableRowOpSpec parent;
-        ColSpecWrite<?> colSpecWrite;
+        ColSpecWrite<TestingUtil.MockupConcreteTableRowOpSpec> colSpecWrite;
 
         colSpecWrite = buildColSpecWrite();
         Assert.assertEquals(colSpecWrite.getState(), SpecState.FLUID);
@@ -303,7 +303,7 @@ public class TestColSpecWrite {
 
     private void testMutationAfterFreeze(final Consumer<ColSpecWrite<?>> mutator) throws Exception {
         final TestingUtil.MockupConcreteTableRowOpSpec parent;
-        final ColSpecWrite<?> colSpecRead;
+        final ColSpecWrite<TestingUtil.MockupConcreteTableRowOpSpec> colSpecRead;
 
         parent = TestingUtil.mockupTableRowOpSec(TABLE_TEST, ROWKEY_TEST);
         colSpecRead = buildColSpecWrite(parent);
