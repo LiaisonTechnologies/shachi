@@ -199,6 +199,7 @@ plugins.withType(IdeaPlugin) {
     idea {
         module {
             scopes.PROVIDED.plus += [configurations.provided]
+            scopes.TEST.plus += [configurations.testIntegrationCompile]
         }
     }
 }
