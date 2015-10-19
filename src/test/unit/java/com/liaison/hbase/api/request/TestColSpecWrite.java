@@ -282,7 +282,7 @@ public class TestColSpecWrite {
     @Test
     public void testStateTransition() throws Exception {
         final TestingUtil.MockupConcreteTableRowOpSpec parent;
-        ColSpecWrite<?> colSpecWrite;
+        ColSpecWrite<TestingUtil.MockupConcreteTableRowOpSpec> colSpecWrite;
 
         colSpecWrite = buildColSpecWrite();
         Assert.assertEquals(colSpecWrite.getState(), SpecState.FLUID);
