@@ -2,9 +2,11 @@
 repositories {
     jcenter()
 }
+
 dependencies {
     classpath "com.netflix.nebula:gradle-ospackage-plugin:2.2.0" // rpm, dep package
     classpath 'nl.javadude.gradle.plugins:license-gradle-plugin:0.11.0' // license
     classpath "net.saliman:gradle-cobertura-plugin:2.2.7" // cobertura
     classpath 'com.github.jengelman.gradle.plugins:shadow:1.2.1' // shadow
+
 }

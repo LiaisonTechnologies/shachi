@@ -10,8 +10,6 @@ package com.liaison.hbase.util;
 
 import co.paralleluniverse.fibers.SuspendExecution;
 import co.paralleluniverse.strands.Strand;
-import com.liaison.commons.BytesUtil;
-import com.liaison.commons.DefensiveCopyStrategy;
 import com.liaison.commons.Util;
 import com.liaison.commons.log.LogMeMaybe;
 import com.liaison.hbase.context.HBaseContext;
@@ -20,6 +18,8 @@ import com.liaison.hbase.model.Name;
 import com.liaison.hbase.model.TableModel;
 import com.liaison.hbase.model.VersioningModel;
 import com.liaison.hbase.resmgr.ResourceConnectTolerance;
+import com.liaison.serialization.BytesUtil;
+import com.liaison.serialization.DefensiveCopyStrategy;
 import org.apache.hadoop.hbase.HColumnDescriptor;
 import org.apache.hadoop.hbase.HTableDescriptor;
 import org.apache.hadoop.hbase.TableName;

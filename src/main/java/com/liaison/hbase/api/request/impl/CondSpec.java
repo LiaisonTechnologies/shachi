@@ -16,8 +16,8 @@ import com.liaison.hbase.dto.NullableValue;
 import com.liaison.hbase.dto.RowKey;
 import com.liaison.hbase.dto.Value;
 import com.liaison.hbase.exception.SpecValidationException;
-import com.liaison.hbase.model.FamilyModel;
-import com.liaison.hbase.model.QualModel;
+import com.liaison.hbase.model.FamilyHB;
+import com.liaison.hbase.model.QualHB;
 import com.liaison.hbase.util.SpecUtil;
 import com.liaison.hbase.util.StringRepFormat;
 
@@ -61,9 +61,10 @@ public final class CondSpec<P extends OperationSpec<P>> extends ColSpec<CondSpec
     }
     
     @Override
-    public CondSpec<P> empty(final Empty empty) throws IllegalStateException, IllegalArgumentException {
+    public CondSpec<P> empty() throws IllegalStateException, IllegalArgumentException {
         prepMutation();
-        this.value = Util.validateExactlyOnceParam(empty, this, "empty", Empty.class, this.value);
+        Util.validateExactlyOnce("value", Empty.class, this.value);
+        this.value = Empty.getInstance();
         return self();
     }
     
@@ -137,8 +138,8 @@ public final class CondSpec<P extends OperationSpec<P>> extends ColSpec<CondSpec
     protected void validate() throws SpecValidationException {
         super.validate();
         SpecUtil.validateRequired(getRowKey(), this, "row", RowKey.class);
-        SpecUtil.validateRequired(getFamily(), this, "fam", FamilyModel.class);
-        SpecUtil.validateRequired(getColumn(), this, "qual", QualModel.class);
+        SpecUtil.validateRequired(getFamily(), this, "fam", FamilyHB.class);
+        SpecUtil.validateRequired(getColumn(), this, "column", QualHB.class);
         SpecUtil.validateRequired(getValue(), this, "value/empty", NullableValue.class);
     }
     

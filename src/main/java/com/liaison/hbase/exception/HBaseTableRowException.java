@@ -8,27 +8,27 @@
  */
 package com.liaison.hbase.exception;
 
-import com.liaison.hbase.api.request.impl.RowSpec;
+import com.liaison.hbase.dto.RowRef;
 
 public class HBaseTableRowException extends HBaseException {
 
     private static final long serialVersionUID = -9220120682288168744L;
     
-    private final RowSpec<?> tableRow;
+    private final RowRef tableRow;
     
-    public RowSpec<?> getTableRow() {
+    public RowRef getTableRow() {
         return this.tableRow;
     }
     
-    public HBaseTableRowException(final RowSpec<?> tableRow, final String message) {
+    public HBaseTableRowException(final RowRef tableRow, final String message) {
         super(message);
         this.tableRow = tableRow;
     }
-    public HBaseTableRowException(final RowSpec<?> tableRow, final String message, final Throwable cause) {
+    public HBaseTableRowException(final RowRef tableRow, final String message, final Throwable cause) {
         super(message, cause);
         this.tableRow = tableRow;
     }
-    public HBaseTableRowException(final RowSpec<?> tableRow, final String message, final Throwable cause, final boolean enableSuppression, final boolean writableStackTrace) {
+    public HBaseTableRowException(final RowRef tableRow, final String message, final Throwable cause, final boolean enableSuppression, final boolean writableStackTrace) {
         super(message, cause, enableSuppression, writableStackTrace);
         this.tableRow = tableRow;
     }

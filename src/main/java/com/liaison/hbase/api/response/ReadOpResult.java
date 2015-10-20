@@ -9,13 +9,18 @@
 package com.liaison.hbase.api.response;
 
 import com.liaison.commons.Util;
+import com.liaison.commons.log.LogMeMaybe;
 import com.liaison.hbase.api.request.frozen.ColSpecReadFrozen;
 import com.liaison.hbase.api.request.impl.ColSpecRead;
 import com.liaison.hbase.api.request.impl.ReadOpSpecDefault;
+import com.liaison.hbase.dto.CellDatum;
+import com.liaison.hbase.dto.CellResult;
 import com.liaison.hbase.dto.Datum;
 import com.liaison.hbase.dto.FamilyQualifierPair;
 import com.liaison.hbase.dto.SingleCellResult;
+import com.liaison.hbase.dto.SpecCellResultSet;
 import com.liaison.hbase.exception.HBaseException;
+import com.liaison.hbase.util.SpecUtil;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -35,28 +40,29 @@ public class ReadOpResult extends OpResult<ReadOpSpecDefault> {
      * TODO: javadoc
      */
     public static class ReadOpResultBuilder extends OpResultBuilder<ReadOpSpecDefault, ReadOpResult, ReadOpResultBuilder> {
+
+        private static final LogMeMaybe LOG;
+
         /**
          * TODO: javadoc
          */
         private static final String CLOSURENAME_ADD = ReadOpResultBuilder.class.getSimpleName() + "#add";
 
-        /**
-         * literal data set; stores references to the literal cells retrieved from HBase
-         * TODO: javadoc
-         */
-        private Map<FamilyQualifierPair, SingleCellResult> data;
-        /*
-         * TODO: The data map really needs to be Map<FamilyQualifierPair, List<SingleCellResult>
-         * in order to accommodate cases where a range of timestamps is retrieved (all of which
-         * bear the same family and qualifier)
-         */
+        static {
+            LOG = new LogMeMaybe(ReadOpResultBuilder.class);
+        }
 
         /**
          * data set linking the retrieved data to the spec which caused it to be queried. data in
          * order retrieved from HBase
          * TODO: javadoc
          */
-        private Map<ColSpecReadFrozen, List<SingleCellResult>> dataBySpec;
+        private Map<ColSpecReadFrozen, SpecCellResultSet.Builder> dataBySpec;
+
+        /**
+         * TODO: javadoc
+         */
+        private Map<Object, SpecCellResultSet.Builder> dataBySpecHandle;
 
         /**
          * TODO: javadoc
@@ -67,16 +73,20 @@ public class ReadOpResult extends OpResult<ReadOpSpecDefault> {
             return this;
         }
 
-        /**
-         * TODO: javadoc
-         * @param fqp
-         * @param cellResult
-         * @return
-         */
-        private ReadOpResultBuilder addCellResult(final FamilyQualifierPair fqp, final SingleCellResult cellResult) {
-            Util.ensureNotNull(fqp, CLOSURENAME_ADD, "fqp", FamilyQualifierPair.class);
-            this.data.put(fqp, cellResult);
-            return self();
+        private SingleCellResult.Builder singleCellBuilder() {
+            return
+                SingleCellResult
+                    .getBuilder()
+                    .tableRow(getTableRow());
+        }
+        private SingleCellResult.Builder singleCellBuilder(final FamilyQualifierPair fqp) {
+            return singleCellBuilder().tableColumn(fqp);
+        }
+        private SingleCellResult.Builder singleCellBuilder(final ColSpecReadFrozen spec, final FamilyQualifierPair fqp) {
+            return singleCellBuilder(fqp).spec(spec);
+        }
+        private SingleCellResult.Builder singleCellBuilder(final ColSpecReadFrozen spec) {
+            return singleCellBuilder().spec(spec);
         }
 
         /**
@@ -86,19 +96,21 @@ public class ReadOpResult extends OpResult<ReadOpSpecDefault> {
          * @return
          */
         private ReadOpResultBuilder addCellResult(final ColSpecReadFrozen colSpec, SingleCellResult cellResult) {
-            List<SingleCellResult> resList;
-            final List<SingleCellResult> existingResList;
+            final Object handle;
 
             Util.ensureNotNull(colSpec, CLOSURENAME_ADD, "colSpec", ColSpecRead.class);
-
-            resList = this.dataBySpec.get(colSpec);
-            if (resList == null) {
-                resList = new LinkedList<SingleCellResult>();
-                existingResList = this.dataBySpec.putIfAbsent(colSpec, resList);
-                if (existingResList != null) {
-                    resList = existingResList;
-                }
-                resList.add(cellResult);
+            Util.appendToValueInMap(this.dataBySpec,
+                                    colSpec,
+                                    cellResult,
+                                    SpecCellResultSet.Builder::result,
+                                    SpecCellResultSet::getBuilder);
+            handle = colSpec.getHandle();
+            if (handle != null) {
+                Util.appendToValueInMap(this.dataBySpecHandle,
+                                        handle,
+                                        cellResult,
+                                        SpecCellResultSet.Builder::result,
+                                        SpecCellResultSet::getBuilder);
             }
             return self();
         }
@@ -110,9 +122,10 @@ public class ReadOpResult extends OpResult<ReadOpSpecDefault> {
          * @return
          * @throws IllegalArgumentException
          */
-        public ReadOpResultBuilder add(final FamilyQualifierPair fqp, final HBaseException exc) throws IllegalArgumentException {
+        public ReadOpResultBuilder add(final ColSpecReadFrozen colSpec, final HBaseException exc) throws IllegalArgumentException {
+            Util.ensureNotNull(colSpec, CLOSURENAME_ADD, "colSpec", ColSpecReadFrozen.class);
             Util.ensureNotNull(exc, CLOSURENAME_ADD, "exc", HBaseException.class);
-            return addCellResult(fqp, new SingleCellResult(exc));
+            return addCellResult(colSpec, singleCellBuilder(colSpec).exc(exc).build());
         }
 
         /**
@@ -123,21 +136,11 @@ public class ReadOpResult extends OpResult<ReadOpSpecDefault> {
          * @throws IllegalArgumentException
          * @throws IllegalStateException
          */
-        public ReadOpResultBuilder add(final ColSpecReadFrozen colSpec, final HBaseException exc) throws IllegalArgumentException, IllegalStateException {
+        public ReadOpResultBuilder add(final ColSpecReadFrozen colSpec, final FamilyQualifierPair fqp, final HBaseException exc) throws IllegalArgumentException, IllegalStateException {
+            Util.ensureNotNull(colSpec, CLOSURENAME_ADD, "colSpec", ColSpecReadFrozen.class);
+            Util.ensureNotNull(fqp, CLOSURENAME_ADD, "fqp", FamilyQualifierPair.class);
             Util.ensureNotNull(exc, CLOSURENAME_ADD, "exc", HBaseException.class);
-            return addCellResult(colSpec, new SingleCellResult(exc));
-        }
-
-        /**
-         * TODO: javadoc
-         * @param fqp
-         * @param datum
-         * @return
-         * @throws IllegalArgumentException
-         */
-        public ReadOpResultBuilder add(final FamilyQualifierPair fqp, final Datum datum) throws IllegalArgumentException {
-            Util.ensureNotNull(datum, CLOSURENAME_ADD, "datum", Datum.class);
-            return addCellResult(fqp, new SingleCellResult(datum));
+            return addCellResult(colSpec, singleCellBuilder(colSpec, fqp).exc(exc).build());
         }
 
         /**
@@ -148,25 +151,54 @@ public class ReadOpResult extends OpResult<ReadOpSpecDefault> {
          * @throws IllegalArgumentException
          * @throws IllegalStateException
          */
-        public ReadOpResultBuilder add(final ColSpecReadFrozen colSpec, final Datum datum) throws IllegalArgumentException, IllegalStateException {
+        public ReadOpResultBuilder add(final ColSpecReadFrozen colSpec, final FamilyQualifierPair fqp, final Datum datum) throws IllegalArgumentException, IllegalStateException {
+            Util.ensureNotNull(colSpec, CLOSURENAME_ADD, "colSpec", ColSpecReadFrozen.class);
+            Util.ensureNotNull(fqp, CLOSURENAME_ADD, "fqp", FamilyQualifierPair.class);
             Util.ensureNotNull(datum, CLOSURENAME_ADD, "datum", Datum.class);
-            return addCellResult(colSpec, new SingleCellResult(datum));
+            return addCellResult(colSpec,
+                                 singleCellBuilder(fqp)
+                                     .datum(CellDatum
+                                                .getBuilder()
+                                                .datum(datum)
+                                                .column(fqp)
+                                                .deserializer(
+                                                    SpecUtil.identifyDeserializer(
+                                                        fqp,
+                                                        colSpec.getColumn(),
+                                                        colSpec.getFamily(),
+                                                        getTableRow().getTable()))
+                                                .row(getTableRow())
+                                                .build())
+                                     .build());
         }
 
         /**
          * TODO: javadoc
          * @return
          */
-        public SingleCellResult getData(final FamilyQualifierPair fqp) {
-            return this.data.get(fqp);
-        }
+        public SpecCellResultSet getDataBySpec(final ColSpecReadFrozen colSpec) {
+            final SpecCellResultSet.Builder cellResultSetBuilder;
+            final SpecCellResultSet cellResultSet;
+            final String logMethodName;
 
-        /**
-         * TODO: javadoc
-         * @return
-         */
-        public List<SingleCellResult> getDataBySpec(final ColSpecReadFrozen colSpec) {
-            return Collections.unmodifiableList(this.dataBySpec.get(colSpec));
+            logMethodName = LOG.enter(()->"getDataBySpec(colSpec=", ()->colSpec);
+            LOG.trace(logMethodName,
+                      ()->"this.dataBySpec=",
+                      ()->this.dataBySpec);
+            cellResultSetBuilder = this.dataBySpec.get(colSpec);
+            if (cellResultSetBuilder != null) {
+                cellResultSet = cellResultSetBuilder.build();
+                LOG.trace(logMethodName,
+                          () -> "result=",
+                          () -> cellResultSet);
+            } else {
+                cellResultSet = null;
+                LOG.trace(logMethodName,
+                          () -> " (no result)");
+            }
+            LOG.leave(logMethodName);
+
+            return cellResultSet;
         }
 
         /**
@@ -183,16 +215,33 @@ public class ReadOpResult extends OpResult<ReadOpSpecDefault> {
          */
         private ReadOpResultBuilder() {
             super();
-            /*
-             * IMPORTANT: This *must* be a LinkedHashMap (rather than a simple HashMap) in order to
-             * preserve the order of data elements as retrieved by HBase.
-             */
-            this.data = new LinkedHashMap<>();
             this.dataBySpec = new HashMap<>();
+            this.dataBySpecHandle = new HashMap<>();
         }
     }
     
     private static final String OPRESULT_TYPE_STR = "READ";
+
+    private static <E> E getFirst(final List<E> list) {
+        E result = null;
+        if ((list != null) && (!list.isEmpty())) {
+            result = list.get(0);
+        }
+        return result;
+    }
+
+    private static <K> Map<K, SpecCellResultSet> buildResultMapFromMutableResultMap(final Map<K, SpecCellResultSet.Builder> source) {
+        final Map<K, SpecCellResultSet> dataMapTemp;
+        /*
+         * MUST use LinkedHashMap here in order to preserve order received from HBase
+         */
+        dataMapTemp = new LinkedHashMap<>();
+        source
+            .entrySet()
+            .stream()
+            .forEachOrdered((entry)->dataMapTemp.put(entry.getKey(), entry.getValue().build()));
+        return Collections.unmodifiableMap(dataMapTemp);
+    }
 
     /**
      * TODO: javadoc
@@ -203,21 +252,19 @@ public class ReadOpResult extends OpResult<ReadOpSpecDefault> {
     }
 
     /**
-     * literal data set; stores references to the literal cells retrieved from HBase
-     * TODO: javadoc
-     */
-    private final Map<FamilyQualifierPair, SingleCellResult> data;
-
-    /**
      * data set linking the retrieved data to the spec which caused it to be queried. data in
      * order retrieved from HBase
      * TODO: javadoc
      */
-    private final Map<ColSpecReadFrozen, List<SingleCellResult>> dataBySpec;
+    private final Map<ColSpecReadFrozen, SpecCellResultSet> dataBySpec;
+    /**
+     * TODO: javadoc
+     */
+    private final Map<Object, SpecCellResultSet> dataBySpecHandle;
 
-    private Datum toContent(final SingleCellResult cellRes) throws HBaseException {
+    private <X> X toContent(final CellResult<X> cellRes) throws HBaseException {
         final HBaseException hbExc;
-        Datum result = null;
+        X result = null;
 
         if (cellRes != null) {
             hbExc = cellRes.getExc();
@@ -233,46 +280,26 @@ public class ReadOpResult extends OpResult<ReadOpSpecDefault> {
      * TODO: javadoc
      * @return
      */
-    public Map<FamilyQualifierPair, SingleCellResult> getData() {
-        return Collections.unmodifiableMap(this.data);
-    }
-
-    /**
-     * TODO: javadoc
-     * @param fqp
-     * @return
-     * @throws HBaseException
-     */
-    public Datum getData(final FamilyQualifierPair fqp) throws HBaseException {
-        return toContent(this.data.get(fqp));
-    }
-
-    /**
-     * TODO: javadoc
-     * @return
-     */
-    public Map<ColSpecReadFrozen, List<SingleCellResult>> getDataBySpec() {
-        /*
-         * TODO
-         * Collections.unmodifiableMap doesn't do anything about the internal lists, which are
-         * still mutable -- is there any way to address that?
-         */
+    public Map<ColSpecReadFrozen, SpecCellResultSet> getDataBySpec() {
         return Collections.unmodifiableMap(this.dataBySpec);
     }
 
     /**
      * TODO: javadoc
-     * @param colSpec
+     * @param key
+     * @param dataMap
+     * @param <K>
      * @return
      * @throws HBaseException
      */
-    public List<Datum> getData(final ColSpecReadFrozen colSpec) throws HBaseException {
-        final List<Datum> dataList;
+    private <K> List<CellDatum> getDataBy(final K key, final Map<K, SpecCellResultSet> dataMap) throws HBaseException {
+        final List<CellDatum> dataList;
         final List<SingleCellResult> cellResList;
-        Datum content;
+        CellDatum content;
 
-        dataList = new LinkedList<Datum>();
-        cellResList = this.dataBySpec.get(colSpec);
+
+        dataList = new LinkedList<CellDatum>();
+        cellResList = toContent(dataMap.get(key));
         if (cellResList == null) {
             return Collections.unmodifiableList(dataList);
         }
@@ -286,7 +313,33 @@ public class ReadOpResult extends OpResult<ReadOpSpecDefault> {
     }
 
     /**
-     *
+     * TODO: javadoc
+     * @param colSpec
+     * @return
+     * @throws HBaseException
+     */
+    public List<CellDatum> getData(final ColSpecReadFrozen colSpec) throws HBaseException {
+        return getDataBy(colSpec, this.dataBySpec);
+    }
+    public CellDatum getSingleData(final ColSpecReadFrozen colSpec) throws HBaseException {
+        return getFirst(getData(colSpec));
+    }
+
+    /**
+     * TODO: javadoc
+     * @param handle
+     * @return
+     * @throws Exception
+     */
+    public List<CellDatum> getData(final Object handle) throws HBaseException {
+        return getDataBy(handle, this.dataBySpecHandle);
+    }
+    public CellDatum getSingleData(final Object handle) throws HBaseException {
+        return getFirst(getData(handle));
+    }
+
+    /**
+     * TODO: javadoc
      * @param otherOpResult
      * @return
      */
@@ -295,7 +348,7 @@ public class ReadOpResult extends OpResult<ReadOpSpecDefault> {
         final ReadOpResult otherReadOpResult;
         if (otherOpResult instanceof ReadOpResult) {
             otherReadOpResult = (ReadOpResult) otherOpResult;
-            return Util.refEquals(this.data, otherReadOpResult.data);
+            return Util.refEquals(this.dataBySpec, otherReadOpResult.dataBySpec);
         }
         return false;
     }
@@ -308,28 +361,34 @@ public class ReadOpResult extends OpResult<ReadOpSpecDefault> {
     @Override
     protected void prepareStrRepAdditional(StringBuilder strGen) {
         strGen.append("{data=");
-        strGen.append(this.data);
+        strGen.append(this.dataBySpec);
         strGen.append("}");
     }
     
     private ReadOpResult(final ReadOpResultBuilder build) {
         super(build);
-        
+
+        final Map<ColSpecReadFrozen, SpecCellResultSet> dataBySpecTemp;
+        final Map<Object, SpecCellResultSet> dataBySpecHandleTemp;
         String logMsg;
         
-        if ((this.getException() != null) && (build.data.size() > 0)) {
+        if ((this.getException() != null) && (build.dataBySpec.size() > 0)) {
             logMsg = 
                 OpResult.class.getSimpleName()
                 + " may not reference both a row-level exception and a non-empty data result set";
             throw new IllegalStateException(logMsg);
         }
+        /*
+        TODO? decide whether this is a necessary restriction; right now, it's causing problems
         if ((this.getException() == null) && (build.data.size() <= 0)) {
             logMsg = 
                 OpResult.class.getSimpleName()
                 + " must reference exactly one of: a row-level exception or a data result set";
             throw new IllegalStateException(logMsg);
         }
-        this.data = Collections.unmodifiableMap(build.data);
-        this.dataBySpec = Collections.unmodifiableMap(build.dataBySpec);
+        */
+
+        this.dataBySpec = buildResultMapFromMutableResultMap(build.dataBySpec);
+        this.dataBySpecHandle = buildResultMapFromMutableResultMap(build.dataBySpecHandle);
     }
 }

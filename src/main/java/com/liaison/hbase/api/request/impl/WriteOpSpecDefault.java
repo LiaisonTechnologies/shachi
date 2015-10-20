@@ -23,6 +23,7 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 
 public final class WriteOpSpecDefault extends TableRowOpSpec<WriteOpSpecDefault> implements WriteOpSpec<OpResultSet>, Serializable {
 
@@ -58,25 +59,43 @@ public final class WriteOpSpecDefault extends TableRowOpSpec<WriteOpSpecDefault>
     }
     
     @Override
-    public ColSpecWrite<WriteOpSpecDefault> with() throws IllegalStateException {
+    public ColSpecWrite<WriteOpSpecDefault> with(final Object handle) throws IllegalStateException {
         final ColSpecWrite<WriteOpSpecDefault> withCol;
         prepMutation();
-        withCol = new ColSpecWrite<>(this);
+        withCol = new ColSpecWrite<>(this, handle);
         this.withColumn.add(withCol);
         return withCol;
     }
-    
-    public <X> WriteOpSpecDefault withAllOf(final Iterable<X> sourceData, final BiConsumer<X, ColSpecWriteFluid<?>> dataToColumnGenerator) {
+    @Override
+    public ColSpecWrite<WriteOpSpecDefault> with() throws IllegalStateException {
+        return with(null);
+    }
+
+    @Override
+    public <X> WriteOpSpecDefault withAllOf(final Iterable<X> sourceData, final BiFunction<X, ColSpecWriteFluid<?>, Object> dataToColumnGenerator) {
         ColSpecWrite<WriteOpSpecDefault> withCol;
+        Object handle;
+
         prepMutation();
         if (sourceData != null) {
             for (X element : sourceData) {
                 withCol = new ColSpecWrite<>(this);
-                dataToColumnGenerator.accept(element, new ColSpecWriteConfined(withCol));
+                handle = dataToColumnGenerator.apply(element, new ColSpecWriteConfined(withCol));
+                withCol.handle(handle);
                 this.withColumn.add(withCol);
             }
         }
         return self();
+    }
+
+    @Override
+    public <X> WriteOpSpecDefault withAllOf(final Iterable<X> sourceData, final BiConsumer<X, ColSpecWriteFluid<?>> dataToColumnGenerator) {
+        return withAllOf(sourceData,
+                         // convert the BiConsumer to a null-returning BiFunction
+                         (X sourceDataElement, ColSpecWriteFluid<?> colSpec) -> {
+                             dataToColumnGenerator.accept(sourceDataElement, colSpec);
+                             return null;
+                         });
     }
     
     // ||----(instance methods: API: fluid)------------------------------------------------------||

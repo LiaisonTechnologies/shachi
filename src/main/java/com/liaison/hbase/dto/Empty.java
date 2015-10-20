@@ -9,12 +9,31 @@
 package com.liaison.hbase.dto;
 
 
-public class Empty extends NullableValue {
-    
+public final class Empty extends NullableValue {
+
     private static final long serialVersionUID = 4938091499596277118L;
-    
+
+    private static final class Builder extends AbstractValueBuilder<Empty, Builder> {
+        @Override
+        protected Builder self() {
+            return this;
+        }
+        @Override
+        public Empty build() {
+            return new Empty(this);
+        }
+    }
+
+    private static final Empty INSTANCE;
     private static final String STR_REP = "--empty--";
-    
+
+    public static Empty getInstance() {
+        return INSTANCE;
+    }
+    static {
+        INSTANCE = new Empty.Builder().build();
+    }
+
     private String strRep;
     
     @Override
@@ -33,7 +52,7 @@ public class Empty extends NullableValue {
         return this.strRep;
     }
     
-    public Empty(AbstractValueBuilder<?, ?> build) throws IllegalArgumentException {
+    private Empty(AbstractValueBuilder<?, ?> build) throws IllegalArgumentException {
         super(build);
         if (build.value != null) {
             throw new IllegalArgumentException(getClass().getSimpleName()

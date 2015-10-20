@@ -14,6 +14,7 @@ import com.liaison.hbase.api.request.fluid.fluent.LongValueSpecFluent;
 import com.liaison.hbase.api.request.fluid.fluent.RowSpecFluent;
 
 import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 
 /**
  * Specifies an <strong>HBase read operation</strong> while it is in a fluid state (i.e. wherein it
@@ -74,6 +75,12 @@ public interface ReadOpSpecFluid<Z> extends OpSpecFluid<Z> {
      */
     ColSpecReadFluent<?, ? extends ReadOpSpecFluid<Z>> with();
     /**
+     * TODO: javadoc
+     * @param handle
+     * @return
+     */
+    ColSpecReadFluent<?, ? extends ReadOpSpecFluid<Z>> with(Object handle);
+    /**
      * Add a series of column specifications to the list of columns from which the HBase read
      * operation specified by this spec will read. Unlike {@link #with()}, which returns a
      * {@link ColSpecReadFluent} instance allowing the column family and qualifier for each column
@@ -109,4 +116,12 @@ public interface ReadOpSpecFluid<Z> extends OpSpecFluid<Z> {
      * write)
      */
     <X> ReadOpSpecFluid<Z> withAllOf(Iterable<X> sourceData, BiConsumer<? super X, ColSpecReadFluid<?>> dataToColumnGenerator);
+    /**
+     * TODO
+     * @param sourceData
+     * @param dataToColumnGenerator
+     * @param <X>
+     * @return
+     */
+    <X> ReadOpSpecFluid<Z> withAllOf(Iterable<X> sourceData, BiFunction<? super X, ColSpecReadFluid<?>, Object> dataToColumnGenerator);
 }

@@ -68,12 +68,10 @@ public interface CondSpecFluid<C extends CondSpecFluid<C>> extends ColSpecFluid<
      * <strong>Cardinality:</strong> As this condition may refer only to a single cell with a
      * a single value, implementations must throw IllegalStateException if a value (either null/
      * empty via this method or non-null via {@link #empty(Empty)}) has already been assigned.
-     * @param empty {@link Empty} representing the null/empty value to which this condition refers.
      * @return this instance (for fluent/chaining API)
      * @throws IllegalStateException if either a null/empty value ({@link Empty}) or a non-null
      * value ({@link Value}) has already been assigned for this condition, or if this operation is
      * not in fluid state
-     * @throws IllegalArgumentException if the provided {@link Empty} is null or otherwise invalid
      */
-    C empty(Empty empty) throws IllegalStateException, IllegalArgumentException;
+    C empty() throws IllegalStateException;
 }

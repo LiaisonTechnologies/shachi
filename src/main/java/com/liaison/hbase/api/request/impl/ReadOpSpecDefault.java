@@ -17,8 +17,9 @@ import com.liaison.hbase.api.response.OpResultSet;
 import com.liaison.hbase.context.HBaseContext;
 import com.liaison.hbase.dto.FamilyQualifierPair;
 import com.liaison.hbase.exception.SpecValidationException;
-import com.liaison.hbase.model.FamilyModel;
-import com.liaison.hbase.model.QualModel;
+import com.liaison.hbase.model.ColumnRange;
+import com.liaison.hbase.model.FamilyHB;
+import com.liaison.hbase.model.QualHB;
 import com.liaison.hbase.model.VersioningModel;
 import com.liaison.hbase.util.SpecUtil;
 import com.liaison.hbase.util.StringRepFormat;
@@ -31,7 +32,9 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 
 /**
  * 
@@ -57,12 +60,24 @@ public final class ReadOpSpecDefault extends TableRowOpSpec<ReadOpSpecDefault> i
      * Association of family+qualifier pairs to the original column specifications which caused
      * them to be read; used when parsing the result set.
      */
-    private Map<FamilyQualifierPair, Set<ColSpecReadFrozen>> columnAssoc;
+    private final Map<FamilyQualifierPair, Set<ColSpecReadFrozen>> columnAssoc;
     /**
      * Association of family references to the original column specifications which caused them to
      * be read; used when parsing the result set.
      */
-    private Map<FamilyModel, Set<ColSpecReadFrozen>> fullFamilyAssoc;
+    private final Map<FamilyHB, Set<ColSpecReadFrozen>> fullFamilyAssoc;
+
+    /**
+     * If any ColumnRanges were generated during the parsing of this spec, this map stores them,
+     * indexed to the column family to which they apply.
+     */
+    private final Map<FamilyHB, Set<ColumnRange>> columnRangeForFamily;
+    /**
+     * Association of column ranges (for a particular family) to the original column spec which
+     * caused them to be generated/read.
+     */
+    private final Map<ColumnRange, Set<ColSpecReadFrozen>> columnRangeAssoc;
+
     
     // ||----(instance properties)---------------------------------------------------------------||
     
@@ -73,6 +88,7 @@ public final class ReadOpSpecDefault extends TableRowOpSpec<ReadOpSpecDefault> i
     @Override
     public ReadOpSpecDefault atMost(final int maxEntriesPerFamily) throws IllegalArgumentException, IllegalStateException {
         String logMsg;
+
         if (maxEntriesPerFamily < 0) {
             logMsg =
                 "Maximum number of entries to read per column family must be >= 0; specified: "
@@ -100,30 +116,53 @@ public final class ReadOpSpecDefault extends TableRowOpSpec<ReadOpSpecDefault> i
         setTableRow(rowSpec);
         return rowSpec;
     }
-    
+
     @Override
-    public ColSpecRead<ReadOpSpecDefault> with() throws IllegalStateException {
+    public ColSpecRead<ReadOpSpecDefault> with(final Object handle) throws IllegalStateException {
         final ColSpecRead<ReadOpSpecDefault> withCol;
         prepMutation();
-        withCol = new ColSpecRead<>(this);
+        withCol = new ColSpecRead<>(this, handle);
         this.withColumn.add(withCol);
         return withCol;
     }
     
     @Override
-    public <X> ReadOpSpecDefault withAllOf(final Iterable<X> sourceData, final BiConsumer<? super X, ColSpecReadFluid<?>> dataToColumnGenerator) {
+    public ColSpecRead<ReadOpSpecDefault> with() throws IllegalStateException {
+        return with(null);
+    }
+    
+    @Override
+    public <X> ReadOpSpecDefault withAllOf(final Iterable<X> sourceData, final BiFunction<? super X, ColSpecReadFluid<?>, Object> dataToColumnGenerator) {
         ColSpecRead<ReadOpSpecDefault> withCol;
+        Object handle;
+
+        // TODO: identical to similar function in WriteOpSpecDefault; could code be combined?
+
         prepMutation();
         if (sourceData != null) {
             for (X element : sourceData) {
                 withCol = new ColSpecRead<>(this);
-                dataToColumnGenerator.accept(element, new ColSpecReadConfined(withCol));
+                handle = dataToColumnGenerator.apply(element, new ColSpecReadConfined(withCol));
+                withCol.handle(handle);
                 this.withColumn.add(withCol);
             }
         }
         return self();
     }
-    
+
+    @Override
+    public <X> ReadOpSpecDefault withAllOf(final Iterable<X> sourceData, final BiConsumer<? super X, ColSpecReadFluid<?>> dataToColumnGenerator) {
+
+        // TODO: identical to similar function in WriteOpSpecDefault; could code be combined?
+
+        return withAllOf(sourceData,
+                         // convert the BiConsumer to a null-returning BiFunction
+                         (X sourceDataElement, ColSpecReadFluid<?> colSpec) -> {
+                             dataToColumnGenerator.accept(sourceDataElement, colSpec);
+                             return null;
+                         });
+    }
+
     // ||----(instance methods: API: fluid)------------------------------------------------------||
     
     // ||========================================================================================||
@@ -131,26 +170,12 @@ public final class ReadOpSpecDefault extends TableRowOpSpec<ReadOpSpecDefault> i
     // ||----------------------------------------------------------------------------------------||
 
     private <K> void addColumnAssoc(final K key, final ColSpecReadFrozen colSpec, final Map<K, Set<ColSpecReadFrozen>> assoc) {
-        Set<ColSpecReadFrozen> colSpecReadSet;
-        final Set<ColSpecReadFrozen> existing;
-
         prepPostFreezeOp("addColumnAssoc");
-
-        colSpecReadSet = assoc.get(key);
-        if (colSpecReadSet == null) {
-            colSpecReadSet = new HashSet<ColSpecReadFrozen>();
-            existing = assoc.putIfAbsent(key, colSpecReadSet);
-            // should never happen, as long as the user is not trying to use the spec objects in
-            // multiple threads, but included just in case...
-            if (existing != null) {
-                colSpecReadSet = existing;
-            }
-        }
-        colSpecReadSet.add(colSpec);
+        Util.appendToValueInMap(assoc, key, colSpec, Set::add, HashSet::new);
     }
 
     @Override
-    public void addColumnAssoc(final FamilyModel famModel, final ColSpecReadFrozen colSpecRead) {
+    public void addColumnAssoc(final FamilyHB famModel, final ColSpecReadFrozen colSpecRead) {
         addColumnAssoc(famModel, colSpecRead, this.fullFamilyAssoc);
     }
 
@@ -159,13 +184,20 @@ public final class ReadOpSpecDefault extends TableRowOpSpec<ReadOpSpecDefault> i
         addColumnAssoc(fqp, colSpecRead, this.columnAssoc);
     }
 
+    @Override
+    public void addColumnRangeAssoc(final ColumnRange columnRange, final ColSpecReadFrozen colSpecRead) {
+        prepPostFreezeOp("addColumnRangeAssoc");
+        Util.appendToValueInMap(this.columnRangeForFamily, columnRange.getFamily(), columnRange, Set::add, HashSet::new);
+        addColumnAssoc(columnRange, colSpecRead, this.columnRangeAssoc);
+    }
+
     private <K> Set<ColSpecReadFrozen> getColumnAssoc(final K key, final Map<K, Set<ColSpecReadFrozen>> assoc) {
         prepPostFreezeOp("getColumnAssoc");
         return assoc.getOrDefault(key, Collections.emptySet());
     }
 
     @Override
-    public Set<ColSpecReadFrozen> getColumnAssoc(final FamilyModel famModel) {
+    public Set<ColSpecReadFrozen> getColumnAssoc(final FamilyHB famModel) {
         return getColumnAssoc(famModel, this.fullFamilyAssoc);
     }
 
@@ -173,6 +205,44 @@ public final class ReadOpSpecDefault extends TableRowOpSpec<ReadOpSpecDefault> i
     public Set<ColSpecReadFrozen> getColumnAssoc(final FamilyQualifierPair fqp) {
         return getColumnAssoc(fqp, this.columnAssoc);
     }
+
+    @Override
+    public Set<ColSpecReadFrozen> getColumnRangeAssoc(final FamilyQualifierPair fqp) {
+        final Set<ColumnRange> rangesForFamily;
+        final Set<ColSpecReadFrozen> setSourceColSpec;
+
+        prepPostFreezeOp("getColumnRangeAssoc");
+
+        setSourceColSpec = new HashSet<>();
+        rangesForFamily = this.columnRangeForFamily.get(fqp.getFamily());
+        if ((rangesForFamily != null) && (!rangesForFamily.isEmpty())) {
+            for (ColumnRange range : rangesForFamily) {
+                if (range.contains(fqp.getColumn())) {
+                    setSourceColSpec.addAll(this.columnRangeAssoc.get(range));
+                }
+            }
+        }
+        return setSourceColSpec;
+    }
+
+    @Override
+    public Map<FamilyQualifierPair, Set<ColSpecReadFrozen>> getFamilyQualifierAssoc() {
+        // TODO Collections.unmodifiableMap does nothing to safeguard the Sets inside the Map
+        return Collections.unmodifiableMap(this.columnAssoc);
+    }
+
+    @Override
+    public Map<FamilyHB, Set<ColSpecReadFrozen>> getFullFamilyAssoc() {
+        // TODO Collections.unmodifiableMap does nothing to safeguard the Sets inside the Map
+        return Collections.unmodifiableMap(this.fullFamilyAssoc);
+    }
+
+    @Override
+    public Map<ColumnRange, Set<ColSpecReadFrozen>> getColumnRangeAssoc() {
+        // TODO Collections.unmodifiableMap does nothing to safeguard the Sets inside the Map
+        return Collections.unmodifiableMap(this.columnRangeAssoc);
+    }
+
 
     @Override
     public EnumSet<VersioningModel> getCommonVersioningConfig() throws IllegalStateException {
@@ -230,8 +300,8 @@ public final class ReadOpSpecDefault extends TableRowOpSpec<ReadOpSpecDefault> i
         final String logMsg;
         final List<StatefulSpec<?, ?>> subordSpecList;
         ColSpecRead<?> readColSpec;
-        QualModel colQualModel;
-        FamilyModel colFamilyModel;
+        QualHB colQualModel;
+        FamilyHB colFamilyModel;
         boolean establishedVersioningConfigIsTimestampBased;
         EnumSet<VersioningModel> establishedVersioningConfig;
         LongValueSpec<?> establishedReadVersionSpec;
@@ -265,24 +335,7 @@ public final class ReadOpSpecDefault extends TableRowOpSpec<ReadOpSpecDefault> i
                      * Get the version range/number specified for the current column.
                      */
                     currentReadVersionSpec = readColSpec.getVersion();
-
-                    /*
-                     * Determine the versioning configuration for the current read column spec. If
-                     * a versioning configuration is declared at the qualifier level, use it;
-                     * otherwise, default to the family level, if a configuration is defined there.
-                     * Note that in some cases, neither the family model nor the qualifier model
-                     * will define a versioning configuration, so currentVersioningConfig may
-                     * remain null after this logic block.
-                     */
-                    colQualModel = readColSpec.getColumn();
-                    if (colQualModel != null) {
-                        currentVersioningConfig = colQualModel.getVersioning();
-                    } else {
-                        colFamilyModel = readColSpec.getFamily();
-                        if (colFamilyModel != null) {
-                            currentVersioningConfig = colFamilyModel.getVersioning();
-                        }
-                    }
+                    currentVersioningConfig = SpecUtil.determineVersioningScheme(readColSpec);
 
                     /*
                      * If the "established" versioning configuration and version number for this
@@ -442,6 +495,10 @@ public final class ReadOpSpecDefault extends TableRowOpSpec<ReadOpSpecDefault> i
         super(handle, context, parent);
         this.withColumn = new LinkedList<>();
         this.atTime = null;
+        this.fullFamilyAssoc = new ConcurrentHashMap<>();
+        this.columnAssoc = new ConcurrentHashMap<>();
+        this.columnRangeForFamily = new ConcurrentHashMap<>();
+        this.columnRangeAssoc = new ConcurrentHashMap<>();
     }
     
     // ||----(constructors)----------------------------------------------------------------------||

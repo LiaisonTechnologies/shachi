@@ -8,10 +8,13 @@
  */
 package com.liaison.hbase.context;
 
-import com.liaison.commons.DefensiveCopyStrategy;
 import com.liaison.hbase.context.async.AsyncConfig;
 import com.liaison.hbase.resmgr.ResourceConnectTolerance;
+import com.liaison.serialization.DefensiveCopyStrategy;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.hbase.client.HBaseAdmin;
+
+import java.io.IOException;
 
 public interface HBaseContext {
     Object getId();
@@ -21,4 +24,5 @@ public interface HBaseContext {
     DefensiveCopyStrategy getDefensiveCopyStrategy();
     TableNamingStrategy getTableNamingStrategy();
     boolean doCreateAbsentTables();
+    HBaseAdmin buildAdmin()  throws IOException;
 }

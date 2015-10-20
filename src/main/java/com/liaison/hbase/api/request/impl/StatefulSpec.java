@@ -9,6 +9,7 @@
 package com.liaison.hbase.api.request.impl;
 
 import com.liaison.commons.Util;
+import com.liaison.commons.log.LogMeMaybe;
 import com.liaison.hbase.exception.SpecValidationException;
 import com.liaison.hbase.util.StringRepFormat;
 import com.liaison.hbase.util.TreeNode;
@@ -36,6 +37,12 @@ import java.util.concurrent.ConcurrentHashMap;
 public abstract class StatefulSpec<A extends StatefulSpec<A, P>, P extends TreeNode<P>> extends TreeNodeNonRoot<A, P> implements Serializable {
     
     private static final long serialVersionUID = -6331552111315785761L;
+
+    private static final LogMeMaybe LOG;
+
+    static {
+        LOG = new LogMeMaybe(StatefulSpec.class);
+    }
 
     // ||========================================================================================||
     // ||    INSTANCE PROPERTIES                                                                 ||
@@ -96,7 +103,7 @@ public abstract class StatefulSpec<A extends StatefulSpec<A, P>, P extends TreeN
         if (!isFrozen()) {
             throw new IllegalStateException("Operation '"
                                             + String.valueOf(operationName)
-                                            + "'not supported until spec is frozen: "
+                                            + "' not supported until spec is frozen: "
                                             + toString());
         }
     }
@@ -109,7 +116,22 @@ public abstract class StatefulSpec<A extends StatefulSpec<A, P>, P extends TreeN
         // provide a default implementation which does nothing
         // TODO implement this in inheritors, where relevant
     }
-    
+
+    private void performCascadingStateChange(final LinkedList<StatefulSpec<?, ?>> subordSpecQueue, final StatefulSpec<?, ?> currentSpec) {
+        currentSpec.validate();
+        LOG.trace(() -> "Setting state of ",
+                  () -> String.valueOf(currentSpec.getClass()),
+                  () -> " from ",
+                  () -> String.valueOf(currentSpec.getState()),
+                  () -> " to FROZEN...");
+        currentSpec.state = SpecState.FROZEN;
+        LOG.trace(() -> "State of ",
+                  () -> String.valueOf(currentSpec.getClass()),
+                  ()->" set: ",
+                  ()->String.valueOf(currentSpec.getState()));
+        subordSpecQueue.addAll(currentSpec.subordSpecList);
+    }
+
     /**
      * TODO
      * @throws SpecValidationException
@@ -123,9 +145,7 @@ public abstract class StatefulSpec<A extends StatefulSpec<A, P>, P extends TreeN
         while (!subordSpecQueue.isEmpty()) {
             currentSpec = subordSpecQueue.removeFirst();
             if (!currentSpec.isFrozen()) {
-                currentSpec.validate();
-                currentSpec.state = SpecState.FROZEN;
-                subordSpecQueue.addAll(currentSpec.subordSpecList);
+                performCascadingStateChange(subordSpecQueue, currentSpec);
             }
         }
     }
@@ -135,7 +155,7 @@ public abstract class StatefulSpec<A extends StatefulSpec<A, P>, P extends TreeN
      * @param subordSpec
      * @throws IllegalArgumentException
      */
-    protected final void addSubordinate(final StatefulSpec<?,?> subordSpec) throws IllegalArgumentException {
+    private final void addSubordinate(final StatefulSpec<?,?> subordSpec) throws IllegalArgumentException {
         Util.ensureNotNull(subordSpec, this, "subordSpec", StatefulSpec.class);
         this.subordSpecList.add(subordSpec);
     }
@@ -231,9 +251,17 @@ public abstract class StatefulSpec<A extends StatefulSpec<A, P>, P extends TreeN
      */
     public StatefulSpec(final P parent) throws IllegalArgumentException {
         super(parent);
+
+        final StatefulSpec<?, ?> parentSpec;
+
         this.state = SpecState.FLUID;
         this.subordSpecList = new LinkedList<>();
         this.strRep = new ConcurrentHashMap<>();
+
+        if (parent instanceof StatefulSpec) {
+            parentSpec = (StatefulSpec<?, ?>) parent;
+            parentSpec.addSubordinate(this);
+        }
     }
     
     // ||----(constructors)----------------------------------------------------------------------||

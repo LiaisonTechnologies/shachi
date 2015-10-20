@@ -8,21 +8,23 @@
  */
 package com.liaison.hbase.model;
 
-
-
 import com.liaison.commons.Util;
+import com.liaison.hbase.model.ser.CellDeserializer;
+import com.liaison.hbase.model.ser.CellSerializer;
 
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-public final class TableModel extends NamedEntity {
+public final class TableModel extends NamedEntityDefault implements TableHB {
 
     private static final long serialVersionUID = 5725568314447294526L;
 
     public static final class Builder {
         private Name name;
         private LinkedHashMap<Name, FamilyModel> families;
+        private CellSerializer serializer;
+        private CellDeserializer deserializer;
         
         public Builder name(final Name name) {
             this.name = name;
@@ -31,6 +33,14 @@ public final class TableModel extends NamedEntity {
         public Builder family(final FamilyModel family) throws IllegalArgumentException {
             Util.ensureNotNull(family, this, "family", FamilyModel.class);
             this.families.put(family.getName(), family);
+            return this;
+        }
+        public Builder serializer(final CellSerializer serializer) {
+            this.serializer = serializer;
+            return this;
+        }
+        public Builder deserializer(final CellDeserializer deserializer) {
+            this.deserializer = deserializer;
             return this;
         }
         
@@ -53,10 +63,22 @@ public final class TableModel extends NamedEntity {
     }
     
     private final Map<Name, FamilyModel> families;
-    
+    private final CellSerializer serializer;
+    private final CellDeserializer deserializer;
+
+    @Override
+    public CellSerializer getSerializer() {
+        return this.serializer;
+    }
+    @Override
+    public CellDeserializer getDeserializer() {
+        return this.deserializer;
+    }
+    @Override
     public Map<Name, FamilyModel> getFamilies() {
         return this.families;
     }
+    @Override
     public FamilyModel getFamily(final Name famName) {
         return this.families.get(famName);
     }
@@ -81,7 +103,7 @@ public final class TableModel extends NamedEntity {
     }
     
     @Override
-    protected boolean deepEquals(final NamedEntity otherNE) {
+    protected boolean deepEquals(final NamedEntityDefault otherNE) {
         final TableModel otherTableModel;
         if (otherNE instanceof TableModel) {
             otherTableModel = (TableModel) otherNE;
@@ -93,5 +115,7 @@ public final class TableModel extends NamedEntity {
     private TableModel(final Builder build) throws IllegalArgumentException {
         super(build.name);
         this.families = Collections.unmodifiableMap(build.families);
+        this.serializer = build.serializer;
+        this.deserializer = build.deserializer;
     }
 }
