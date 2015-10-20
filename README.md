@@ -1,1 +1,1 @@
-Liaison HBase Client environment
+Liaison HBase Client environment libraries
