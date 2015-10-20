@@ -11,7 +11,9 @@ package com.liaison.hbase.api.request.impl;
 import com.liaison.commons.Util;
 import com.liaison.hbase.api.request.fluid.ColSpecFluid;
 import com.liaison.hbase.api.request.frozen.ColSpecFrozen;
+import com.liaison.hbase.model.FamilyHB;
 import com.liaison.hbase.model.FamilyModel;
+import com.liaison.hbase.model.QualHB;
 import com.liaison.hbase.model.QualModel;
 import com.liaison.hbase.util.StringRepFormat;
 
@@ -24,7 +26,8 @@ public abstract class ColSpec<C extends ColSpec<C, P>, P extends OperationSpec<P
     // ||========================================================================================||
     // ||    INSTANCE PROPERTIES                                                                 ||
     // ||----------------------------------------------------------------------------------------||
-    
+
+    private Object handle;
     private FamilyModel family;
     private QualModel column;
     
@@ -33,7 +36,14 @@ public abstract class ColSpec<C extends ColSpec<C, P>, P extends OperationSpec<P
     // ||========================================================================================||
     // ||    INSTANCE METHODS: API: FLUID                                                        ||
     // ||----------------------------------------------------------------------------------------||
-    
+
+    @Override
+    public C handle(final Object handle) throws IllegalStateException {
+        prepMutation();
+        this.handle = handle;
+        return self();
+    }
+
     @Override
     public C fam(final FamilyModel family) throws IllegalStateException, IllegalArgumentException {
         prepMutation();
@@ -56,11 +66,15 @@ public abstract class ColSpec<C extends ColSpec<C, P>, P extends OperationSpec<P
     // ||----------------------------------------------------------------------------------------||
 
     @Override
-    public FamilyModel getFamily() {
+    public Object getHandle() {
+        return this.handle;
+    }
+    @Override
+    public FamilyHB getFamily() {
         return this.family;
     }
     @Override
-    public QualModel getColumn() {
+    public QualHB getColumn() {
         return this.column;
     }
     
@@ -80,7 +94,7 @@ public abstract class ColSpec<C extends ColSpec<C, P>, P extends OperationSpec<P
                 Util.appendIndented(strGen, getDepth() + 1, "family: ", this.family, "\n");
             }
             if (this.column != null) {
-                Util.appendIndented(strGen, getDepth() + 1, "qual: ", this.column, "\n");
+                Util.appendIndented(strGen, getDepth() + 1, "column: ", this.column, "\n");
             }
             prepareStrRepAdditional(strGen, format);
         } else if (format == StringRepFormat.INLINE) {
@@ -92,7 +106,7 @@ public abstract class ColSpec<C extends ColSpec<C, P>, P extends OperationSpec<P
                 }
             }
             if (this.column != null) {
-                Util.append(strGen, "qual=", this.column);
+                Util.append(strGen, "column=", this.column);
             }
             prepareStrRepAdditional(strGen, format);
             strGen.append("}");
@@ -112,8 +126,9 @@ public abstract class ColSpec<C extends ColSpec<C, P>, P extends OperationSpec<P
         final ColSpec<?,?> otherColSpec;
         if (otherObj instanceof ColSpec) {
             otherColSpec = (ColSpec<?,?>) otherObj;
-            return (Util.refEquals(this.family, this.family)
-                    && Util.refEquals(this.column, this.column)
+            return (Util.refEquals(this.handle, otherColSpec.handle)
+                    && Util.refEquals(this.family, otherColSpec.family)
+                    && Util.refEquals(this.column, otherColSpec.column)
                     && deepEquals(otherColSpec));
         }
         return false;
@@ -125,8 +140,12 @@ public abstract class ColSpec<C extends ColSpec<C, P>, P extends OperationSpec<P
     // ||    CONSTRUCTORS                                                                        ||
     // ||----------------------------------------------------------------------------------------||
 
-    public ColSpec(final P parent) {
+    public ColSpec(final P parent, final Object handle) {
         super(parent);
+        this.handle = handle;
+    }
+    public ColSpec(final P parent) {
+        this(parent, null);
     }
     
     // ||----(constructors)----------------------------------------------------------------------||

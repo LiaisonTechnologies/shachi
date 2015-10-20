@@ -8,14 +8,11 @@
  */
 package com.liaison.hbase.api.request.frozen;
 
-import com.liaison.hbase.dto.RowKey;
-import com.liaison.hbase.model.TableModel;
+import com.liaison.hbase.dto.RowRef;
 
 /**
  * TODO
  * @author Branden Smith; Liaison Technologies, Inc.
  */
-public interface RowSpecFrozen {
-    TableModel getTable();
-    RowKey getRowKey();
+public interface RowSpecFrozen extends RowRef {
 }

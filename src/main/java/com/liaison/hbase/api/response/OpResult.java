@@ -9,8 +9,8 @@
 package com.liaison.hbase.api.response;
 
 import com.liaison.commons.Util;
-import com.liaison.hbase.api.request.impl.RowSpec;
 import com.liaison.hbase.api.request.impl.TableRowOpSpec;
+import com.liaison.hbase.dto.TableRow;
 import com.liaison.hbase.exception.HBaseException;
 import com.liaison.hbase.util.AbstractSelfRefBuilder;
 
@@ -21,12 +21,16 @@ public abstract class OpResult<O extends TableRowOpSpec<O>> implements Serializa
     private static final long serialVersionUID = -276369205056256487L;
 
     protected abstract static class OpResultBuilder<O extends TableRowOpSpec<O>, T extends OpResult<O>, B extends AbstractSelfRefBuilder<T, B>> extends AbstractSelfRefBuilder<T, B> {
-        
+
+        private TableRow tableRow;
         private O originSpec;
         private HBaseException hbExc;
-        
+
         public B origin(final O originSpec) {
             this.originSpec = originSpec;
+            this.tableRow =
+                TableRow.of(originSpec.getTableRow().getTable(),
+                            originSpec.getTableRow().getRowKey());
             return self();
         }
         
@@ -34,18 +38,30 @@ public abstract class OpResult<O extends TableRowOpSpec<O>> implements Serializa
             this.hbExc = exc;
             return self();
         }
-        
+
+        protected TableRow getTableRow() throws IllegalStateException {
+            final String logMsg;
+            if (this.tableRow == null) {
+                logMsg = "Illegal attempt to access table row before invoking origin()";
+                throw new IllegalStateException(logMsg);
+
+            }
+            return this.tableRow;
+        }
+
         public abstract T build();
         
         protected OpResultBuilder() {
             this.originSpec = null;
+            this.tableRow = null;
             this.hbExc = null;
         }
     }
-    
+
+
     private final O originSpec;
     private final Object handle;
-    private final RowSpec<O> tableRow;
+    private final TableRow tableRow;
     private final HBaseException hbExc;
     
     private String strRep;
@@ -57,7 +73,7 @@ public abstract class OpResult<O extends TableRowOpSpec<O>> implements Serializa
     public Object getHandle() {
         return this.handle;
     }
-    public RowSpec<O> getTableRow() {
+    public TableRow getTableRow() {
         return this.tableRow;
     }
     public HBaseException getException() {
@@ -124,9 +140,10 @@ public abstract class OpResult<O extends TableRowOpSpec<O>> implements Serializa
 
     protected OpResult(final OpResultBuilder<O, ?, ?> build) {
         Util.ensureNotNull(build.originSpec, this, "originSpec", TableRowOpSpec.class);
+        Util.ensureNotNull(build.tableRow, this, "tableRow", TableRow.class);
         this.originSpec = build.originSpec;
+        this.tableRow = build.tableRow;
         this.handle = this.originSpec.getHandle();
-        this.tableRow = this.originSpec.getTableRow();
         this.hbExc = build.hbExc;
     }
 }

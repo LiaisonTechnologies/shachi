@@ -8,20 +8,20 @@
  */
 package com.liaison.hbase.exception;
 
-import com.liaison.hbase.api.request.impl.ColSpec;
-import com.liaison.hbase.api.request.impl.RowSpec;
+import com.liaison.hbase.dto.ColRef;
+import com.liaison.hbase.dto.RowRef;
 
 public class HBaseNoCellException extends HBaseColumnException {
     
     private static final long serialVersionUID = 2043070353814422741L;
     
-    public HBaseNoCellException(final RowSpec<?> rowSpec, final ColSpec<?,?> colSpec, String message) {
-        super(rowSpec, colSpec, message);
+    public HBaseNoCellException(final RowRef rowRef, final ColRef colRef, String message) {
+        super(rowRef, colRef, message);
     }
-    public HBaseNoCellException(final RowSpec<?> rowSpec, final ColSpec<?,?> colSpec, String message, Throwable cause) {
-        super(rowSpec, colSpec, message, cause);
+    public HBaseNoCellException(final RowRef rowRef, final ColRef colRef, String message, Throwable cause) {
+        super(rowRef, colRef, message, cause);
     }
-    public HBaseNoCellException(final RowSpec<?> rowSpec, final ColSpec<?,?> colSpec, String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
-        super(rowSpec, colSpec, message, cause, enableSuppression, writableStackTrace);
+    public HBaseNoCellException(final RowRef rowRef, final ColRef colRef, String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
+        super(rowRef, colRef, message, cause, enableSuppression, writableStackTrace);
     }
 }

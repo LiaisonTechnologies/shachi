@@ -8,12 +8,12 @@
  */
 package com.liaison.hbase.context;
 
-import com.liaison.commons.DefensiveCopyStrategy;
 import com.liaison.commons.Util;
 import com.liaison.hbase.context.async.AsyncConfig;
 import com.liaison.hbase.context.async.AsyncConfigDefault;
 import com.liaison.hbase.resmgr.ResourceConnectTolerance;
 import com.liaison.hbase.util.AbstractSelfRefBuilder;
+import com.liaison.serialization.DefensiveCopyStrategy;
 import org.apache.hadoop.conf.Configuration;
 
 import java.util.function.Supplier;

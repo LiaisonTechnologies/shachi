@@ -1,18 +1,3 @@
-apply plugin: 'java'
-apply plugin: 'eclipse'
-apply plugin: 'java-library-distribution'
-
-configurations {
-    provided
-    provided.extendsFrom(compile)
-}
-
-sourceSets {
-    main.compileClasspath += configurations.provided
-    test.compileClasspath += configurations.provided
-    test.runtimeClasspath += configurations.provided
-}
-
 buildscript {
     repositories {
         mavenLocal()
@@ -21,9 +6,57 @@ buildscript {
     apply from: file('gradle/buildscript.gradle'), to: buildscript
 }
 
+plugins {
+    id 'org.unbroken-dome.test-sets' version '1.2.0'
+}
+
+apply plugin: 'java'
+apply plugin: 'eclipse'
+apply plugin: 'java-library-distribution'
+
+ext.verCommons = '0.1.2-SNAPSHOT'
+ext.verGuava = '18.0'
+ext.verGuavaTEST = '14.0.1'
+ext.verHadoopTEST = '2.5.1'
+ext.verMockito = '1.10.19'
+ext.verPool = '2.3'
+ext.verQuasar  = '0.6.2'
+ext.verTestNG  = '6.8.21'
+
+ext.classifierQuasar = ':jdk8'
+
+testSets {
+    testUnit { dirName = 'test/unit' }
+    testIntegration { dirName = 'test/integration' }
+}
+
+configurations {
+    guava
+    provided
+    provided {
+        extendsFrom(compile)
+    }
+    testIntConf
+    testIntConf {
+        extendsFrom(provided)
+        resolutionStrategy {
+            force "com.google.guava:guava:${verGuavaTEST}"
+            forcedModules = ["com.google.guava:guava:${verGuavaTEST}"]
+        }
+    }
+}
+
+sourceSets {
+    main.compileClasspath += configurations.provided
+    testUnit.compileClasspath += configurations.provided
+    testUnit.runtimeClasspath += configurations.provided
+    testIntegration.compileClasspath += configurations.testIntConf
+    testIntegration.runtimeClasspath += configurations.testIntConf
+}
+
 allprojects {
     repositories {
-        mavenLocal()
+        // mavenLocal()
         mavenCentral()
         // Liaison Private Maven artifact repo (Nexus)
         maven { url releasesArtifactRepoURL }
@@ -37,19 +70,6 @@ apply from: file('gradle/check.gradle')
 apply from: file('gradle/license.gradle')
 apply from: file('gradle/maven.gradle')
 
-group = 'com.liaison'
-version = '0.0.1-SNAPSHOT'
-
-ext.libraryName = "liaison-hbase-${version}"
-ext.verGuava = '18.0'
-ext.verMockito = '1.10.19'
-ext.verPhoenixCommons = '0.0.2-SNAPSHOT'
-ext.verPool = '2.3'
-ext.verQuasar  = '0.6.2'
-ext.verTestNG  = '6.8.21'
-
-ext.classifier = ':jdk8'
-
 if (project.hasProperty('env') && project.getProperty('env') == 'mapr') {
     repositories {
         mavenCentral()
@@ -57,30 +77,44 @@ if (project.hasProperty('env') && project.getProperty('env') == 'mapr') {
             url "http://repository.mapr.com/maven/"
         }
     }
-    // ext.verHBase = '0.98.7-mapr-1501'
-    ext.verHBase = '0.98.9-mapr-1503-m7-4.1.0'
-    ext.verZookeeper = '3.4.5-mapr-1406'
+    ext.verHBase = '0.98.12-mapr-1506'
 } else {
-    // ext.verHBase = '0.98.7-hadoop2'
-    ext.verHBase = '0.98.9-hadoop2'
-    ext.verZookeeper = '3.4.5'
+    ext.verHBase = '0.98.12-hadoop2'
 }
+
+group = 'com.liaison'
+def artifact = "${rootProject.name}"
+version = '0.1.0-SNAPSHOT'
+def packaging = 'jar'
+def classifier = "${verHBase}"
+
+ext.libraryName = "${rootProject.name}-${version}"
 
 jar {
     manifest {
-        attributes 'Implementation-Title': 'Gradle Quickstart', 'Implementation-Version': version
+        attributes 'Implementation-Title': 'HBase Client', 'Implementation-Version': version
     }
 }
 
 dependencies {
-    compile "com.liaison.phoenix:phoenix-commons:0.0.1-SNAPSHOT"
-    compile "com.google.guava:guava:${verGuava}"
-    compile "co.paralleluniverse:quasar-core:${verQuasar}${classifier}"
+    guava group:'com.google.guava', name:'guava', version:"${verGuava}"
+    compile "com.liaison:dm-lib-commons:${verCommons}"
+    compile "co.paralleluniverse:quasar-core:${verQuasar}${classifierQuasar}"
     provided "org.apache.hbase:hbase-client:${verHBase}"
     provided "org.apache.hbase:hbase-common:${verHBase}"
     compile "org.apache.commons:commons-pool2:${verPool}"
-    testCompile "org.testng:testng:${verTestNG}"
+    compile "org.testng:testng:${verTestNG}"
     testCompile "org.mockito:mockito-all:${verMockito}"
+    testIntegrationCompile group:'com.google.guava', name:'guava', version:"${verGuavaTEST}"
+    testIntegrationCompile group:'org.apache.hadoop', name:'hadoop-common', version:"${verHadoopTEST}", classifier: 'tests'
+    testIntegrationCompile group:'org.apache.hbase', name:'hbase-server', version:"${verHBase}"
+    testIntegrationCompile group:'org.apache.hbase', name:'hbase-server', version:"${verHBase}", classifier: 'tests'
+    testIntegrationCompile group:'org.apache.hbase', name:'hbase-hadoop-compat', version:"${verHBase}"
+    testIntegrationCompile group:'org.apache.hbase', name:'hbase-hadoop-compat', version:"${verHBase}", classifier: 'tests'
+    testIntegrationCompile group:'org.apache.hbase', name:'hbase-hadoop2-compat', version:"${verHBase}"
+    testIntegrationCompile group:'org.apache.hbase', name:'hbase-hadoop2-compat', version:"${verHBase}", classifier: 'tests'
+    testIntegrationCompile group:'org.apache.hadoop', name:'hadoop-hdfs', version:"${verHadoopTEST}"
+    testIntegrationCompile group:'org.apache.hadoop', name:'hadoop-hdfs', version:"${verHadoopTEST}", classifier: 'tests'
 }
 
 task fatJar(type: Jar) {
@@ -94,9 +128,26 @@ task fatJar(type: Jar) {
     with jar
 }
 
-test {
-    useTestNG()
+task copyToLib( type: Copy ) {
+    into "$buildDir/libs/lib"
+    from configurations.runtime
 }
+
+testUnit {
+    useTestNG()
+    logger.info "@@@ Classpath (UNIT testing): ${classpath.getFiles().collect({it.toString()}).inject('\n') {acc, next -> acc + next + '\n'}}"
+    logger.info "@@@ SystemProps (UNIT testing): ${System.getProperties().collect({it.toString()}).inject('\n') {acc, next -> acc + next + '\n'}}"
+}
+
+testIntegration {
+    classpath = classpath.minus(configurations.guava);
+    useTestNG()
+    systemProperty "java.net.preferIPv4Stack", "true"
+    logger.info "@@@ Classpath (INTEGRATION testing): ${classpath.getFiles().collect({it.toString()}).inject('\n') {acc, next -> acc + next + '\n'}}"
+    logger.info "@@@ SysProps (INTEGRATION testing): ${System.getProperties().collect({it.toString()}).inject('\n') {acc, next -> acc + next + '\n'}}"
+}
+
+test.dependsOn testUnit
 
 distributions {
     main {
@@ -112,11 +163,54 @@ uploadArchives {
     }
 }
 
+task createPom  {
+    pom {
+        project {
+            artifactId artifact
+            version version
+            inceptionYear '2015'
+            licenses {
+                license {
+                    name 'Liaison Proprietary'
+                    url 'http://www.liaison.com'
+                    distribution 'repo'
+                }
+            }
+        }
+    }.withXml { root ->
+        def propsNode
+        def children = root.asNode().children()
+        def versionIndex
+
+        versionIndex = children.indexOf(children.find {it.name().localPart == 'properties'})
+        if (versionIndex >= 0) {
+            propsNode = children.elementAt(versionIndex);
+        } else {
+            versionIndex = children.indexOf(children.find {it.name().localPart == 'inceptionYear'})
+            propsNode = new Node(null, 'properties')
+            children.add(versionIndex + 1, propsNode)
+        }
+        propsNode.children().add(0, new Node(null, 'classifier', classifier))
+
+        versionIndex = children.indexOf(children.find {it.name().localPart == 'version'})
+        children.add(versionIndex + 1, new Node(null, 'packaging', packaging))
+    }.writeTo("pom.xml")
+}
+
+if (project.hasProperty('mainClass')) {
+    task execute(type: JavaExec) {
+        main = mainClass
+        classpath = sourceSets.main.runtimeClasspath
+        standardInput = System.in
+    }
+}
+
 eclipse.classpath.plusConfigurations += configurations.provided
 plugins.withType(IdeaPlugin) {
     idea {
         module {
             scopes.PROVIDED.plus += [configurations.provided]
+            scopes.TEST.plus += [configurations.testIntegrationCompile]
         }
     }
 }

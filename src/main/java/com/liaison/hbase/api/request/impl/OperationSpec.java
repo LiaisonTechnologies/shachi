@@ -56,6 +56,9 @@ public abstract class OperationSpec<O extends OperationSpec<O>> extends Stateful
         freezeRecursive();
         return getParent();
     }
+    public final OperationControllerDefault done() throws SpecValidationException {
+        return then();
+    }
     
     @Override
     public final int prepareHashCode() {

@@ -11,21 +11,28 @@ package com.liaison.hbase.model;
 
 
 import com.liaison.commons.Util;
+import com.liaison.hbase.model.ser.CellDeserializer;
+import com.liaison.hbase.model.ser.CellSerializer;
 
 import java.util.Collections;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-public final class FamilyModel extends NamedEntity {
+public final class FamilyModel extends NamedEntityDefault implements FamilyHB {
     
     private static final long serialVersionUID = -6051047393328804323L;
 
     public static final class Builder {
         private Name name;
-        private LinkedHashMap<Name, QualModel> quals;
+        private final LinkedHashMap<Name, QualModel> quals;
+        private final Map<QualHB, CellSerializer> qualSerializers;
+        private final Map<QualHB, CellDeserializer> qualDeserializers;
         private boolean closedQualSet;
         private EnumSet<VersioningModel> versioning;
+        private CellSerializer serializer;
+        private CellDeserializer deserializer;
 
         public Builder versionWith(final VersioningModel verModel) throws IllegalArgumentException {
             Util.ensureNotNull(verModel, this, "verModel", VersioningModel.class);
@@ -37,12 +44,33 @@ public final class FamilyModel extends NamedEntity {
             return this;
         }
         public Builder qual(final QualModel qual) throws IllegalArgumentException {
-            Util.ensureNotNull(qual, this, "qual", QualModel.class);
+            final CellSerializer cellSer;
+            final CellDeserializer cellDeser;
+
+            Util.ensureNotNull(qual, this, "column", QualModel.class);
             this.quals.put(qual.getName(), qual);
+
+            cellSer = qual.getSerializer();
+            cellDeser = qual.getDeserializer();
+            if (cellSer != null) {
+                this.qualSerializers.put(qual, cellSer);
+            }
+            if (cellDeser != null) {
+                this.qualDeserializers.put(qual, cellDeser);
+            }
+
             return this;
         }
         public Builder closedQualSet(final boolean closedQualSet) {
             this.closedQualSet = closedQualSet;
+            return this;
+        }
+        public Builder serializer(final CellSerializer serializer) {
+            this.serializer = serializer;
+            return this;
+        }
+        public Builder deserializer(final CellDeserializer deserializer) {
+            this.deserializer = deserializer;
             return this;
         }
         
@@ -53,6 +81,9 @@ public final class FamilyModel extends NamedEntity {
             this.closedQualSet = false;
             this.name = null;
             this.quals = new LinkedHashMap<>();
+            this.qualSerializers = new HashMap<>();
+            this.qualDeserializers = new HashMap<>();
+            this.versioning = EnumSet.noneOf(VersioningModel.class);
         }
     }
     
@@ -66,15 +97,49 @@ public final class FamilyModel extends NamedEntity {
     }
     
     private final Map<Name, QualModel> quals;
+    private final Map<QualHB, CellSerializer> qualSerializers;
+    private final Map<QualHB, CellDeserializer> qualDeserializers;
     private final boolean closedQualSet;
     private final EnumSet<VersioningModel> versioning;
-    
+    private final CellSerializer serializer;
+    private final CellDeserializer deserializer;
+
+    private <S> S getSerializationComponentDeferToQual(final QualHB forQualInstance, final Map<QualHB, S> qualSerComponentMap, final S defaultComponentForFamily) {
+        S serComponent;
+        serComponent = qualSerComponentMap.get(forQualInstance);
+        if (serComponent == null) {
+            serComponent = defaultComponentForFamily;
+        }
+        return serComponent;
+    }
+    public CellSerializer getSerializer(final QualHB forQualInstance) {
+        return getSerializationComponentDeferToQual(forQualInstance,
+                                                    this.qualSerializers,
+                                                    this.serializer);
+    }
+    public CellDeserializer getDeserializer(final QualHB forQualInstance) {
+        return getSerializationComponentDeferToQual(forQualInstance,
+                                                    this.qualDeserializers,
+                                                    this.deserializer);
+    }
+
+    @Override
+    public CellSerializer getSerializer() {
+        return this.serializer;
+    }
+    @Override
+    public CellDeserializer getDeserializer() {
+        return this.deserializer;
+    }
+    @Override
     public Map<Name, QualModel> getQuals() {
         return this.quals;
     }
+    @Override
     public boolean isClosedQualSet() {
         return closedQualSet;
     }
+    @Override
     public EnumSet<VersioningModel> getVersioning() {
         return this.versioning;
     }
@@ -87,7 +152,7 @@ public final class FamilyModel extends NamedEntity {
     @Override
     protected void deepToString(final StringBuilder strGen) {
         /*
-        strGen.append(":qual={");
+        strGen.append(":column={");
         strGen.append(this.quals);
         strGen.append("}");
         */
@@ -99,7 +164,22 @@ public final class FamilyModel extends NamedEntity {
     }
     
     @Override
-    protected boolean deepEquals(final NamedEntity otherNE) {
+    protected boolean deepEquals(final NamedEntityDefault otherNE) {
+        /*
+         * TODO: TEMPORARY FIX!
+         * This is a temporary fix to resolve the problem where the result-parsing logic cannot
+         * match a result from HBase with the original model, because the comparison of family and
+         * qualifier column identifiers does not match. The identifying family/column model instances
+         * coming from HBase include only the name, and not additional meta-data, so performing a
+         * "deep" equals check with the original model returns false, so the assimilation process
+         * is never able to perform a match.
+         *
+         * The permanent fix will abstract the name away into a separate reference class, so the
+         * model and the identifier determined from the DB can be easily matched based on name
+         * alone.
+         */
+        return true;
+        /*
         final FamilyModel otherFamilyModel;
         if (otherNE instanceof FamilyModel) {
             otherFamilyModel = (FamilyModel) otherNE;
@@ -107,6 +187,7 @@ public final class FamilyModel extends NamedEntity {
                     && (this.quals.equals(otherFamilyModel.quals)));
         }
         return false;
+        */
     }
     
     private FamilyModel(final Builder build) throws IllegalArgumentException {
@@ -116,6 +197,10 @@ public final class FamilyModel extends NamedEntity {
 
         Util.ensureNotNull(build.quals, this, "quals", LinkedHashMap.class);
         this.quals = Collections.unmodifiableMap(build.quals);
+        Util.ensureNotNull(build.qualSerializers, this, "qualSerializers", HashMap.class);
+        this.qualSerializers = Collections.unmodifiableMap(build.qualSerializers);
+        Util.ensureNotNull(build.qualDeserializers, this, "qualDeserializers", HashMap.class);
+        this.qualDeserializers = Collections.unmodifiableMap(build.qualDeserializers);
 
         /*
         versioning should never be null, even if no versioning scheme is enabled; in that case, the
@@ -123,5 +208,8 @@ public final class FamilyModel extends NamedEntity {
          */
         Util.ensureNotNull(build.versioning, this, "versioning", EnumSet.class);
         this.versioning = build.versioning;
+
+        this.serializer = build.serializer;
+        this.deserializer = build.deserializer;
     }
 }

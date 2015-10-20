@@ -8,9 +8,9 @@
  */
 package com.liaison.hbase.model;
 
-import com.liaison.commons.BytesUtil;
-import com.liaison.commons.DefensiveCopyStrategy;
 import com.liaison.hbase.dto.Value;
+import com.liaison.serialization.BytesUtil;
+import com.liaison.serialization.DefensiveCopyStrategy;
 
 import java.io.Serializable;
 import java.nio.charset.Charset;

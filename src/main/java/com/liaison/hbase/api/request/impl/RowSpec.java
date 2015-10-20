@@ -109,10 +109,6 @@ public final class RowSpec<P extends OperationSpec<P>> extends CriteriaSpec<RowS
             strGen.append("}");
         }
     }
-    
-    public RowSpec(final P parent) {
-        super(parent);
-    }
 
     @Override
     protected int prepareHashCode() {
@@ -141,4 +137,8 @@ public final class RowSpec<P extends OperationSpec<P>> extends CriteriaSpec<RowS
     }
     
     // ||----(instance methods: utility)---------------------------------------------------------||
+
+    public RowSpec(final P parent) {
+        super(parent);
+    }
 }

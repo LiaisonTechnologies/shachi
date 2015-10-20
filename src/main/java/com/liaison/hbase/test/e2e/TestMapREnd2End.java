@@ -9,10 +9,13 @@
 package com.liaison.hbase.test.e2e;
 
 import com.google.common.util.concurrent.ListenableFuture;
+import com.liaison.commons.Util;
 import com.liaison.hbase.HBaseControl;
 import com.liaison.hbase.api.response.OpResultSet;
+import com.liaison.hbase.context.DirectoryPrefixedTableNamingStrategy;
 import com.liaison.hbase.context.MapRHBaseContext;
-import com.liaison.hbase.context.async.AsyncConfigDefault;
+import com.liaison.hbase.context.TableNamingStrategy;
+import com.liaison.hbase.dto.CellDatum;
 import com.liaison.hbase.dto.RowKey;
 import com.liaison.hbase.dto.Value;
 import com.liaison.hbase.exception.HBaseException;
@@ -20,21 +23,24 @@ import com.liaison.hbase.model.FamilyModel;
 import com.liaison.hbase.model.Name;
 import com.liaison.hbase.model.QualModel;
 import com.liaison.hbase.model.TableModel;
-import com.liaison.hbase.resmgr.PoolingHBaseResourceManager;
+import com.liaison.hbase.model.VersioningModel;
 import com.liaison.hbase.resmgr.SimpleHBaseResourceManager;
 import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.Closeable;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
-public class TestMapREnd2End {
+public class TestMapREnd2End implements Closeable {
 
     private static final Logger LOG;
-    
+
+    private static final String SYSPROP_PATH_MAPRTABLES = "PATH_MAPRTABLES";
+
     private static final String ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
     
     private static final String CONTEXT_ID_1 = "CONTEXT-1";
@@ -80,6 +86,35 @@ public class TestMapREnd2End {
             .with(Name.of(TABLENAME_C))
             .family(FAM_MODEL_a)
             .build();
+
+    private static HBaseControl createControl(final TableNamingStrategy namingStrategy) {
+        final HBaseControl hbc;
+
+        if (namingStrategy == null) {
+            hbc =
+                new HBaseControl(
+                    MapRHBaseContext
+                        .getBuilder()
+                        .id(DatasetSimulation.class.getSimpleName())
+                        .configProvider(HBaseConfiguration::create)
+                        .build(),
+                    SimpleHBaseResourceManager.INSTANCE);
+        } else {
+            hbc =
+                new HBaseControl(
+                    MapRHBaseContext
+                        .getBuilder()
+                        .id(DatasetSimulation.class.getSimpleName())
+                        .configProvider(HBaseConfiguration::create)
+                        .tableNamingStrategy(namingStrategy)
+                        .build(),
+                    SimpleHBaseResourceManager.INSTANCE);
+        }
+        return hbc;
+    }
+    private static HBaseControl createControl() {
+        return createControl(null);
+    }
     
     static {
         final String[] alphabetArray;
@@ -99,10 +134,11 @@ public class TestMapREnd2End {
         Collections.shuffle(alphabetList);
         COLUMNQUALS_ABC = Collections.unmodifiableList(alphabetList);
     }
+
+    private final HBaseControl ctrl;
     
     public void test1() {
         final String testPrefix;
-        HBaseControl control = null;
         OpResultSet opResSet;
         String rowKeyStr;
         String randomData;
@@ -110,23 +146,13 @@ public class TestMapREnd2End {
         testPrefix = "[test1] ";
         try {
             LOG.info(testPrefix + "starting...");
-            control =
-                new HBaseControl(
-                    MapRHBaseContext
-                        .getBuilder()
-                        .id(CONTEXT_ID_1)
-                        .configProvider(() -> HBaseConfiguration.create())
-                        .build(),
-                    SimpleHBaseResourceManager.INSTANCE);
-
-            LOG.info(testPrefix + "control: " + control);
             
             rowKeyStr = Long.toString(System.currentTimeMillis());
             randomData = UUID.randomUUID().toString();
             
             LOG.info(testPrefix + "starting write...");
-            opResSet = 
-                control
+            opResSet =
+                this.ctrl
                     .begin()
                     .write(HANDLE_TESTWRITE_1)
                         .on()
@@ -147,7 +173,7 @@ public class TestMapREnd2End {
 
             LOG.info(testPrefix + "starting read...");
             opResSet =
-                control
+                this.ctrl
                     .begin()
                     .read(HANDLE_TESTREAD_1)
                         .from()
@@ -170,16 +196,11 @@ public class TestMapREnd2End {
             LOG.info(testPrefix + "read results: " + opResSet.getResultsByHandle());
         } catch (HBaseException hbExc) {
             hbExc.printStackTrace();
-        } finally {
-            if (control != null) {
-                control.close();
-            }
         }
     }
     
     public void test2() {
         final String testPrefix;
-        HBaseControl control = null;
         OpResultSet opResSet;
         String rowKeyStr;
         String randomData;
@@ -187,24 +208,13 @@ public class TestMapREnd2End {
         testPrefix = "[test2] ";
         try {
             LOG.info(testPrefix + "starting...");
-            control =
-                new HBaseControl(
-                    MapRHBaseContext
-                        .getBuilder()
-                        .id(CONTEXT_ID_2)
-                        .configProvider(() -> HBaseConfiguration.create())
-                        .build(),
-                    SimpleHBaseResourceManager.INSTANCE);
-            
-
-            LOG.info(testPrefix + "control: " + control);
             
             rowKeyStr = Long.toString(System.currentTimeMillis());
             randomData = UUID.randomUUID().toString();
             
             LOG.info(testPrefix + "starting write...");
-            opResSet = 
-                control
+            opResSet =
+                this.ctrl
                     .begin()
                     .write(HANDLE_TESTWRITE_2)
                         .on()
@@ -224,7 +234,7 @@ public class TestMapREnd2End {
 
             LOG.info(testPrefix + "starting read...");
             opResSet =
-                control
+                this.ctrl
                     .begin()
                     .read(HANDLE_TESTREAD_2)
                         .from()
@@ -250,16 +260,11 @@ public class TestMapREnd2End {
             LOG.info(testPrefix + "read results: " + opResSet.getResultsByHandle());
         } catch (HBaseException hbExc) {
             hbExc.printStackTrace();
-        } finally {
-            if (control != null) {
-                control.close();
-            }
         }
     }
     
     public void test3() {
         final String testPrefix;
-        HBaseControl control = null;
         ListenableFuture<OpResultSet> opResSetFuture;
         OpResultSet opResSet;
         String rowKeyStr;
@@ -268,25 +273,13 @@ public class TestMapREnd2End {
         testPrefix = "[test3] ";
         try {
             LOG.info(testPrefix + "starting...");
-            control =
-                new HBaseControl(
-                    MapRHBaseContext
-                        .getBuilder()
-                        .id(CONTEXT_ID_3)
-                        .asyncConfig(AsyncConfigDefault.getBuilder().enabled().build())
-                        .configProvider(() -> HBaseConfiguration.create())
-                        .build(),
-                    PoolingHBaseResourceManager.INSTANCE);
-            
-
-            LOG.info(testPrefix + "control: " + control);
             
             rowKeyStr = Long.toString(System.currentTimeMillis());
             randomData = UUID.randomUUID().toString();
             
             LOG.info(testPrefix + "starting write...");
             opResSetFuture = 
-                control
+                this.ctrl
                     .begin()
                     .write(HANDLE_TESTWRITE_3)
                         .on()
@@ -308,7 +301,7 @@ public class TestMapREnd2End {
 
             LOG.info(testPrefix + "starting read...");
             opResSet =
-                control
+                this.ctrl
                     .begin()
                     .read(HANDLE_TESTREAD_3)
                         .from()
@@ -330,18 +323,201 @@ public class TestMapREnd2End {
             LOG.info(testPrefix + "read results: " + opResSet.getResultsByHandle());
         } catch (Exception exc) {
             LOG.error(testPrefix + " was BAD! and you should feel bad! " + exc, exc);
-        } finally {
-            if (control != null) {
-                control.close();
-            }
         }
     }
+
+    public void test4() {
+        final String testPrefix;
+        OpResultSet opResSet;
+        String rowKeyStr;
+        String randomData;
+        String tableName;
+        FamilyModel fam;
+        QualModel qual;
+        TableModel tbl;
+
+        testPrefix = "[test4] ";
+        try {
+            LOG.info(testPrefix + "starting...");
+
+            randomData = UUID.randomUUID().toString();
+            tableName = TestMapREnd2End.class.getSimpleName() + "-" + randomData;
+            rowKeyStr = Long.toString(System.currentTimeMillis());
+            fam = FamilyModel.of(Name.of("A"));
+            qual =
+                QualModel
+                    .with(Name.of("B"))
+                    .versionWith(VersioningModel.QUALIFIER_LATEST)
+                    .build();
+            tbl = TableModel.with(Name.of(tableName)).family(fam).build();
+
+            LOG.info(testPrefix + "starting write...");
+            opResSet =
+                this.ctrl
+                    .begin()
+                        .write("WRITE")
+                            .on()
+                                .tbl(tbl)
+                                .row(RowKey.of(rowKeyStr))
+                                .and()
+                            .with("ATVER1")
+                                .fam(fam)
+                                .qual(qual)
+                                .version(1)
+                                .value(Value.of(randomData))
+                                .and()
+                            .with("ATVER2")
+                                .fam(fam)
+                                .qual(qual)
+                                .version(2)
+                                .value(Value.of(randomData))
+                                .and()
+                            .with("ATVER3")
+                                .fam(fam)
+                                .qual(qual)
+                                .version(3)
+                                .value(Value.of(randomData))
+                                .and()
+                            .given()
+                                .row(RowKey.of(rowKeyStr))
+                                .fam(fam)
+                                .qual(QualModel.of(Name.of("NON-EXISTENT")))
+                                .empty()
+                                .and()
+                            .then()
+                        .exec();
+            LOG.info(testPrefix + "write complete!");
+            LOG.info(testPrefix + "write results: " + opResSet.getResultsByHandle());
+
+            LOG.info(testPrefix + "starting read...");
+
+            opResSet =
+                this.ctrl
+                    .begin()
+                        .read("READ")
+                            .from()
+                                .tbl(tbl)
+                                .row(RowKey.of(rowKeyStr))
+                                .and()
+                            .with("everything")
+                                .fam(fam)
+                                .qual(qual)
+                                .and()
+                            .then()
+                        .exec();
+
+            LOG.info(testPrefix + "read complete! results (everything): ");
+
+            for (CellDatum datum : opResSet.getReadResult("READ").getData("everything")) {
+                LOG.info("retrieved: " + datum.getDatum());
+            }
+
+            LOG.info(testPrefix + "starting read...");
+
+            opResSet =
+                this.ctrl
+                    .begin()
+                        .read("READ")
+                            .from()
+                                .tbl(tbl)
+                                .row(RowKey.of(rowKeyStr))
+                                .and()
+                            .with("ge2")
+                                .fam(fam)
+                                .qual(qual)
+                                .version()
+                                    .ge(2)
+                                    .and()
+                                .and()
+                            .then()
+                        .exec();
+
+            opResSet.getReadResult("READ");
+
+            LOG.info(testPrefix + "read complete! results (ge2): ");
+
+            for (CellDatum datum : opResSet.getReadResult("READ").getData("ge2")) {
+                LOG.info("retrieved: " + datum.getDatum());
+            }
+
+            LOG.info(testPrefix + "starting read...");
+
+            opResSet =
+                this.ctrl
+                    .begin()
+                        .read("READ")
+                            .from()
+                                .tbl(tbl)
+                                .row(RowKey.of(rowKeyStr))
+                                .and()
+                            .with("le2")
+                                .fam(fam)
+                                .qual(qual)
+                                .version()
+                                    .le(2)
+                                    .and()
+                                .and()
+                            .then()
+                        .exec();
+
+            opResSet.getReadResult("READ");
+
+            LOG.info(testPrefix + "read complete! results (le2): ");
+
+            for (CellDatum datum : opResSet.getReadResult("READ").getData("le2")) {
+                LOG.info("retrieved: " + datum.getDatum());
+            }
+
+            LOG.info(testPrefix + "starting read...");
+
+            opResSet =
+                this.ctrl
+                    .begin()
+                        .read("READ")
+                            .from()
+                                .tbl(tbl)
+                                .row(RowKey.of(rowKeyStr))
+                                .and()
+                            .with("2")
+                                .fam(fam)
+                                .qual(qual)
+                                .version(2)
+                                .and()
+                            .then()
+                        .exec();
+
+            LOG.info(testPrefix + "read complete! results (2): ");
+
+            for (CellDatum datum : opResSet.getReadResult("READ").getData("2")) {
+                LOG.info("retrieved: " + datum.getDatum());
+            }
+        } catch (Exception exc) {
+            LOG.error(testPrefix + " was BAD! and you should feel bad! " + exc, exc);
+        }
+    }
+
+    @Override
+    public void close() {
+        this.ctrl.close();
+    }
+
+    public TestMapREnd2End() {
+        final String tablesPathPrefix;
+
+        tablesPathPrefix = Util.simplify(System.getProperty(SYSPROP_PATH_MAPRTABLES));
+        if (tablesPathPrefix != null) {
+            LOG.trace("Creating HBase control using directory naming prefix: " + tablesPathPrefix);
+            this.ctrl = createControl(new DirectoryPrefixedTableNamingStrategy(tablesPathPrefix));
+        } else {
+            this.ctrl = createControl();
+        }
+    }
+
     public static void main(final String[] arguments) {
-        final TestMapREnd2End test;
-        
-        test = new TestMapREnd2End();
-        test.test1();
-        test.test2();
-        test.test3();
+        try (final TestMapREnd2End test = new TestMapREnd2End()) {
+            test.test1();
+            test.test2();
+            test.test4();
+        }
     }
 }

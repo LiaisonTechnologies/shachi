@@ -23,6 +23,13 @@ import com.liaison.hbase.model.QualModel;
  */
 public interface ColSpecFluid<C extends ColSpecFluid<C>> {
     /**
+     * TODO: javadoc
+     * @param handle
+     * @return
+     * @throws IllegalStateException
+     */
+    C handle(final Object handle) throws IllegalStateException;
+    /**
      * Specify that this column reference refers to the given HBase column family.
      * <br><br>
      * <strong>Cardinality:</strong> As this column reference may refer only to a single column

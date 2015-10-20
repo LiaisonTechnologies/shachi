@@ -1,6 +1,8 @@
 package com.liaison.hbase.model;
 
 import com.google.common.collect.Sets;
+import com.liaison.hbase.api.request.impl.CriteriaSpec;
+import com.liaison.hbase.api.request.impl.LongValueSpec;
 
 import java.util.EnumSet;
 import java.util.Set;
@@ -91,5 +93,9 @@ public enum VersioningModel {
      */
     public static boolean isQualifierBased(final EnumSet<VersioningModel> verModelSet) {
         return setsOverlap(SET_QUALIFIER, verModelSet);
+    }
+
+    public static <P extends CriteriaSpec<P, ?>> LongValueSpec<P> buildLongValueSpecForQualVersioning(final P parent) {
+        return new LongValueSpec<>(parent, Long.valueOf(0), null);
     }
 }

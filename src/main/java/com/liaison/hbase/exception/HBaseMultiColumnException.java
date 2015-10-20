@@ -8,29 +8,29 @@
  */
 package com.liaison.hbase.exception;
 
-import com.liaison.hbase.api.request.frozen.ColSpecFrozen;
-import com.liaison.hbase.api.request.impl.RowSpec;
+import com.liaison.hbase.dto.ColRef;
+import com.liaison.hbase.dto.RowRef;
 
 public class HBaseMultiColumnException extends HBaseTableRowException {
     
     private static final long serialVersionUID = 219076743239752424L;
     
-    private final Iterable<? extends ColSpecFrozen> colSpecList;
+    private final Iterable<? extends ColRef> colRefList;
     
-    public final Iterable<? extends ColSpecFrozen> getColSpecList() {
-        return this.colSpecList;
+    public final Iterable<? extends ColRef> getColRefList() {
+        return this.colRefList;
     }
     
-    public HBaseMultiColumnException(final RowSpec<?> rowSpec, final Iterable<? extends ColSpecFrozen> colSpecList, String message) {
-        super(rowSpec, message);
-        this.colSpecList = colSpecList;
+    public HBaseMultiColumnException(final RowRef rowRef, final Iterable<? extends ColRef> colRefList, String message) {
+        super(rowRef, message);
+        this.colRefList = colRefList;
     }
-    public HBaseMultiColumnException(final RowSpec<?> rowSpec, final Iterable<? extends ColSpecFrozen> colSpecList, String message, Throwable cause) {
-        super(rowSpec, message, cause);
-        this.colSpecList = colSpecList;
+    public HBaseMultiColumnException(final RowRef rowRef, final Iterable<? extends ColRef> colRefList, String message, Throwable cause) {
+        super(rowRef, message, cause);
+        this.colRefList = colRefList;
     }
-    public HBaseMultiColumnException(final RowSpec<?> rowSpec, final Iterable<? extends ColSpecFrozen> colSpecList, String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
-        super(rowSpec, message, cause, enableSuppression, writableStackTrace);
-        this.colSpecList = colSpecList;
+    public HBaseMultiColumnException(final RowRef rowRef, final Iterable<? extends ColRef> colRefList, String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
+        super(rowRef, message, cause, enableSuppression, writableStackTrace);
+        this.colRefList = colRefList;
     }
 }

@@ -10,76 +10,110 @@ package com.liaison.hbase.api.request.frozen;
 
 import com.liaison.hbase.api.request.impl.ReadOpSpecDefault;
 import com.liaison.hbase.dto.FamilyQualifierPair;
-import com.liaison.hbase.model.FamilyModel;
+import com.liaison.hbase.model.ColumnRange;
+import com.liaison.hbase.model.FamilyHB;
 import com.liaison.hbase.model.VersioningModel;
 
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
- * TODO
+ * TODO: javadoc
  * @author Branden Smith; Liaison Technologies, Inc.
  */
 public interface ReadOpSpecFrozen extends TableRowOpSpecFrozen<ReadOpSpecDefault> {
 
     /**
-     * TODO
+     * TODO: javadoc
      * @return
      * @throws IllegalStateException
      */
-    public EnumSet<VersioningModel> getCommonVersioningConfig() throws IllegalStateException;
+    EnumSet<VersioningModel> getCommonVersioningConfig() throws IllegalStateException;
 
     /**
-     * TODO
+     * TODO: javadoc
      * @return
      * @throws IllegalStateException
      */
-    public LongValueSpecFrozen getCommonVersion() throws IllegalStateException;
+    LongValueSpecFrozen getCommonVersion() throws IllegalStateException;
 
     /**
-     * TODO
+     * TODO: javadoc
      * @return
      */
     Integer getMaxEntriesPerFamily();
 
     /**
-     * TODO
+     * TODO: javadoc
      * @return
      */
     LongValueSpecFrozen getAtTime();
 
     /**
-     * TODO
+     * TODO: javadoc
      * @return
      */
     List<? extends ColSpecReadFrozen> getWithColumn();
 
     /**
-     * TODO
+     * TODO: javadoc
      * @param famModel
      * @param colSpecRead
      */
-    public void addColumnAssoc(FamilyModel famModel, ColSpecReadFrozen colSpecRead);
+    void addColumnAssoc(FamilyHB famModel, ColSpecReadFrozen colSpecRead);
 
     /**
-     * TODO
+     * TODO: javadoc
      * @param fqp
      * @param colSpecRead
      */
-    public void addColumnAssoc(FamilyQualifierPair fqp, ColSpecReadFrozen colSpecRead);
+    void addColumnAssoc(FamilyQualifierPair fqp, ColSpecReadFrozen colSpecRead);
 
     /**
-     * TODO
+     * TODO: javadoc
+     * @param columnRange
+     * @param colSpecRead
+     */
+    void addColumnRangeAssoc(ColumnRange columnRange, ColSpecReadFrozen colSpecRead);
+
+    /**
+     * TODO: javadoc
      * @param famModel
      * @return
      */
-    public Set<ColSpecReadFrozen> getColumnAssoc(FamilyModel famModel);
+    Set<ColSpecReadFrozen> getColumnAssoc(FamilyHB famModel);
 
     /**
-     * TODO
+     * TODO: javadoc
      * @param fqp
      * @return
      */
-    public Set<ColSpecReadFrozen> getColumnAssoc(FamilyQualifierPair fqp);
+    Set<ColSpecReadFrozen> getColumnAssoc(FamilyQualifierPair fqp);
+
+    /**
+     * TODO: javadoc
+     * @param fqp
+     * @return
+     */
+    Set<ColSpecReadFrozen> getColumnRangeAssoc(FamilyQualifierPair fqp);
+
+    /**
+     * TODO: javadoc
+     * @return
+     */
+    Map<FamilyQualifierPair, Set<ColSpecReadFrozen>> getFamilyQualifierAssoc();
+
+    /**
+     * TODO: javadoc
+     * @return
+     */
+    Map<FamilyHB, Set<ColSpecReadFrozen>> getFullFamilyAssoc();
+
+    /**
+     * TODO: javadoc
+     * @return
+     */
+    Map<ColumnRange, Set<ColSpecReadFrozen>> getColumnRangeAssoc();
 }
