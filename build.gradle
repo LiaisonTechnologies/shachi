@@ -14,7 +14,7 @@ apply plugin: 'java'
 apply plugin: 'eclipse'
 apply plugin: 'java-library-distribution'
 
-ext.verCommons = '0.1.2-SNAPSHOT'
+ext.verCommons = '0.1.2'
 ext.verGuava = '18.0'
 ext.verGuavaTEST = '14.0.1'
 ext.verHadoopTEST = '2.5.1'
@@ -84,7 +84,7 @@ if (project.hasProperty('env') && project.getProperty('env') == 'mapr') {
 
 group = 'com.liaison'
 def artifact = "${rootProject.name}"
-version = '0.1.0-SNAPSHOT'
+version = '0.1.0'
 def packaging = 'jar'
 def classifier = "${verHBase}"
 
