@@ -1,0 +1,1 @@
+Liaison HBase Client environment
