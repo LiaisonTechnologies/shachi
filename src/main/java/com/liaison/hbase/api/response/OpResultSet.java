@@ -115,6 +115,7 @@ public class OpResultSet implements Serializable {
              */
             content = CellUtil.cloneValue(resCell);
             contentTS = Long.valueOf(resCell.getTimestamp());
+
             /*
              * TODO
              * At the moment, the code assumes that an empty return value (byte array of
@@ -215,10 +216,6 @@ public class OpResultSet implements Serializable {
         final Cell[] resCells;
         final int resCellCount;
         int iterCount;
-        Datum datum = null;
-        byte[] content = null;
-        Long contentTS = null;
-        FamilyQualifierPair fqp = null;
 
         logMethodName =
             LOG.enter(()->"populateContent(spec:",

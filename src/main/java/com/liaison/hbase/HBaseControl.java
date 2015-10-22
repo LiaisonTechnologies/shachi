@@ -874,18 +874,6 @@ public class HBaseControl implements HBaseStart<OpResultSet>, Closeable {
                         throw new HBaseMultiColumnException(tableRowSpec, colReadList, logMsg, ioExc);
                     }
                 }
-
-                /*
-                TODO? decide whether to get rid of this; causing problems right now
-                LOG.trace(logMethodName,
-                          ()->"read complete; result: ",
-                          ()->res);
-                if ((res == null) || (res.isEmpty())) {
-                    logMsg = "READ failed; null/empty result set";
-                    LOG.error(logMethodName, logMsg);
-                    throw new HBaseEmptyResultSetException(tableRowSpec, colReadList, logMsg);
-                }
-                */
             } catch (HBaseException | HBaseRuntimeException exc) {
                 // already logged; just rethrow to get out of the current try block
                 throw exc;

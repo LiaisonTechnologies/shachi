@@ -11,6 +11,8 @@ package com.liaison.hbase.api.request.fluid;
 import com.liaison.hbase.dto.Empty;
 import com.liaison.hbase.dto.Value;
 
+import java.util.concurrent.TimeUnit;
+
 /**
  * An instance of {@link ColSpecFluid} intended for use in HBase write operations.
  * <br><br>
@@ -22,6 +24,24 @@ import com.liaison.hbase.dto.Value;
  * fluent/chaining API
  */
 public interface ColSpecWriteFluid<C extends ColSpecWriteFluid<C>> extends ColSpecFluid<C> {
+    /**
+     * Specify a time-to-live (TTL) value for the cell containing the value to be written. Assuming
+     * that TTL is supported by the underlying HBase implementation, the associated cell will be
+     * purged by the first major compaction which occurs after the current time plus the specified
+     * TTL value.
+     * @param ttlValue the TTL value; after the amount of time indicated by this value multiplied
+     *                 by the TTL unit specified by the other parameter, the cell(s) written will
+     *                 be eligibile to be purged via an HBase major compaction
+     * @param ttlUnit the time unit by which the TTL value is multiplied to establish the TTL. Note
+     *                that since HBase's underlying API only resolves at millisecond-granularity,
+     *                any time references with TimeUnit.MICROSECOND or TimeUnit.NANOSECONDS
+     *                precision will be rounded down to the nearest full millisecond.
+     * @return this instance (for fluent/chaining API)
+     * @throws IllegalStateException if a TTL has already been assigned for this write, or if this
+     * operation is not in fluid state
+     * @throws IllegalArgumentException if ttlValue is < 0, or if ttlUnit is null
+     */
+    C ttl(final long ttlValue, final TimeUnit ttlUnit) throws IllegalStateException, IllegalArgumentException;
     /**
      * TODO
      * @param version
