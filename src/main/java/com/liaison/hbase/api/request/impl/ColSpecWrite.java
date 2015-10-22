@@ -24,7 +24,6 @@ import com.liaison.hbase.util.StringRepFormat;
 import com.liaison.serialization.DefensiveCopyStrategy;
 
 import java.io.Serializable;
-import java.util.concurrent.TimeUnit;
 
 public final class ColSpecWrite<P extends TableRowOpSpec<P>> extends ColSpec<ColSpecWrite<P>, P> implements ColSpecWriteFluent<ColSpecWrite<P>, P>, ColSpecWriteFrozen, Serializable {
 
@@ -34,7 +33,6 @@ public final class ColSpecWrite<P extends TableRowOpSpec<P>> extends ColSpec<Col
     // ||    INSTANCE PROPERTIES                                                                 ||
     // ||----------------------------------------------------------------------------------------||
 
-    private Long ttlMillisec;
     private Long version;
     private Long ts;
     /**
@@ -54,21 +52,6 @@ public final class ColSpecWrite<P extends TableRowOpSpec<P>> extends ColSpec<Col
     // ||    INSTANCE METHODS: API: FLUID                                                        ||
     // ||----------------------------------------------------------------------------------------||
 
-    @Override
-    public ColSpecWrite<P> ttl(final long ttlValue, final TimeUnit ttlUnit) throws IllegalStateException, IllegalArgumentException {
-        long ttlMilli;
-        prepMutation();
-        Util.ensureNotNull(ttlUnit, this, "ttlUnit", TimeUnit.class);
-
-        ttlMilli = ttlUnit.toMillis(ttlValue);
-        this.ttlMillisec =
-            Util.validateExactlyOnceParam(Long.valueOf(ttlMilli),
-                                          this,
-                                          "ttlMillisec",
-                                          Long.class,
-                                          this.ttlMillisec);
-        return self();
-    }
     @Override
     public ColSpecWrite<P> version(final long version) throws IllegalStateException, IllegalArgumentException {
         prepMutation();

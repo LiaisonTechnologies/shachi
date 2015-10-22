@@ -15,8 +15,6 @@ import com.liaison.hbase.dto.Value;
 import com.liaison.hbase.model.FamilyModel;
 import com.liaison.hbase.model.QualModel;
 
-import java.util.concurrent.TimeUnit;
-
 
 /**
  * TODO
@@ -44,11 +42,6 @@ public class ColSpecWriteConfined implements ColSpecWriteFluid<ColSpecWriteConfi
     @Override
     public ColSpecWriteConfined version(final long version) throws IllegalStateException, IllegalArgumentException {
         colSpecWrite.version(version);
-        return this;
-    }
-    @Override
-    public ColSpecWriteConfined ttl(final long ttlValue, final TimeUnit ttlUnit) throws IllegalStateException, IllegalArgumentException {
-        colSpecWrite.ttl(ttlValue, ttlUnit);
         return this;
     }
     @Override

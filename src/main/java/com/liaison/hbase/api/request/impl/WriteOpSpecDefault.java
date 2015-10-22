@@ -22,6 +22,7 @@ import java.io.Serializable;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 
@@ -32,7 +33,8 @@ public final class WriteOpSpecDefault extends TableRowOpSpec<WriteOpSpecDefault>
     // ||========================================================================================||
     // ||    INSTANCE PROPERTIES                                                                 ||
     // ||----------------------------------------------------------------------------------------||
-    
+
+    private Long ttlMillisec;
     private CondSpec<WriteOpSpecDefault> givenCondition;
     private final List<ColSpecWrite<WriteOpSpecDefault>> withColumn;
     
@@ -41,6 +43,22 @@ public final class WriteOpSpecDefault extends TableRowOpSpec<WriteOpSpecDefault>
     // ||========================================================================================||
     // ||    INSTANCE METHODS: API: FLUID                                                        ||
     // ||----------------------------------------------------------------------------------------||
+
+    @Override
+    public WriteOpSpecDefault ttl(final long ttlValue, final TimeUnit ttlUnit) throws IllegalStateException, IllegalArgumentException {
+        long ttlMilli;
+        prepMutation();
+        Util.ensureNotNull(ttlUnit, this, "ttlUnit", TimeUnit.class);
+
+        ttlMilli = ttlUnit.toMillis(ttlValue);
+        this.ttlMillisec =
+            Util.validateExactlyOnceParam(Long.valueOf(ttlMilli),
+                                          this,
+                                          "ttlMillisec",
+                                          Long.class,
+                                          this.ttlMillisec);
+        return self();
+    }
 
     @Override
     public RowSpec<WriteOpSpecDefault> on() throws IllegalArgumentException, IllegalStateException {
@@ -103,7 +121,12 @@ public final class WriteOpSpecDefault extends TableRowOpSpec<WriteOpSpecDefault>
     // ||========================================================================================||
     // ||    INSTANCE METHODS: API: FROZEN                                                       ||
     // ||----------------------------------------------------------------------------------------||
-    
+
+    @Override
+    public Long getTTL() {
+        return this.ttlMillisec;
+    }
+
     @Override
     public CondSpec<WriteOpSpecDefault> getGivenCondition() {
         return this.givenCondition;
@@ -210,6 +233,8 @@ public final class WriteOpSpecDefault extends TableRowOpSpec<WriteOpSpecDefault>
     public WriteOpSpecDefault(final Object handle, final HBaseContext context, final OperationControllerDefault parent) {
         super(handle, context, parent);
         this.withColumn = new LinkedList<>();
+        // by default, assign no TTL
+        this.ttlMillisec = null;
     }
     
     // ||----(constructors)----------------------------------------------------------------------||

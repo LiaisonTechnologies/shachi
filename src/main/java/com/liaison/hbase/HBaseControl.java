@@ -907,6 +907,7 @@ public class HBaseControl implements HBaseStart<OpResultSet>, Closeable {
             final List<ColSpecWriteFrozen> colWriteList;
             final CondSpec<?> condition;
             final Put writePut;
+            final Long ttl;
             boolean writeCompleted;
             
             Util.ensureNotNull(writeSpec, this, "writeSpec", WriteOpSpecDefault.class);
@@ -935,7 +936,15 @@ public class HBaseControl implements HBaseStart<OpResultSet>, Closeable {
                 LOG.trace(logMethodName, ()->"table obtained");
                 
                 writePut = new Put(tableRowSpec.getRowKey().getValue(dcs));
-                
+
+                ttl = writeSpec.getTTL();
+                if (ttl == null) {
+                    LOG.trace(logMethodName, ()->"no TTL specified (infinite retention)");
+                } else {
+                    LOG.trace(logMethodName, ()->"TTL assigned: ", ()->ttl);
+                    writePut.setTTL(ttl.longValue());
+                }
+
                 colWriteList = writeSpec.getWithColumn();
                 LOG.trace(logMethodName,
                           ()->"columns: ",
