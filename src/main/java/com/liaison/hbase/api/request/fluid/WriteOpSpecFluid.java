@@ -133,5 +133,5 @@ public interface WriteOpSpecFluid<Z> extends OpSpecFluid<Z> {
      * operation is not in fluid state
      * @throws IllegalArgumentException if ttlValue is < 0, or if ttlUnit is null
      */
-    WriteOpSpecFluid<Z> ttl(final long ttlValue, final TimeUnit ttlUnit) throws IllegalStateException, IllegalArgumentException;
+    WriteOpSpecFluid<Z> keepFor(final long ttlValue, final TimeUnit ttlUnit) throws IllegalStateException, IllegalArgumentException;
 }

@@ -45,7 +45,7 @@ public final class WriteOpSpecDefault extends TableRowOpSpec<WriteOpSpecDefault>
     // ||----------------------------------------------------------------------------------------||
 
     @Override
-    public WriteOpSpecDefault ttl(final long ttlValue, final TimeUnit ttlUnit) throws IllegalStateException, IllegalArgumentException {
+    public WriteOpSpecDefault keepFor(final long ttlValue, final TimeUnit ttlUnit) throws IllegalStateException, IllegalArgumentException {
         long ttlMilli;
         prepMutation();
         Util.ensureNotNull(ttlUnit, this, "ttlUnit", TimeUnit.class);
