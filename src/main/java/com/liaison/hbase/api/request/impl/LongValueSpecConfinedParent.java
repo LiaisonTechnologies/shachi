@@ -111,6 +111,9 @@ public class LongValueSpecConfinedParent<S extends TreeNode<S>, P extends Statef
     }
     @Override
     public boolean equals(final Object otherObj) {
+        if (this == otherObj) {
+            return true;
+        }
         return core.equals(otherObj);
     }
     @Override

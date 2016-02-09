@@ -31,7 +31,20 @@ public final class TableModel extends NamedEntityDefault implements TableHB {
             return this;
         }
         public Builder family(final FamilyModel family) throws IllegalArgumentException {
+            String excMsg;
+            final Name familyName;
+
             Util.ensureNotNull(family, this, "family", FamilyModel.class);
+
+            familyName = family.getName();
+            if (this.families.containsKey(familyName)) {
+                excMsg =
+                    "Duplicate column family "
+                    + familyName.toString()
+                    + " specified for table "
+                    + this.name;
+                throw new IllegalArgumentException(excMsg);
+            }
             this.families.put(family.getName(), family);
             return this;
         }

@@ -75,6 +75,9 @@ public abstract class NullableValue implements Serializable {
     @Override
     public boolean equals(final Object otherObj) {
         final NullableValue otherVal;
+        if (this == otherObj) {
+            return true;
+        }
         if (otherObj instanceof NullableValue) {
             otherVal = (Value) otherObj;
             return BytesUtil.refEquals(this.value, otherVal.value);

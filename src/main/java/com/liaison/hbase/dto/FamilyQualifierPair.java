@@ -107,6 +107,9 @@ public class FamilyQualifierPair implements ColRef, Serializable {
     }
     public boolean equals(final Object otherObj) {
         final FamilyQualifierPair otherFQP;
+        if (this == otherObj) {
+            return true;
+        }
         if (otherObj instanceof FamilyQualifierPair) {
             otherFQP = (FamilyQualifierPair) otherObj;
             return (Util.refEquals(this.family, otherFQP.family)

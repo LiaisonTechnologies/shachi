@@ -118,6 +118,9 @@ public final class RowSpec<P extends OperationSpec<P>> extends CriteriaSpec<RowS
     @Override
     public boolean equals(final Object otherObj) {
         final RowSpec<?> otherRowSpec;
+        if (this == otherObj) {
+            return true;
+        }
         if (otherObj instanceof RowSpec) {
             otherRowSpec = (RowSpec<?>) otherObj;
             return (Util.refEquals(this.table, otherRowSpec.table)

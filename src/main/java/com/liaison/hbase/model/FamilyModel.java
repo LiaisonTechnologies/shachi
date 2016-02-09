@@ -13,6 +13,7 @@ package com.liaison.hbase.model;
 import com.liaison.commons.Util;
 import com.liaison.hbase.model.ser.CellDeserializer;
 import com.liaison.hbase.model.ser.CellSerializer;
+import com.liaison.serialization.BytesUtil;
 
 import java.util.Collections;
 import java.util.EnumSet;
@@ -44,11 +45,23 @@ public final class FamilyModel extends NamedEntityDefault implements FamilyHB {
             return this;
         }
         public Builder qual(final QualModel qual) throws IllegalArgumentException {
+            String excMsg;
+            final Name qualName;
             final CellSerializer cellSer;
             final CellDeserializer cellDeser;
 
             Util.ensureNotNull(qual, this, "column", QualModel.class);
-            this.quals.put(qual.getName(), qual);
+
+            qualName = qual.getName();
+            if (this.quals.containsKey(qualName)) {
+                excMsg =
+                    "Duplicate column qualifier "
+                    + qualName.toString()
+                    + " specified for family "
+                    + this.name;
+                throw new IllegalArgumentException(excMsg);
+            }
+            this.quals.put(qualName, qual);
 
             cellSer = qual.getSerializer();
             cellDeser = qual.getDeserializer();

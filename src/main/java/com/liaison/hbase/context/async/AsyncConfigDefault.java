@@ -80,6 +80,9 @@ public class AsyncConfigDefault implements AsyncConfig {
     @Override
     public boolean equals(final Object otherObj) {
         AsyncConfig otherAsyncConf;
+        if (this == otherObj) {
+            return true;
+        }
         if (otherObj instanceof AsyncConfig) {
             otherAsyncConf = (AsyncConfig) otherObj;
             return ((this.asyncEnabled == otherAsyncConf.isAsyncEnabled())

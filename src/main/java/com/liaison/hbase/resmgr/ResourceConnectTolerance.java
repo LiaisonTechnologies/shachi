@@ -86,6 +86,9 @@ public final class ResourceConnectTolerance {
     @Override
     public boolean equals(final Object otherObj) {
         final ResourceConnectTolerance otherRCT;
+        if (this == otherObj) {
+            return true;
+        }
         if (otherObj instanceof ResourceConnectTolerance) {
             otherRCT = (ResourceConnectTolerance) otherObj;
             return ((this.attemptsMax == otherRCT.attemptsMax)
