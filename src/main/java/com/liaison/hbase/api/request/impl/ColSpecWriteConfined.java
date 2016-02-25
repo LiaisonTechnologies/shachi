@@ -12,7 +12,9 @@ import com.liaison.commons.Util;
 import com.liaison.hbase.api.request.fluid.ColSpecWriteFluid;
 import com.liaison.hbase.dto.Empty;
 import com.liaison.hbase.dto.Value;
+import com.liaison.hbase.model.FamilyHB;
 import com.liaison.hbase.model.FamilyModel;
+import com.liaison.hbase.model.QualHB;
 import com.liaison.hbase.model.QualModel;
 
 
@@ -30,12 +32,12 @@ public class ColSpecWriteConfined implements ColSpecWriteFluid<ColSpecWriteConfi
         return this;
     }
     @Override
-    public ColSpecWriteConfined fam(final FamilyModel family) throws IllegalStateException, IllegalArgumentException {
+    public ColSpecWriteConfined fam(final FamilyHB family) throws IllegalStateException, IllegalArgumentException {
         colSpecWrite.fam(family);
         return this;
     }
     @Override
-    public ColSpecWriteConfined qual(final QualModel qual) throws IllegalStateException, IllegalArgumentException {
+    public ColSpecWriteConfined qual(final QualHB qual) throws IllegalStateException, IllegalArgumentException {
         colSpecWrite.qual(qual);
         return this;
     }

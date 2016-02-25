@@ -10,7 +10,9 @@ package com.liaison.hbase.api.request.impl;
 
 import com.liaison.commons.Util;
 import com.liaison.hbase.api.request.fluid.ColSpecReadFluid;
+import com.liaison.hbase.model.FamilyHB;
 import com.liaison.hbase.model.FamilyModel;
+import com.liaison.hbase.model.QualHB;
 import com.liaison.hbase.model.QualModel;
 import com.liaison.hbase.util.TreeNodeRoot;
 
@@ -29,12 +31,12 @@ public class ColSpecReadConfined extends TreeNodeRoot<ColSpecReadConfined> imple
         return self();
     }
     @Override
-    public ColSpecReadConfined fam(final FamilyModel family) throws IllegalStateException, IllegalArgumentException {
+    public ColSpecReadConfined fam(final FamilyHB family) throws IllegalStateException, IllegalArgumentException {
         colSpecRead.fam(family);
         return self();
     }
     @Override
-    public ColSpecReadConfined qual(final QualModel qual) throws IllegalStateException, IllegalArgumentException {
+    public ColSpecReadConfined qual(final QualHB qual) throws IllegalStateException, IllegalArgumentException {
         colSpecRead.qual(qual);
         return self();
     }

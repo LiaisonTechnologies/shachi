@@ -9,7 +9,9 @@
 package com.liaison.hbase.api.request.fluid;
 
 import com.liaison.hbase.api.request.impl.SpecState;
+import com.liaison.hbase.model.FamilyHB;
 import com.liaison.hbase.model.FamilyModel;
+import com.liaison.hbase.model.QualHB;
 import com.liaison.hbase.model.QualModel;
 
 /**
@@ -43,7 +45,7 @@ public interface ColSpecFluid<C extends ColSpecFluid<C>> {
      * @throws IllegalArgumentException if the provided {@link FamilyModel} is null or otherwise
      * invalid
      */
-    C fam(final FamilyModel family) throws IllegalStateException, IllegalArgumentException;
+    C fam(final FamilyHB family) throws IllegalStateException, IllegalArgumentException;
     /**
      * Specify that this column reference refers to the given HBase column qualifier.
      * <br><br>
@@ -58,5 +60,5 @@ public interface ColSpecFluid<C extends ColSpecFluid<C>> {
      * @throws IllegalArgumentException if the provided {@link QualModel} is null or otherwise
      * invalid
      */
-    C qual(final QualModel qual) throws IllegalStateException, IllegalArgumentException;
+    C qual(final QualHB qual) throws IllegalStateException, IllegalArgumentException;
 }
