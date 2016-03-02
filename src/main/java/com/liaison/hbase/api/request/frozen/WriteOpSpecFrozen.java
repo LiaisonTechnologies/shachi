@@ -19,4 +19,5 @@ import java.util.List;
 public interface WriteOpSpecFrozen extends TableRowOpSpecFrozen<WriteOpSpecDefault> {
     CondSpecFrozen getGivenCondition();
     List<? extends ColSpecWriteFrozen> getWithColumn();
+    Long getTTL();
 }

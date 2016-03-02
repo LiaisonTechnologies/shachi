@@ -874,18 +874,6 @@ public class HBaseControl implements HBaseStart<OpResultSet>, Closeable {
                         throw new HBaseMultiColumnException(tableRowSpec, colReadList, logMsg, ioExc);
                     }
                 }
-
-                /*
-                TODO? decide whether to get rid of this; causing problems right now
-                LOG.trace(logMethodName,
-                          ()->"read complete; result: ",
-                          ()->res);
-                if ((res == null) || (res.isEmpty())) {
-                    logMsg = "READ failed; null/empty result set";
-                    LOG.error(logMethodName, logMsg);
-                    throw new HBaseEmptyResultSetException(tableRowSpec, colReadList, logMsg);
-                }
-                */
             } catch (HBaseException | HBaseRuntimeException exc) {
                 // already logged; just rethrow to get out of the current try block
                 throw exc;
@@ -919,6 +907,7 @@ public class HBaseControl implements HBaseStart<OpResultSet>, Closeable {
             final List<ColSpecWriteFrozen> colWriteList;
             final CondSpec<?> condition;
             final Put writePut;
+            final Long ttl;
             boolean writeCompleted;
             
             Util.ensureNotNull(writeSpec, this, "writeSpec", WriteOpSpecDefault.class);
@@ -947,7 +936,15 @@ public class HBaseControl implements HBaseStart<OpResultSet>, Closeable {
                 LOG.trace(logMethodName, ()->"table obtained");
                 
                 writePut = new Put(tableRowSpec.getRowKey().getValue(dcs));
-                
+
+                ttl = writeSpec.getTTL();
+                if (ttl == null) {
+                    LOG.trace(logMethodName, ()->"no TTL specified (infinite retention)");
+                } else {
+                    LOG.trace(logMethodName, ()->"TTL assigned: ", ()->ttl);
+                    writePut.setTTL(ttl.longValue());
+                }
+
                 colWriteList = writeSpec.getWithColumn();
                 LOG.trace(logMethodName,
                           ()->"columns: ",

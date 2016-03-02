@@ -184,6 +184,9 @@ public class Name extends Value implements Serializable {
     
     @Override
     public boolean equals(final Object otherObj) {
+        if (this == otherObj) {
+            return true;
+        }
         if (otherObj instanceof Name) {
             return super.equals(otherObj);
         }
@@ -225,8 +228,8 @@ public class Name extends Value implements Serializable {
         final byte[] valueBytes;
         
         valueBytes = getValue(DefensiveCopyStrategy.NEVER);
-        if ((valueBytes == null) || (valueBytes.length <= 0)) {
-            throw new IllegalArgumentException("Null/empty name not permitted");
+        if (valueBytes == null) {
+            throw new IllegalArgumentException("Non-null name value must be specified");
         }
         this.str = build.str;
         this.alias = Collections.unmodifiableSet(build.alias);

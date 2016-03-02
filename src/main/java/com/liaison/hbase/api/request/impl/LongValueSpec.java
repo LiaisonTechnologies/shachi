@@ -344,6 +344,9 @@ public final class LongValueSpec<P extends StatefulSpec<P, ?>> extends CriteriaS
     @Override
     public boolean equals(final Object otherObj) {
         final LongValueSpec<?> otherLVS;
+        if (this == otherObj) {
+            return true;
+        }
         if (otherObj instanceof LongValueSpec) {
             otherLVS = (LongValueSpec<?>) otherObj;
             return (Util.refEquals(this.lowerBoundInclusive, otherLVS.lowerBoundInclusive)

@@ -297,21 +297,54 @@ public class ReadOpResult extends OpResult<ReadOpSpecDefault> {
         final List<SingleCellResult> cellResList;
         CellDatum content;
 
-
-        dataList = new LinkedList<CellDatum>();
+        dataList = new LinkedList<>();
         cellResList = toContent(dataMap.get(key));
-        if (cellResList == null) {
-            return Collections.unmodifiableList(dataList);
-        }
-        for (SingleCellResult cellRes : cellResList) {
-            content = toContent(cellRes);
-            if (content != null) {
-                dataList.add(content);
+        if (cellResList != null) {
+            for (SingleCellResult cellRes : cellResList) {
+                content = toContent(cellRes);
+                if (content != null) {
+                    dataList.add(content);
+                }
             }
         }
         return Collections.unmodifiableList(dataList);
     }
 
+    /**
+     * TODO: javadoc
+     * @param key
+     * @param dataMap
+     * @param <K>
+     * @return
+     * @throws HBaseException
+     */
+    private <K> Map<FamilyQualifierPair, CellDatum> getDataMapBy(final K key, final Map<K, SpecCellResultSet> dataMap) throws HBaseException {
+        final Map<FamilyQualifierPair, CellDatum> dataResultMap;
+        final List<SingleCellResult> cellResList;
+        CellDatum content;
+
+        dataResultMap = new HashMap<>();
+        cellResList = toContent(dataMap.get(key));
+        if (cellResList != null) {
+            for (SingleCellResult cellRes : cellResList) {
+                content = toContent(cellRes);
+                if (content != null) {
+                    dataResultMap.put(content.getTableColumn(), content);
+                }
+            }
+        }
+        return Collections.unmodifiableMap(dataResultMap);
+    }
+
+    /**
+     * TODO: javadoc
+     * @param colSpec
+     * @return
+     * @throws HBaseException
+     */
+    public Map<FamilyQualifierPair, CellDatum> getDataMap(final ColSpecReadFrozen colSpec) throws HBaseException {
+        return getDataMapBy(colSpec, this.dataBySpec);
+    }
     /**
      * TODO: javadoc
      * @param colSpec
@@ -325,6 +358,15 @@ public class ReadOpResult extends OpResult<ReadOpSpecDefault> {
         return getFirst(getData(colSpec));
     }
 
+    /**
+     * TODO: javadoc
+     * @param handle
+     * @return
+     * @throws Exception
+     */
+    public Map<FamilyQualifierPair, CellDatum> getDataMap(final Object handle) throws HBaseException {
+        return getDataMapBy(handle, this.dataBySpecHandle);
+    }
     /**
      * TODO: javadoc
      * @param handle

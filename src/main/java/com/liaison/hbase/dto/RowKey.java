@@ -59,6 +59,9 @@ public final class RowKey extends Value implements Serializable {
     
     @Override
     public boolean equals(final Object otherObj) {
+        if (this == otherObj) {
+            return true;
+        }
         return ((otherObj instanceof RowKey) && (super.equals(otherObj)));
     }
     @Override

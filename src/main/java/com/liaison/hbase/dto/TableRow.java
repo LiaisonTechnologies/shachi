@@ -83,6 +83,9 @@ public class TableRow implements RowRef, Serializable {
     }
     public boolean equals(final Object otherObj) {
         final TableRow otherTR;
+        if (this == otherObj) {
+            return true;
+        }
         if (otherObj instanceof TableRow) {
             otherTR = (TableRow) otherObj;
             return (Util.refEquals(this.table, otherTR.table)

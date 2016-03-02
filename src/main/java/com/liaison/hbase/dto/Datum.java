@@ -99,6 +99,9 @@ public final class Datum extends Value implements Serializable {
     @Override
     public boolean equals(final Object otherObj) {
         final Datum otherDatum;
+        if (this == otherObj) {
+            return true;
+        }
         if (otherObj instanceof Datum) {
             otherDatum = (Datum) otherObj;
             return (super.equals(otherObj) && (this.ts == otherDatum.ts));

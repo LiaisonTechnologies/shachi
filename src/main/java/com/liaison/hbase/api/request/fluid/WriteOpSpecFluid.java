@@ -13,6 +13,7 @@ import com.liaison.hbase.api.request.fluid.fluent.ColSpecWriteFluent;
 import com.liaison.hbase.api.request.fluid.fluent.CondSpecFluent;
 import com.liaison.hbase.api.request.fluid.fluent.RowSpecFluent;
 
+import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 
@@ -115,4 +116,22 @@ public interface WriteOpSpecFluid<Z> extends OpSpecFluid<Z> {
      * @return
      */
     <X> WriteOpSpecFluid<Z> withAllOf(Iterable<X> sourceData, BiFunction<X, ColSpecWriteFluid<?>, Object> dataToColumnGenerator);
+    /**
+     * Specify a time-to-live (TTL) value for all cells written as part of this write operation.
+     * Assuming that TTL is supported by the underlying HBase implementation, the associated cells
+     * will be purged by the first major compaction which occurs after the current time plus the
+     * specified TTL value.
+     * @param ttlValue the TTL value; after the amount of time indicated by this value multiplied
+     *                 by the TTL unit specified by the other parameter, the cell(s) written will
+     *                 be eligible to be purged via an HBase major compaction
+     * @param ttlUnit the time unit by which the TTL value is multiplied to establish the TTL. Note
+     *                that since HBase's underlying API only resolves at millisecond-granularity,
+     *                any time references with TimeUnit.MICROSECOND or TimeUnit.NANOSECONDS
+     *                precision will be rounded down to the nearest full millisecond.
+     * @return this instance (for fluent/chaining API)
+     * @throws IllegalStateException if a TTL has already been assigned for this write, or if this
+     * operation is not in fluid state
+     * @throws IllegalArgumentException if ttlValue is < 0, or if ttlUnit is null
+     */
+    WriteOpSpecFluid<Z> keepFor(final long ttlValue, final TimeUnit ttlUnit) throws IllegalStateException, IllegalArgumentException;
 }

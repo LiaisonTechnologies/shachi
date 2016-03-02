@@ -28,8 +28,8 @@ public abstract class ColSpec<C extends ColSpec<C, P>, P extends OperationSpec<P
     // ||----------------------------------------------------------------------------------------||
 
     private Object handle;
-    private FamilyModel family;
-    private QualModel column;
+    private FamilyHB family;
+    private QualHB column;
     
     // ||----(instance properties)---------------------------------------------------------------||
     
@@ -45,17 +45,17 @@ public abstract class ColSpec<C extends ColSpec<C, P>, P extends OperationSpec<P
     }
 
     @Override
-    public C fam(final FamilyModel family) throws IllegalStateException, IllegalArgumentException {
+    public C fam(final FamilyHB family) throws IllegalStateException, IllegalArgumentException {
         prepMutation();
         this.family =
-            Util.validateExactlyOnceParam(family, this, "family", FamilyModel.class, this.family);
+            Util.validateExactlyOnceParam(family, this, "family", FamilyHB.class, this.family);
         return self();
     }
     @Override
-    public C qual(final QualModel qual) throws IllegalStateException, IllegalArgumentException {
+    public C qual(final QualHB qual) throws IllegalStateException, IllegalArgumentException {
         prepMutation();
         this.column =
-            Util.validateExactlyOnceParam(qual, this, "column", QualModel.class, this.column);
+            Util.validateExactlyOnceParam(qual, this, "column", QualHB.class, this.column);
         return self();
     }
     
