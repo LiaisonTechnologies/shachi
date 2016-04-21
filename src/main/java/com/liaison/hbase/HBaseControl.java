@@ -49,8 +49,10 @@ import com.liaison.hbase.util.HBaseUtil;
 import com.liaison.hbase.util.ReadUtils;
 import com.liaison.hbase.util.SpecUtil;
 import com.liaison.serialization.DefensiveCopyStrategy;
+import org.apache.hadoop.hbase.client.Delete;
 import org.apache.hadoop.hbase.client.Get;
 import org.apache.hadoop.hbase.client.HTable;
+import org.apache.hadoop.hbase.client.Mutation;
 import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.filter.BinaryComparator;
@@ -89,6 +91,15 @@ public class HBaseControl implements HBaseStart<OpResultSet>, Closeable {
     // ||========================================================================================||
     // ||    INNER CLASSES (INSTANCE)                                                            ||
     // ||----------------------------------------------------------------------------------------||
+
+    @FunctionalInterface
+    public interface HBaseCheckAndMutate<M extends Mutation> {
+        boolean checkAndMutate(byte[] condRow, byte[] condFamily, byte[] condQual, byte[] condValue, M operation) throws IOException;
+    }
+    @FunctionalInterface
+    public interface HBaseMutate<M extends Mutation> {
+        void mutate(M operation) throws IOException;
+    }
 
     /**
      * Internal class implementation owned and controlled by an {@link HBaseControl} instance, and
@@ -575,7 +586,7 @@ public class HBaseControl implements HBaseStart<OpResultSet>, Closeable {
                 }
             }
         }
-        
+
         /**
          * TODO
          * @param logMethodName
@@ -588,14 +599,14 @@ public class HBaseControl implements HBaseStart<OpResultSet>, Closeable {
          * @return
          * @throws HBaseMultiColumnException
          */
-        private boolean performWrite(final String logMethodName, final HTable writeToTable, final RowSpec<WriteOpSpecDefault> tableRowSpec, final List<ColSpecWriteFrozen> colWriteList, final CondSpec<?> condition, final Put writePut, final DefensiveCopyStrategy dcs) throws HBaseMultiColumnException {
+        private <M extends Mutation> boolean performMutation(final String logMethodName, final String opName, final HBaseCheckAndMutate<M> condMutateOp, final HBaseMutate<M> mutateOp, final RowSpec<WriteOpSpecDefault> tableRowSpec, final List<ColSpecWriteFrozen> colWriteList, final CondSpec<?> condition, final M writeMutation, final DefensiveCopyStrategy dcs) throws HBaseTableRowException {
             final String logMsg;
             final NullableValue condPossibleValue;
             final RowKey rowKey;
             final FamilyHB fam;
             final QualHB qual;
             final boolean writeCompleted;
-            
+
             try {
                 if (condition != null) {
                     LOG.trace(logMethodName,
@@ -605,8 +616,8 @@ public class HBaseControl implements HBaseStart<OpResultSet>, Closeable {
                     rowKey = condition.getRowKey();
                     fam = condition.getFamily();
                     qual = condition.getColumn();
-                    
-                    LOG.trace(logMethodName, ()->"performing write...");
+
+                    LOG.trace(logMethodName, ()->"performing ", ()->opName, ()->"...");
                     /*
                      * It's okay to use NullableValue#getValue here without disambiguating Value vs.
                      * Empty, as both are immutable, and the constructor for the former enforces that
@@ -615,29 +626,83 @@ public class HBaseControl implements HBaseStart<OpResultSet>, Closeable {
                      * either case.
                      */
                     writeCompleted =
-                        writeToTable.checkAndPut(rowKey.getValue(dcs),
-                                                 fam.getName().getValue(dcs),
-                                                 qual.getName().getValue(dcs),
-                                                 condPossibleValue.getValue(dcs),
-                                                 writePut);
+                        condMutateOp.checkAndMutate(rowKey.getValue(dcs),
+                                                    fam.getName().getValue(dcs),
+                                                    qual.getName().getValue(dcs),
+                                                    condPossibleValue.getValue(dcs),
+                                                    writeMutation);
                 } else {
-                    LOG.trace(logMethodName, ()->"performing write...");
-                    writeToTable.put(writePut);
+                    LOG.trace(logMethodName, ()->"performing ", ()->opName, ()->"...");
+                    mutateOp.mutate(writeMutation);
                     writeCompleted = true;
                 }
                 LOG.trace(logMethodName,
-                          ()->"write operation response: ",
+                          ()->opName,
+                          ()->" operation response: ",
                           ()->Boolean.toString(writeCompleted));
             } catch (IOException ioExc) {
-                logMsg = ("WRITE failure"
+                logMsg = (opName.toUpperCase()
+                          + " failure"
                           + ((condition == null)
                              ?"; "
                              :" (with condition: " + condition + "); ")
                           + ioExc);
                 LOG.error(logMethodName, logMsg, ioExc);
-                throw new HBaseMultiColumnException(tableRowSpec, colWriteList, logMsg, ioExc);
+                if ((colWriteList != null) && (!colWriteList.isEmpty())) {
+                    throw new HBaseMultiColumnException(tableRowSpec, colWriteList, logMsg, ioExc);
+                } else {
+                    throw new HBaseTableRowException(tableRowSpec, logMsg, ioExc);
+                }
             }
             return writeCompleted;
+        }
+
+        /**
+         * TODO
+         * @param logMethodName
+         * @param writeToTable
+         * @param tableRowSpec
+         * @param colWriteList
+         * @param condition
+         * @param writePut
+         * @param dcs
+         * @return
+         * @throws HBaseMultiColumnException
+         */
+        private boolean performWrite(final String logMethodName, final HTable writeToTable, final RowSpec<WriteOpSpecDefault> tableRowSpec, final List<ColSpecWriteFrozen> colWriteList, final CondSpec<?> condition, final Put writePut, final DefensiveCopyStrategy dcs) throws HBaseTableRowException {
+            return performMutation(logMethodName,
+                                   "write",
+                                   writeToTable::checkAndPut,
+                                   writeToTable::put,
+                                   tableRowSpec,
+                                   colWriteList,
+                                   condition,
+                                   writePut,
+                                   dcs);
+        }
+
+        /**
+         * TODO
+         * @param logMethodName
+         * @param writeToTable
+         * @param tableRowSpec
+         * @param colWriteList
+         * @param condition
+         * @param writePut
+         * @param dcs
+         * @return
+         * @throws HBaseMultiColumnException
+         */
+        private boolean performDelete(final String logMethodName, final HTable writeToTable, final RowSpec<WriteOpSpecDefault> tableRowSpec, final List<ColSpecWriteFrozen> colWriteList, final CondSpec<?> condition, final Delete writeDel, final DefensiveCopyStrategy dcs) throws HBaseTableRowException {
+            return performMutation(logMethodName,
+                                   "delete",
+                                   writeToTable::checkAndDelete,
+                                   writeToTable::delete,
+                                   tableRowSpec,
+                                   colWriteList,
+                                   condition,
+                                   writeDel,
+                                   dcs);
         }
 
         /**
@@ -906,7 +971,9 @@ public class HBaseControl implements HBaseStart<OpResultSet>, Closeable {
             final RowSpec<WriteOpSpecDefault> tableRowSpec;
             final List<ColSpecWriteFrozen> colWriteList;
             final CondSpec<?> condition;
+            final byte[] rowKeyBytes;
             final Put writePut;
+            final Delete writeDel;
             final Long ttl;
             boolean writeCompleted;
             
@@ -934,36 +1001,50 @@ public class HBaseControl implements HBaseStart<OpResultSet>, Closeable {
             try (ManagedTable writeToTable =
                     resMgr.borrow(HBaseControl.this.context, tableRowSpec.getTable())) {
                 LOG.trace(logMethodName, ()->"table obtained");
-                
-                writePut = new Put(tableRowSpec.getRowKey().getValue(dcs));
 
-                ttl = writeSpec.getTTL();
-                if (ttl == null) {
-                    LOG.trace(logMethodName, ()->"no TTL specified (infinite retention)");
-                } else {
-                    LOG.trace(logMethodName, ()->"TTL assigned: ", ()->ttl);
-                    writePut.setTTL(ttl.longValue());
-                }
-
-                colWriteList = writeSpec.getWithColumn();
-                LOG.trace(logMethodName,
-                          ()->"columns: ",
-                          ()->colWriteList);
-                if (colWriteList != null) {
-                    for (ColSpecWriteFrozen colWrite : colWriteList) {
-                        addColumn(logMethodName, dcs, writePut, colWrite);
-                    }
-                }
-                
+                rowKeyBytes = tableRowSpec.getRowKey().getValue(dcs);
                 condition = writeSpec.getGivenCondition();
-                writeCompleted =
-                    this.performWrite(logMethodName,
-                                      writeToTable.use(),
-                                      tableRowSpec,
-                                      colWriteList,
-                                      condition,
-                                      writePut,
-                                      dcs);
+
+                if (writeSpec.isDeleteRow()) {
+                    writeCompleted =
+                        this.performDelete(logMethodName,
+                                           writeToTable.use(),
+                                           tableRowSpec,
+                                           null,
+                                           condition,
+                                           new Delete(rowKeyBytes),
+                                           dcs);
+
+                } else {
+                    writePut = new Put(rowKeyBytes);
+
+                    ttl = writeSpec.getTTL();
+                    if (ttl == null) {
+                        LOG.trace(logMethodName, () -> "no TTL specified (infinite retention)");
+                    } else {
+                        LOG.trace(logMethodName, () -> "TTL assigned: ", () -> ttl);
+                        writePut.setTTL(ttl.longValue());
+                    }
+
+                    colWriteList = writeSpec.getWithColumn();
+                    LOG.trace(logMethodName,
+                              () -> "columns: ",
+                              () -> colWriteList);
+                    if (colWriteList != null) {
+                        for (ColSpecWriteFrozen colWrite : colWriteList) {
+                            addColumn(logMethodName, dcs, writePut, colWrite);
+                        }
+                    }
+
+                    writeCompleted =
+                        this.performWrite(logMethodName,
+                                          writeToTable.use(),
+                                          tableRowSpec,
+                                          colWriteList,
+                                          condition,
+                                          writePut,
+                                          dcs);
+                }
             } catch (HBaseException | HBaseRuntimeException exc) {
                 throw exc;
             } catch (Exception exc) {

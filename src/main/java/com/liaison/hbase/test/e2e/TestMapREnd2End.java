@@ -192,7 +192,41 @@ public class TestMapREnd2End implements Closeable {
                         .exec();
             
             LOG.info(testPrefix + "read complete!");
-            
+            LOG.info(testPrefix + "read results: " + opResSet.getResultsByHandle());
+
+            LOG.info(testPrefix + "starting delete...");
+            opResSet =
+                this.ctrl
+                    .begin()
+                    .write(HANDLE_TESTWRITE_1)
+                        .on()
+                            .tbl(TEST_MODEL_A)
+                            .row(RowKey.of(rowKeyStr))
+                            .and()
+                        .delete()
+                        .then()
+                        .exec();
+
+            LOG.info(testPrefix + "delete complete!");
+            LOG.info(testPrefix + "delete results: " + opResSet.getResultsByHandle());
+
+            LOG.info(testPrefix + "starting read...");
+            opResSet =
+                this.ctrl
+                    .begin()
+                    .read(HANDLE_TESTREAD_1)
+                        .from()
+                            .tbl(TEST_MODEL_A)
+                            .row(RowKey.of(rowKeyStr))
+                        .and()
+                        .with()
+                            .fam(FAM_MODEL_a)
+                            .optional()
+                        .and()
+                        .then()
+                        .exec();
+
+            LOG.info(testPrefix + "read complete!");
             LOG.info(testPrefix + "read results: " + opResSet.getResultsByHandle());
         } catch (HBaseException hbExc) {
             hbExc.printStackTrace();

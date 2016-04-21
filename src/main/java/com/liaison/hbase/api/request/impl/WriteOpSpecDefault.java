@@ -11,6 +11,7 @@ package com.liaison.hbase.api.request.impl;
 import com.liaison.commons.Util;
 import com.liaison.hbase.api.request.WriteOpSpec;
 import com.liaison.hbase.api.request.fluid.ColSpecWriteFluid;
+import com.liaison.hbase.api.request.fluid.WriteOpSpecFluid;
 import com.liaison.hbase.api.request.frozen.ColSpecWriteFrozen;
 import com.liaison.hbase.api.response.OpResultSet;
 import com.liaison.hbase.context.HBaseContext;
@@ -37,6 +38,7 @@ public final class WriteOpSpecDefault extends TableRowOpSpec<WriteOpSpecDefault>
     private Long ttlMillisec;
     private CondSpec<WriteOpSpecDefault> givenCondition;
     private final List<ColSpecWrite<WriteOpSpecDefault>> withColumn;
+    private boolean deleteRow;
     
     // ||----(instance properties)---------------------------------------------------------------||
     
@@ -47,6 +49,8 @@ public final class WriteOpSpecDefault extends TableRowOpSpec<WriteOpSpecDefault>
     @Override
     public WriteOpSpecDefault keepFor(final long ttlValue, final TimeUnit ttlUnit) throws IllegalStateException, IllegalArgumentException {
         long ttlMilli;
+
+        ensureNotADelete("keepFor");
         prepMutation();
         Util.ensureNotNull(ttlUnit, this, "ttlUnit", TimeUnit.class);
 
@@ -79,11 +83,14 @@ public final class WriteOpSpecDefault extends TableRowOpSpec<WriteOpSpecDefault>
     @Override
     public ColSpecWrite<WriteOpSpecDefault> with(final Object handle) throws IllegalStateException {
         final ColSpecWrite<WriteOpSpecDefault> withCol;
+
+        ensureNotADelete("with");
         prepMutation();
         withCol = new ColSpecWrite<>(this, handle);
         this.withColumn.add(withCol);
         return withCol;
     }
+
     @Override
     public ColSpecWrite<WriteOpSpecDefault> with() throws IllegalStateException {
         return with(null);
@@ -94,7 +101,9 @@ public final class WriteOpSpecDefault extends TableRowOpSpec<WriteOpSpecDefault>
         ColSpecWrite<WriteOpSpecDefault> withCol;
         Object handle;
 
+        ensureNotADelete("withAllOf");
         prepMutation();
+
         if (sourceData != null) {
             for (X element : sourceData) {
                 withCol = new ColSpecWrite<>(this);
@@ -103,6 +112,33 @@ public final class WriteOpSpecDefault extends TableRowOpSpec<WriteOpSpecDefault>
                 this.withColumn.add(withCol);
             }
         }
+        return self();
+    }
+
+    @Override
+    public WriteOpSpecFluid<OpResultSet> delete() throws IllegalStateException {
+        String logMsg;
+
+        prepMutation();
+        if (this.ttlMillisec != null) {
+            logMsg =
+                "Cannot delete on "
+                + WriteOpSpecDefault.class.getSimpleName()
+                + " with handle '"
+                + getHandle()
+                + "' as it already a keep-for TTL value";
+            throw new IllegalStateException(logMsg);
+        }
+        if (this.withColumn.size() > 0) {
+            logMsg =
+                "Cannot delete on "
+                + WriteOpSpecDefault.class.getSimpleName()
+                + " with handle '"
+                + getHandle()
+                + "' as it already specifies at least 1 column to be written";
+            throw new IllegalStateException(logMsg);
+        }
+        this.deleteRow = true;
         return self();
     }
 
@@ -136,6 +172,11 @@ public final class WriteOpSpecDefault extends TableRowOpSpec<WriteOpSpecDefault>
     public List<ColSpecWriteFrozen> getWithColumn() {
         return Collections.unmodifiableList(this.withColumn);
     }
+
+    @Override
+    public boolean isDeleteRow() {
+        return this.deleteRow;
+    }
     
     // ||----(instance methods: API: frozen)-----------------------------------------------------||
     
@@ -150,7 +191,9 @@ public final class WriteOpSpecDefault extends TableRowOpSpec<WriteOpSpecDefault>
     protected void validate() throws SpecValidationException {
         super.validate();
         SpecUtil.validateRequired(getTableRow(), this, "from", RowSpec.class);
-        SpecUtil.validateAtLeastOne(getWithColumn(), this, "with", ColSpecWrite.class);
+        if (!isDeleteRow()) {
+            SpecUtil.validateAtLeastOne(getWithColumn(), this, "with", ColSpecWrite.class);
+        }
     }
     
     @Override
@@ -179,7 +222,9 @@ public final class WriteOpSpecDefault extends TableRowOpSpec<WriteOpSpecDefault>
                                     this.givenCondition,
                                     "\n");
             }
-            if (this.withColumn.size() > 0) {
+            if (this.deleteRow) {
+                Util.appendIndented(strGen, getDepth() + 1, "delete! ", "\n");
+            } else if (this.withColumn.size() > 0) {
                 Util.appendIndented(strGen, getDepth() + 1, "with column(s): ", "\n");
                 for (ColSpecWrite<WriteOpSpecDefault> colSpec : this.withColumn) {
                     Util.appendIndented(strGen, getDepth() + 1, colSpec);
@@ -199,7 +244,9 @@ public final class WriteOpSpecDefault extends TableRowOpSpec<WriteOpSpecDefault>
                     strGen.append(",");
                 }
             }
-            if (this.withColumn.size() > 0) {
+            if (this.deleteRow) {
+                Util.append(strGen, "delete! ");
+            } else if (this.withColumn.size() > 0) {
                 Util.append(strGen, "col=", this.withColumn);
             }
             strGen.append("}");
@@ -219,11 +266,29 @@ public final class WriteOpSpecDefault extends TableRowOpSpec<WriteOpSpecDefault>
                     &&
                     (Util.refEquals(this.givenCondition, otherWriteSpec.givenCondition))
                     &&
-                    (Util.refEquals(this.withColumn, otherWriteSpec.withColumn)));
+                    (Util.refEquals(this.withColumn, otherWriteSpec.withColumn))
+                    &&
+                    (Util.refEquals(this.ttlMillisec, otherWriteSpec.ttlMillisec))
+                    &&
+                    (this.deleteRow == otherWriteSpec.deleteRow));
         }
         return false;
     }
-    
+
+    private void ensureNotADelete(final String opName) throws IllegalStateException {
+        final String logMsg;
+        if (this.deleteRow) {
+            logMsg =
+                "Cannot "
+                + opName
+                + " on "
+                + WriteOpSpecDefault.class.getSimpleName()
+                + " with handle '"
+                + getHandle()
+                + "' as it already specifies a row deletion";
+        }
+    }
+
     // ||----(instance methods: utility)---------------------------------------------------------||
 
     // ||========================================================================================||
@@ -235,6 +300,7 @@ public final class WriteOpSpecDefault extends TableRowOpSpec<WriteOpSpecDefault>
         this.withColumn = new LinkedList<>();
         // by default, assign no TTL
         this.ttlMillisec = null;
+        this.deleteRow = false;
     }
     
     // ||----(constructors)----------------------------------------------------------------------||

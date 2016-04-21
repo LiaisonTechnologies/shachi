@@ -84,11 +84,11 @@ if (project.hasProperty('env') && project.getProperty('env') == 'mapr') {
 
 group = 'com.liaison'
 def artifact = "${rootProject.name}"
-version = '0.1.6'
+version = '0.1.7'
 def packaging = 'jar'
 def classifier = "${verHBase}"
 
-ext.libraryName = "${rootProject.name}-${version}"
+ext.libraryName = "${rootProject.name}"
 
 jar {
     manifest {
