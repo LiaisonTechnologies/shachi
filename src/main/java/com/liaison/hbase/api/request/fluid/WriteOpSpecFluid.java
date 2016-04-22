@@ -116,6 +116,7 @@ public interface WriteOpSpecFluid<Z> extends OpSpecFluid<Z> {
      * @return
      */
     <X> WriteOpSpecFluid<Z> withAllOf(Iterable<X> sourceData, BiFunction<X, ColSpecWriteFluid<?>, Object> dataToColumnGenerator);
+    WriteOpSpecFluid<Z> delete();
     /**
      * Specify a time-to-live (TTL) value for all cells written as part of this write operation.
      * Assuming that TTL is supported by the underlying HBase implementation, the associated cells

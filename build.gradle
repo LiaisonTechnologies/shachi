@@ -1,13 +1,20 @@
 buildscript {
     repositories {
         mavenLocal()
-        mavenCentral()
+        mavenCentral() // maven { url 'http://jcenter.bintray.com' }
     }
     apply from: file('gradle/buildscript.gradle'), to: buildscript
 }
 
 plugins {
     id 'org.unbroken-dome.test-sets' version '1.2.0'
+}
+
+allprojects {
+    repositories {
+        mavenLocal()
+        maven { url 'http://10.10.20.53:8081/nexus/repository/maven-public/' }
+    }
 }
 
 apply plugin: 'java'
@@ -18,9 +25,11 @@ ext.verCommons = '0.1.2'
 ext.verGuava = '18.0'
 ext.verGuavaTEST = '14.0.1'
 ext.verHadoopTEST = '2.5.1'
+ext.verLog4j = '2.5'
 ext.verMockito = '1.10.19'
 ext.verPool = '2.3'
 ext.verQuasar  = '0.6.2'
+ext.verSlf4j = '1.7.21'
 ext.verTestNG  = '6.8.21'
 
 ext.classifierQuasar = ':jdk8'
@@ -54,17 +63,6 @@ sourceSets {
     testIntegration.runtimeClasspath += configurations.testIntConf
 }
 
-allprojects {
-    repositories {
-        // mavenLocal()
-        mavenCentral()
-        // Liaison Private Maven artifact repo (Nexus)
-        maven { url releasesArtifactRepoURL }
-        maven { url snapshotsArtifactRepoURL }
-        maven { url thirdpartyArtifactRepoURL }
-    }
-}
-
 apply from: file('gradle/convention.gradle')
 apply from: file('gradle/check.gradle')
 apply from: file('gradle/license.gradle')
@@ -77,18 +75,18 @@ if (project.hasProperty('env') && project.getProperty('env') == 'mapr') {
             url "http://repository.mapr.com/maven/"
         }
     }
-    ext.verHBase = '0.98.12-mapr-1506'
+    ext.verHBase = '0.98.12-mapr-1602-m7-5.1.0'
 } else {
     ext.verHBase = '0.98.12-hadoop2'
 }
 
 group = 'com.liaison'
 def artifact = "${rootProject.name}"
-version = '0.1.6'
+version = '0.1.7'
 def packaging = 'jar'
 def classifier = "${verHBase}"
 
-ext.libraryName = "${rootProject.name}-${version}"
+ext.libraryName = "${rootProject.name}"
 
 jar {
     manifest {
@@ -98,6 +96,11 @@ jar {
 
 dependencies {
     guava group:'com.google.guava', name:'guava', version:"${verGuava}"
+    /*
+    compile "org.slf4j:slf4j-api:${verSlf4j}"
+    compile "org.apache.logging.log4j:log4j-slf4j-impl:${verLog4j}"
+    compile "org.apache.logging.log4j:log4j-core:${verLog4j}"
+    */
     compile "com.liaison:dm-lib-commons:${verCommons}"
     compile "co.paralleluniverse:quasar-core:${verQuasar}${classifierQuasar}"
     provided "org.apache.hbase:hbase-client:${verHBase}"

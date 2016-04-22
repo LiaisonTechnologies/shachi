@@ -20,4 +20,5 @@ public interface WriteOpSpecFrozen extends TableRowOpSpecFrozen<WriteOpSpecDefau
     CondSpecFrozen getGivenCondition();
     List<? extends ColSpecWriteFrozen> getWithColumn();
     Long getTTL();
+    boolean isDeleteRow();
 }
