@@ -96,9 +96,11 @@ jar {
 
 dependencies {
     guava group:'com.google.guava', name:'guava', version:"${verGuava}"
+    /*
     compile "org.slf4j:slf4j-api:${verSlf4j}"
     compile "org.apache.logging.log4j:log4j-slf4j-impl:${verLog4j}"
     compile "org.apache.logging.log4j:log4j-core:${verLog4j}"
+    */
     compile "com.liaison:dm-lib-commons:${verCommons}"
     compile "co.paralleluniverse:quasar-core:${verQuasar}${classifierQuasar}"
     provided "org.apache.hbase:hbase-client:${verHBase}"
