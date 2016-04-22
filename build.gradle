@@ -75,7 +75,7 @@ if (project.hasProperty('env') && project.getProperty('env') == 'mapr') {
             url "http://repository.mapr.com/maven/"
         }
     }
-    ext.verHBase = '0.98.12-mapr-1506'
+    ext.verHBase = '0.98.12-mapr-1602-m7-5.1.0'
 } else {
     ext.verHBase = '0.98.12-hadoop2'
 }
