@@ -18,9 +18,11 @@ ext.verCommons = '0.1.2'
 ext.verGuava = '18.0'
 ext.verGuavaTEST = '14.0.1'
 ext.verHadoopTEST = '2.5.1'
+ext.verLog4j = '1.7.21'
 ext.verMockito = '1.10.19'
 ext.verPool = '2.3'
 ext.verQuasar  = '0.6.2'
+ext.verSlf4j = '2.5'
 ext.verTestNG  = '6.8.21'
 
 ext.classifierQuasar = ':jdk8'
@@ -98,6 +100,8 @@ jar {
 
 dependencies {
     guava group:'com.google.guava', name:'guava', version:"${verGuava}"
+    compile "org.slf4j:slf4j-api:${verSlf4j}"
+    compile "org.apache.logging.log4j:log4j-slf4j-impl:${verLog4j}"
     compile "com.liaison:dm-lib-commons:${verCommons}"
     compile "co.paralleluniverse:quasar-core:${verQuasar}${classifierQuasar}"
     provided "org.apache.hbase:hbase-client:${verHBase}"
