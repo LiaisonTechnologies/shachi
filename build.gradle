@@ -1,13 +1,20 @@
 buildscript {
     repositories {
         mavenLocal()
-        mavenCentral()
+        mavenCentral() // maven { url 'http://jcenter.bintray.com' }
     }
     apply from: file('gradle/buildscript.gradle'), to: buildscript
 }
 
 plugins {
     id 'org.unbroken-dome.test-sets' version '1.2.0'
+}
+
+allprojects {
+    repositories {
+        mavenLocal()
+        maven { url 'http://10.10.20.53:8081/nexus/repository/maven-public/' }
+    }
 }
 
 apply plugin: 'java'
@@ -54,17 +61,6 @@ sourceSets {
     testUnit.runtimeClasspath += configurations.provided
     testIntegration.compileClasspath += configurations.testIntConf
     testIntegration.runtimeClasspath += configurations.testIntConf
-}
-
-allprojects {
-    repositories {
-        // mavenLocal()
-        mavenCentral()
-        // Liaison Private Maven artifact repo (Nexus)
-        maven { url releasesArtifactRepoURL }
-        maven { url snapshotsArtifactRepoURL }
-        maven { url thirdpartyArtifactRepoURL }
-    }
 }
 
 apply from: file('gradle/convention.gradle')
