@@ -9,11 +9,9 @@
 package com.liaison.hbase.model;
 
 
-
 import com.liaison.commons.Util;
 import com.liaison.hbase.model.ser.CellDeserializer;
 import com.liaison.hbase.model.ser.CellSerializer;
-import com.liaison.serialization.BytesUtil;
 
 import java.util.Collections;
 import java.util.EnumSet;

@@ -13,9 +13,7 @@ import com.liaison.hbase.api.request.fluid.ColSpecWriteFluid;
 import com.liaison.hbase.dto.Empty;
 import com.liaison.hbase.dto.Value;
 import com.liaison.hbase.model.FamilyHB;
-import com.liaison.hbase.model.FamilyModel;
 import com.liaison.hbase.model.QualHB;
-import com.liaison.hbase.model.QualModel;
 
 
 /**

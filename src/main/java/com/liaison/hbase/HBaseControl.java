@@ -619,14 +619,14 @@ public class HBaseControl implements HBaseStart<OpResultSet>, Closeable {
 
                     LOG.trace(logMethodName, ()->"performing ", ()->opName, ()->"...");
                     /*
-                     * It's okay to use NullableValue#getValue here without disambiguating Value vs.
-                     * Empty, as both are immutable, and the constructor for the former enforces that
-                     * getValue must return NON-NULL, and the constructor for the latter enforces that
-                     * getValue must return NULL. Thus, getValue returns what checkAndPut needs in
-                     * either case.
+                     * It's okay to use NullableValue#getValue here without disambiguating Value
+                     * vs. Empty, as both are immutable, and the constructor for the former
+                     * enforces that getValue must return NON-NULL, and the constructor for the
+                     * latter enforces that getValue must return NULL. Thus, getValue returns what
+                     * checkAndPut needs in either case.
                      */
                     writeCompleted =
-                        condMutateOp.checkAndMutate(rowKey.getValue(dcs),
+                        condMutateOp.checkAndMutate(buildRowKeyForSpec(tableRowSpec),
                                                     fam.getName().getValue(dcs),
                                                     qual.getName().getValue(dcs),
                                                     condPossibleValue.getValue(dcs),
@@ -826,6 +826,10 @@ public class HBaseControl implements HBaseStart<OpResultSet>, Closeable {
             LOG.leave(logMethodName);
         }
 
+        private byte[] buildRowKeyForSpec(final RowSpec<?> tableRowSpec) {
+            return tableRowSpec.getTable().literalize(tableRowSpec.getRowKey());
+        }
+
         /**
          * TODO
          * @param readSpec
@@ -892,7 +896,7 @@ public class HBaseControl implements HBaseStart<OpResultSet>, Closeable {
             if ((gcg.hasFamilies()) || (gcg.hasFQPs())) {
                 LOG.trace(logMethodName,
                           () -> "building main Get object for columns which require NO filter...");
-                readGet = new Get(tableRowSpec.getRowKey().getValue(dcs));
+                readGet = new Get(buildRowKeyForSpec(tableRowSpec));
                 for (FamilyHB family : gcg.getFamilySet()) {
                     readGet.addFamily(family.getName().getValue(dcs));
                 }
@@ -1002,7 +1006,7 @@ public class HBaseControl implements HBaseStart<OpResultSet>, Closeable {
                     resMgr.borrow(HBaseControl.this.context, tableRowSpec.getTable())) {
                 LOG.trace(logMethodName, ()->"table obtained");
 
-                rowKeyBytes = tableRowSpec.getRowKey().getValue(dcs);
+                rowKeyBytes = buildRowKeyForSpec(tableRowSpec);
                 condition = writeSpec.getGivenCondition();
 
                 if (writeSpec.isDeleteRow()) {

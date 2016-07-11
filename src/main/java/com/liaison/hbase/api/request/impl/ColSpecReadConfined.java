@@ -11,9 +11,7 @@ package com.liaison.hbase.api.request.impl;
 import com.liaison.commons.Util;
 import com.liaison.hbase.api.request.fluid.ColSpecReadFluid;
 import com.liaison.hbase.model.FamilyHB;
-import com.liaison.hbase.model.FamilyModel;
 import com.liaison.hbase.model.QualHB;
-import com.liaison.hbase.model.QualModel;
 import com.liaison.hbase.util.TreeNodeRoot;
 
 

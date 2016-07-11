@@ -25,6 +25,7 @@ import com.liaison.hbase.model.QualModel;
 import com.liaison.hbase.model.TableModel;
 import com.liaison.hbase.model.VersioningModel;
 import com.liaison.hbase.resmgr.SimpleHBaseResourceManager;
+import com.liaison.hbase.util.HBaseUtil;
 import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,6 +33,7 @@ import org.slf4j.LoggerFactory;
 import java.io.Closeable;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.UUID;
 
@@ -363,12 +365,23 @@ public class TestMapREnd2End implements Closeable {
     public void test4() {
         final String testPrefix;
         OpResultSet opResSet;
-        String rowKeyStr;
         String randomData;
         String tableName;
         FamilyModel fam;
         QualModel qual;
         TableModel tbl;
+        List<String> rowKeyStrList;
+
+        rowKeyStrList = new LinkedList<>();
+        for (int counter = 0; counter < 10; counter++) {
+            rowKeyStrList.add(Integer.toString(counter));
+        }
+        for (int counter = 0; counter < 10; counter++) {
+            rowKeyStrList.add(Long.toString(System.nanoTime()));
+        }
+        for (int counter = 0; counter < 10; counter++) {
+            rowKeyStrList.add(UUID.randomUUID().toString());
+        }
 
         testPrefix = "[test4] ";
         try {
@@ -376,158 +389,178 @@ public class TestMapREnd2End implements Closeable {
 
             randomData = UUID.randomUUID().toString();
             tableName = TestMapREnd2End.class.getSimpleName() + "-" + randomData;
-            rowKeyStr = Long.toString(System.currentTimeMillis());
             fam = FamilyModel.of(Name.of("A"));
             qual =
                 QualModel
                     .with(Name.of("B"))
                     .versionWith(VersioningModel.QUALIFIER_LATEST)
                     .build();
-            tbl = TableModel.with(Name.of(tableName)).family(fam).build();
 
-            LOG.info(testPrefix + "starting write...");
-            opResSet =
-                this.ctrl
-                    .begin()
-                        .write("WRITE")
-                            .on()
-                                .tbl(tbl)
-                                .row(RowKey.of(rowKeyStr))
-                                .and()
-                            .with("ATVER1")
-                                .fam(fam)
-                                .qual(qual)
-                                .version(1)
-                                .value(Value.of(randomData))
-                                .and()
-                            .with("ATVER2")
-                                .fam(fam)
-                                .qual(qual)
-                                .version(2)
-                                .value(Value.of(randomData))
-                                .and()
-                            .with("ATVER3")
-                                .fam(fam)
-                                .qual(qual)
-                                .version(3)
-                                .value(Value.of(randomData))
-                                .and()
-                            .given()
-                                .row(RowKey.of(rowKeyStr))
-                                .fam(fam)
-                                .qual(QualModel.of(Name.of("NON-EXISTENT")))
-                                .empty()
-                                .and()
-                            .then()
-                        .exec();
-            LOG.info(testPrefix + "write complete!");
-            LOG.info(testPrefix + "write results: " + opResSet.getResultsByHandle());
+            tbl =
+                TableModel
+                    .with(Name.of(tableName))
+                    .family(fam)
+                    .saltRows()
+                    .build();
 
-            LOG.info(testPrefix + "starting read...");
-
-            opResSet =
-                this.ctrl
-                    .begin()
-                        .read("READ")
-                            .from()
-                                .tbl(tbl)
-                                .row(RowKey.of(rowKeyStr))
-                                .and()
-                            .with("everything")
-                                .fam(fam)
-                                .qual(qual)
-                                .and()
-                            .then()
-                        .exec();
-
-            LOG.info(testPrefix + "read complete! results (everything): ");
-
-            for (CellDatum datum : opResSet.getReadResult("READ").getData("everything")) {
-                LOG.info("retrieved: " + datum.getDatum());
-            }
-
-            LOG.info(testPrefix + "starting read...");
-
-            opResSet =
-                this.ctrl
-                    .begin()
-                        .read("READ")
-                            .from()
-                                .tbl(tbl)
-                                .row(RowKey.of(rowKeyStr))
-                                .and()
-                            .with("ge2")
-                                .fam(fam)
-                                .qual(qual)
-                                .version()
-                                    .ge(2)
+            for (String rowKeyStr : rowKeyStrList) {
+                LOG.info(testPrefix + "starting write (" + rowKeyStr + ")...");
+                // @formatter:off
+                opResSet =
+                    this.ctrl
+                        .begin()
+                            .write("WRITE")
+                                .on()
+                                    .tbl(tbl)
+                                    .row(RowKey.of(rowKeyStr))
                                     .and()
-                                .and()
-                            .then()
-                        .exec();
-
-            opResSet.getReadResult("READ");
-
-            LOG.info(testPrefix + "read complete! results (ge2): ");
-
-            for (CellDatum datum : opResSet.getReadResult("READ").getData("ge2")) {
-                LOG.info("retrieved: " + datum.getDatum());
-            }
-
-            LOG.info(testPrefix + "starting read...");
-
-            opResSet =
-                this.ctrl
-                    .begin()
-                        .read("READ")
-                            .from()
-                                .tbl(tbl)
-                                .row(RowKey.of(rowKeyStr))
-                                .and()
-                            .with("le2")
-                                .fam(fam)
-                                .qual(qual)
-                                .version()
-                                    .le(2)
+                                .with("ATVER1")
+                                    .fam(fam)
+                                    .qual(qual)
+                                    .version(1)
+                                    .value(Value.of(randomData))
                                     .and()
-                                .and()
-                            .then()
-                        .exec();
-
-            opResSet.getReadResult("READ");
-
-            LOG.info(testPrefix + "read complete! results (le2): ");
-
-            for (CellDatum datum : opResSet.getReadResult("READ").getData("le2")) {
-                LOG.info("retrieved: " + datum.getDatum());
+                                .with("ATVER2")
+                                    .fam(fam)
+                                    .qual(qual)
+                                    .version(2)
+                                    .value(Value.of(randomData))
+                                    .and()
+                                .with("ATVER3")
+                                    .fam(fam)
+                                    .qual(qual)
+                                    .version(3)
+                                    .value(Value.of(randomData))
+                                    .and()
+                                .given()
+                                    .row(RowKey.of(rowKeyStr))
+                                    .fam(fam)
+                                    .qual(QualModel.of(Name.of("NON-EXISTENT")))
+                                    .empty()
+                                    .and()
+                                .then()
+                            .exec();
+                // @formatter:on
+                LOG.info(testPrefix + "write complete (" + rowKeyStr + ")!");
+                LOG.info(testPrefix + "write results (" + rowKeyStr + "): " + opResSet.getResultsByHandle());
             }
 
-            LOG.info(testPrefix + "starting read...");
+            for (String rowKeyStr : rowKeyStrList) {
+                LOG.info(testPrefix + "starting read (" + rowKeyStr + ")...");
 
-            opResSet =
-                this.ctrl
-                    .begin()
-                        .read("READ")
-                            .from()
-                                .tbl(tbl)
-                                .row(RowKey.of(rowKeyStr))
-                                .and()
-                            .with("2")
-                                .fam(fam)
-                                .qual(qual)
-                                .version(2)
-                                .and()
-                            .then()
-                        .exec();
+                // @formatter:off
+                opResSet =
+                    this.ctrl
+                        .begin()
+                            .read("READ")
+                                .from()
+                                    .tbl(tbl)
+                                    .row(RowKey.of(rowKeyStr))
+                                    .and()
+                                .with("everything")
+                                    .fam(fam)
+                                    .qual(qual)
+                                    .and()
+                                .then()
+                            .exec();
+                // @formatter:on
 
-            LOG.info(testPrefix + "read complete! results (2): ");
+                LOG.info(testPrefix + "read (" + rowKeyStr + ") complete! results (everything): ");
 
-            for (CellDatum datum : opResSet.getReadResult("READ").getData("2")) {
-                LOG.info("retrieved: " + datum.getDatum());
+                for (CellDatum datum : opResSet.getReadResult("READ").getData("everything")) {
+                    LOG.info("retrieved: " + datum.getDatum());
+                }
+
+                LOG.info(testPrefix + "starting read (" + rowKeyStr + ")...");
+
+                // @formatter:off
+                opResSet =
+                    this.ctrl
+                        .begin()
+                            .read("READ")
+                                .from()
+                                    .tbl(tbl)
+                                    .row(RowKey.of(rowKeyStr))
+                                    .and()
+                                .with("ge2")
+                                    .fam(fam)
+                                    .qual(qual)
+                                    .version()
+                                        .ge(2)
+                                        .and()
+                                    .and()
+                                .then()
+                            .exec();
+                // @formatter:on
+
+                opResSet.getReadResult("READ");
+
+                LOG.info(testPrefix + "read (" + rowKeyStr + ") complete! results (ge2): ");
+
+                for (CellDatum datum : opResSet.getReadResult("READ").getData("ge2")) {
+                    LOG.info("retrieved: " + datum.getDatum());
+                }
+
+                LOG.info(testPrefix + "starting read (" + rowKeyStr + ")...");
+
+                // @formatter:off
+                opResSet =
+                    this.ctrl
+                        .begin()
+                            .read("READ")
+                                .from()
+                                    .tbl(tbl)
+                                    .row(RowKey.of(rowKeyStr))
+                                    .and()
+                                .with("le2")
+                                    .fam(fam)
+                                    .qual(qual)
+                                    .version()
+                                        .le(2)
+                                        .and()
+                                    .and()
+                                .then()
+                            .exec();
+                // @formatter:on
+
+                opResSet.getReadResult("READ");
+
+                LOG.info(testPrefix + "read (" + rowKeyStr + ") complete! results (le2): ");
+
+                for (CellDatum datum : opResSet.getReadResult("READ").getData("le2")) {
+                    LOG.info("retrieved: " + datum.getDatum());
+                }
+
+                LOG.info(testPrefix + "starting read (" + rowKeyStr + ")...");
+
+                // @formatter:off
+                opResSet =
+                    this.ctrl
+                        .begin()
+                            .read("READ")
+                                .from()
+                                    .tbl(tbl)
+                                    .row(RowKey.of(rowKeyStr))
+                                    .and()
+                                .with("2")
+                                    .fam(fam)
+                                    .qual(qual)
+                                    .version(2)
+                                    .and()
+                                .then()
+                            .exec();
+                // @formatter:on
+
+                LOG.info(testPrefix + "read (" + rowKeyStr + ") complete! results (2): ");
+
+                for (CellDatum datum : opResSet.getReadResult("READ").getData("2")) {
+                    LOG.info("retrieved: " + datum.getDatum());
+                }
             }
         } catch (Exception exc) {
             LOG.error(testPrefix + " was BAD! and you should feel bad! " + exc, exc);
         }
+
     }
 
     @Override
