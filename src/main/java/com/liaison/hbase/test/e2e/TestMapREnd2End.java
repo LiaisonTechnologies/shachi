@@ -25,7 +25,8 @@ import com.liaison.hbase.model.QualModel;
 import com.liaison.hbase.model.TableModel;
 import com.liaison.hbase.model.VersioningModel;
 import com.liaison.hbase.resmgr.SimpleHBaseResourceManager;
-import com.liaison.hbase.util.HBaseUtil;
+import com.liaison.serialization.BytesUtil;
+import com.liaison.serialization.DefensiveCopyStrategy;
 import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -369,8 +370,33 @@ public class TestMapREnd2End implements Closeable {
         String tableName;
         FamilyModel fam;
         QualModel qual;
-        TableModel tbl;
+        TableModel tblSALTED;
+        TableModel tblUNSALTED;
+        List<TableModel> tblList;
         List<String> rowKeyStrList;
+        List<CellDatum> resultList;
+
+        tableName = TestMapREnd2End.class.getSimpleName() + "-" + UUID.randomUUID().toString();
+        fam = FamilyModel.of(Name.of("A"));
+        qual =
+            QualModel
+                .with(Name.of("B"))
+                .versionWith(VersioningModel.QUALIFIER_LATEST)
+                .build();
+        tblSALTED =
+            TableModel
+                .with(Name.of(tableName + "-SALTED"))
+                .family(fam)
+                .saltRows()
+                .build();
+        tblUNSALTED =
+            TableModel
+                .with(Name.of(tableName + "-UNSALTED"))
+                .family(fam)
+                .build();
+        tblList = new LinkedList<>();
+        tblList.add(tblUNSALTED);
+        tblList.add(tblSALTED);
 
         rowKeyStrList = new LinkedList<>();
         for (int counter = 0; counter < 10; counter++) {
@@ -387,174 +413,207 @@ public class TestMapREnd2End implements Closeable {
         try {
             LOG.info(testPrefix + "starting...");
 
-            randomData = UUID.randomUUID().toString();
-            tableName = TestMapREnd2End.class.getSimpleName() + "-" + randomData;
-            fam = FamilyModel.of(Name.of("A"));
-            qual =
-                QualModel
-                    .with(Name.of("B"))
-                    .versionWith(VersioningModel.QUALIFIER_LATEST)
-                    .build();
+            for (TableModel tbl : tblList) {
 
-            tbl =
-                TableModel
-                    .with(Name.of(tableName))
-                    .family(fam)
-                    .saltRows()
-                    .build();
+                randomData = UUID.randomUUID().toString();
 
-            for (String rowKeyStr : rowKeyStrList) {
-                LOG.info(testPrefix + "starting write (" + rowKeyStr + ")...");
-                // @formatter:off
-                opResSet =
-                    this.ctrl
-                        .begin()
-                            .write("WRITE")
-                                .on()
-                                    .tbl(tbl)
-                                    .row(RowKey.of(rowKeyStr))
-                                    .and()
-                                .with("ATVER1")
-                                    .fam(fam)
-                                    .qual(qual)
-                                    .version(1)
-                                    .value(Value.of(randomData))
-                                    .and()
-                                .with("ATVER2")
-                                    .fam(fam)
-                                    .qual(qual)
-                                    .version(2)
-                                    .value(Value.of(randomData))
-                                    .and()
-                                .with("ATVER3")
-                                    .fam(fam)
-                                    .qual(qual)
-                                    .version(3)
-                                    .value(Value.of(randomData))
-                                    .and()
-                                .given()
-                                    .row(RowKey.of(rowKeyStr))
-                                    .fam(fam)
-                                    .qual(QualModel.of(Name.of("NON-EXISTENT")))
-                                    .empty()
-                                    .and()
-                                .then()
-                            .exec();
-                // @formatter:on
-                LOG.info(testPrefix + "write complete (" + rowKeyStr + ")!");
-                LOG.info(testPrefix + "write results (" + rowKeyStr + "): " + opResSet.getResultsByHandle());
-            }
-
-            for (String rowKeyStr : rowKeyStrList) {
-                LOG.info(testPrefix + "starting read (" + rowKeyStr + ")...");
-
-                // @formatter:off
-                opResSet =
-                    this.ctrl
-                        .begin()
-                            .read("READ")
-                                .from()
-                                    .tbl(tbl)
-                                    .row(RowKey.of(rowKeyStr))
-                                    .and()
-                                .with("everything")
-                                    .fam(fam)
-                                    .qual(qual)
-                                    .and()
-                                .then()
-                            .exec();
-                // @formatter:on
-
-                LOG.info(testPrefix + "read (" + rowKeyStr + ") complete! results (everything): ");
-
-                for (CellDatum datum : opResSet.getReadResult("READ").getData("everything")) {
-                    LOG.info("retrieved: " + datum.getDatum());
-                }
-
-                LOG.info(testPrefix + "starting read (" + rowKeyStr + ")...");
-
-                // @formatter:off
-                opResSet =
-                    this.ctrl
-                        .begin()
-                            .read("READ")
-                                .from()
-                                    .tbl(tbl)
-                                    .row(RowKey.of(rowKeyStr))
-                                    .and()
-                                .with("ge2")
-                                    .fam(fam)
-                                    .qual(qual)
-                                    .version()
-                                        .ge(2)
+                for (String rowKeyStr : rowKeyStrList) {
+                    LOG.info(testPrefix + "starting write (" + rowKeyStr + ")...");
+                    // @formatter:off
+                    opResSet =
+                        this.ctrl
+                            .begin()
+                                .write("WRITE")
+                                    .on()
+                                        .tbl(tbl)
+                                        .row(RowKey.of(rowKeyStr))
                                         .and()
-                                    .and()
-                                .then()
-                            .exec();
-                // @formatter:on
-
-                opResSet.getReadResult("READ");
-
-                LOG.info(testPrefix + "read (" + rowKeyStr + ") complete! results (ge2): ");
-
-                for (CellDatum datum : opResSet.getReadResult("READ").getData("ge2")) {
-                    LOG.info("retrieved: " + datum.getDatum());
-                }
-
-                LOG.info(testPrefix + "starting read (" + rowKeyStr + ")...");
-
-                // @formatter:off
-                opResSet =
-                    this.ctrl
-                        .begin()
-                            .read("READ")
-                                .from()
-                                    .tbl(tbl)
-                                    .row(RowKey.of(rowKeyStr))
-                                    .and()
-                                .with("le2")
-                                    .fam(fam)
-                                    .qual(qual)
-                                    .version()
-                                        .le(2)
+                                    .with("ATVER1")
+                                        .fam(fam)
+                                        .qual(qual)
+                                        .version(1)
+                                        .value(Value.of(randomData))
                                         .and()
-                                    .and()
-                                .then()
-                            .exec();
-                // @formatter:on
-
-                opResSet.getReadResult("READ");
-
-                LOG.info(testPrefix + "read (" + rowKeyStr + ") complete! results (le2): ");
-
-                for (CellDatum datum : opResSet.getReadResult("READ").getData("le2")) {
-                    LOG.info("retrieved: " + datum.getDatum());
+                                    .with("ATVER2")
+                                        .fam(fam)
+                                        .qual(qual)
+                                        .version(2)
+                                        .value(Value.of(randomData))
+                                        .and()
+                                    .with("ATVER3")
+                                        .fam(fam)
+                                        .qual(qual)
+                                        .version(3)
+                                        .value(Value.of(randomData))
+                                        .and()
+                                    .given()
+                                        .row(RowKey.of(rowKeyStr))
+                                        .fam(fam)
+                                        .qual(QualModel.of(Name.of("NON-EXISTENT")))
+                                        .empty()
+                                        .and()
+                                    .then()
+                                .exec();
+                    // @formatter:on
+                    LOG.info(testPrefix + "write complete (" + rowKeyStr + ")!");
+                    LOG.info(testPrefix + "write results (" + rowKeyStr + "): " + opResSet.getResultsByHandle());
                 }
 
-                LOG.info(testPrefix + "starting read (" + rowKeyStr + ")...");
+                for (String rowKeyStr : rowKeyStrList) {
+                    LOG.info(testPrefix + "starting read (" + rowKeyStr + ")...");
 
-                // @formatter:off
-                opResSet =
-                    this.ctrl
-                        .begin()
-                            .read("READ")
-                                .from()
-                                    .tbl(tbl)
-                                    .row(RowKey.of(rowKeyStr))
-                                    .and()
-                                .with("2")
-                                    .fam(fam)
-                                    .qual(qual)
-                                    .version(2)
-                                    .and()
-                                .then()
-                            .exec();
-                // @formatter:on
+                    // @formatter:off
+                    opResSet =
+                        this.ctrl
+                            .begin()
+                                .read("READ")
+                                    .from()
+                                        .tbl(tbl)
+                                        .row(RowKey.of(rowKeyStr))
+                                        .and()
+                                    .with("everything")
+                                        .fam(fam)
+                                        .qual(qual)
+                                        .and()
+                                    .then()
+                                .exec();
+                    // @formatter:on
 
-                LOG.info(testPrefix + "read (" + rowKeyStr + ") complete! results (2): ");
+                    resultList = opResSet.getReadResult("READ").getData("everything");
+                    LOG.info(testPrefix
+                             + "read ("
+                             + rowKeyStr
+                             + ") complete! <<<COUNT-CORRECT="
+                             + (resultList.size() == 3)
+                             + ">>> results (everything): ");
+                    for (CellDatum datum : resultList) {
+                        LOG.info("retrieved: "
+                                 + datum.getDatum()
+                                 + "; correct="
+                                 + randomData.equals(
+                                     BytesUtil.toString(
+                                         datum
+                                             .getDatum()
+                                             .getValue(DefensiveCopyStrategy.ALWAYS))));
+                    }
 
-                for (CellDatum datum : opResSet.getReadResult("READ").getData("2")) {
-                    LOG.info("retrieved: " + datum.getDatum());
+                    LOG.info(testPrefix + "starting read (" + rowKeyStr + ")...");
+
+                    // @formatter:off
+                    opResSet =
+                        this.ctrl
+                            .begin()
+                                .read("READ")
+                                    .from()
+                                        .tbl(tbl)
+                                        .row(RowKey.of(rowKeyStr))
+                                        .and()
+                                    .with("ge2")
+                                        .fam(fam)
+                                        .qual(qual)
+                                        .version()
+                                            .ge(2)
+                                            .and()
+                                        .and()
+                                    .then()
+                                .exec();
+                    // @formatter:on
+
+                    resultList = opResSet.getReadResult("READ").getData("ge2");
+                    LOG.info(testPrefix
+                             + "read ("
+                             + rowKeyStr
+                             + ") complete! <<<COUNT-CORRECT="
+                             + (resultList.size() == 2)
+                             + ">>> results (ge2): ");
+                    for (CellDatum datum : resultList) {
+                        LOG.info("retrieved: "
+                                 + datum.getDatum()
+                                 + "; correct="
+                                 + randomData.equals(
+                            BytesUtil.toString(
+                                datum
+                                    .getDatum()
+                                    .getValue(DefensiveCopyStrategy.ALWAYS))));
+                    }
+
+                    LOG.info(testPrefix + "starting read (" + rowKeyStr + ")...");
+
+                    // @formatter:off
+                    opResSet =
+                        this.ctrl
+                            .begin()
+                                .read("READ")
+                                    .from()
+                                        .tbl(tbl)
+                                        .row(RowKey.of(rowKeyStr))
+                                        .and()
+                                    .with("le2")
+                                        .fam(fam)
+                                        .qual(qual)
+                                        .version()
+                                            .le(2)
+                                            .and()
+                                        .and()
+                                    .then()
+                                .exec();
+                    // @formatter:on
+
+                    resultList = opResSet.getReadResult("READ").getData("le2");
+                    LOG.info(testPrefix
+                             + "read ("
+                             + rowKeyStr
+                             + ") complete! <<<COUNT-CORRECT="
+                             + (resultList.size() == 2)
+                             + ">>> results (le2): ");
+                    for (CellDatum datum : resultList) {
+                        LOG.info("retrieved: "
+                                 + datum.getDatum()
+                                 + "; correct="
+                                 + randomData.equals(
+                            BytesUtil.toString(
+                                datum
+                                    .getDatum()
+                                    .getValue(DefensiveCopyStrategy.ALWAYS))));
+                    }
+
+                    LOG.info(testPrefix + "starting read (" + rowKeyStr + ")...");
+
+                    // @formatter:off
+                    opResSet =
+                        this.ctrl
+                            .begin()
+                                .read("READ")
+                                    .from()
+                                        .tbl(tbl)
+                                        .row(RowKey.of(rowKeyStr))
+                                        .and()
+                                    .with("ver2")
+                                        .fam(fam)
+                                        .qual(qual)
+                                        .version(2)
+                                        .and()
+                                    .then()
+                                .exec();
+                    // @formatter:on
+
+                    resultList = opResSet.getReadResult("READ").getData("ver2");
+                    LOG.info(testPrefix
+                             + "read ("
+                             + rowKeyStr
+                             + ") complete! <<<COUNT-CORRECT="
+                             + (resultList.size() == 1)
+                             + ">>> results (ver2): ");
+                    for (CellDatum datum : resultList) {
+                        LOG.info("retrieved: "
+                                 + datum.getDatum()
+                                 + "; correct="
+                                 + randomData.equals(
+                            BytesUtil.toString(
+                                datum
+                                    .getDatum()
+                                    .getValue(DefensiveCopyStrategy.ALWAYS))));
+                    }
                 }
             }
         } catch (Exception exc) {

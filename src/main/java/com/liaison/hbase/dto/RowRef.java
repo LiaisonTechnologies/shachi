@@ -9,4 +9,5 @@ import com.liaison.hbase.model.TableModel;
 public interface RowRef {
     TableModel getTable();
     RowKey getRowKey();
+    byte[] getLiteralizedRowKeyBytes() throws IllegalStateException;
 }

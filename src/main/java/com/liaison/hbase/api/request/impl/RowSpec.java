@@ -74,6 +74,12 @@ public final class RowSpec<P extends OperationSpec<P>> extends CriteriaSpec<RowS
     public RowKey getRowKey() {
         return this.rowKey;
     }
+
+    @Override
+    public byte[] getLiteralizedRowKeyBytes() throws IllegalStateException {
+        prepPostFreezeOp("getLiteralizedRowKeyBytes");
+        return this.table.literalize(this.rowKey);
+    }
     
     // ||----(instance methods: API: frozen)-----------------------------------------------------||
     
