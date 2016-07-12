@@ -65,7 +65,7 @@ public enum PoolingHBaseResourceManager implements HBaseResourceManager {
          */
         @Override
         public PooledObject<ManagedTable> wrap(final ManagedTable value) {
-            return new DefaultPooledObject<ManagedTable>(value);
+            return new DefaultPooledObject<>(value);
         }
         
         @Override
@@ -118,7 +118,7 @@ public enum PoolingHBaseResourceManager implements HBaseResourceManager {
          */
         @Override
         public PooledObject<ManagedAdmin> wrap(final ManagedAdmin value) {
-            return new DefaultPooledObject<ManagedAdmin>(value);
+            return new DefaultPooledObject<>(value);
         }
         
         @Override
@@ -147,11 +147,11 @@ public enum PoolingHBaseResourceManager implements HBaseResourceManager {
         }       
     }
     
-    private static LogMeMaybe LOG = new LogMeMaybe(SimpleHBaseResourceManager.class);
+    private static LogMeMaybe LOG = new LogMeMaybe(PoolingHBaseResourceManager.class);
     
     private static final boolean POOLDEFAULT_BLOCK_ON_POOL_EXHAUSTED = true;
     private static final int POOLDEFAULT_MAXWAIT_MILLI = 30000; // 30 seconds
-    private static final int POOLDEFAULT_EVICTAFTER_MILLI = 60000; // 5 minutes
+    private static final int POOLDEFAULT_EVICTAFTER_MILLI = 60000; // 1 minute
     
     private static final Integer POOLDEFAULT_TABLE_POOL_MAXSIZE_OVERALL = null; // infinite
     private static final int POOLDEFAULT_TABLE_POOL_MAXSIZE = 25;

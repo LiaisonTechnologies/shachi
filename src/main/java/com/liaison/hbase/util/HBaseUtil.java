@@ -10,9 +10,13 @@ package com.liaison.hbase.util;
 
 import co.paralleluniverse.fibers.SuspendExecution;
 import co.paralleluniverse.strands.Strand;
+import com.google.common.hash.HashCode;
+import com.google.common.hash.HashFunction;
+import com.google.common.hash.Hashing;
 import com.liaison.commons.Util;
 import com.liaison.commons.log.LogMeMaybe;
 import com.liaison.hbase.context.HBaseContext;
+import com.liaison.hbase.dto.RowKey;
 import com.liaison.hbase.exception.HBaseInitializationException;
 import com.liaison.hbase.model.Name;
 import com.liaison.hbase.model.TableModel;
@@ -30,9 +34,46 @@ import java.io.IOException;
 
 public final class HBaseUtil {
 
-    public static final byte[] DELIM_VERSION = {0};
+    public static final byte[] DELIM_BYTES = {0};
+
+    private static final int BYTES_PER_INT = 4;
 
     private static final LogMeMaybe LOG;
+    private static final HashFunction HASH_MURMUR3_32;
+
+    private static byte[] buildSaltedRowKeyValue(final byte[] salt, final int saltOffset, final int saltLen, final byte[] rkBytes) {
+        final byte[] saltedRKBytes;
+
+        // build a new byte array to contain the RowKey content, the salt value, and a delimiter to
+        // be placed between them (DELIM_BYTES)
+        saltedRKBytes = new byte[rkBytes.length + saltLen + DELIM_BYTES.length];
+        // copy the specified sub-array of the salt into the beginning of the new array
+        System.arraycopy(salt, saltOffset, saltedRKBytes, 0, saltLen);
+        // copy the delimiter into the new array following the salt
+        System.arraycopy(DELIM_BYTES, 0, saltedRKBytes, saltLen, DELIM_BYTES.length);
+        // copy the original RowKey contents to fill out the rest of the new array
+        System.arraycopy(rkBytes,
+                         0,
+                         saltedRKBytes,
+                         (saltLen + DELIM_BYTES.length),
+                         rkBytes.length);
+
+        return saltedRKBytes;
+    }
+
+    public static byte[] saltRowKeyMurmur3_32(final RowKey rk) {
+        final byte[] rkBytes;
+        final HashCode hash;
+        final byte[] hashBytes;
+
+        rkBytes = rk.getValue(DefensiveCopyStrategy.NEVER);
+        hash = HASH_MURMUR3_32.hashBytes(rkBytes);
+        hashBytes = hash.asBytes();
+        return buildSaltedRowKeyValue(hashBytes,
+                                      0,
+                                      Math.min(hashBytes.length, BYTES_PER_INT),
+                                      rkBytes);
+    }
 
     public static byte[] appendVersionToQual(final byte[] original, final long version, final VersioningModel model) throws ArithmeticException {
         String logMsg;
@@ -55,7 +96,7 @@ public final class HBaseUtil {
          * TODO: make the format for a field identifier which includes a version configurable,
          * rather than using the original + 0-byte + version format for all cases
          */
-        return BytesUtil.concat(original, DELIM_VERSION, versionBytes);
+        return BytesUtil.concat(original, DELIM_BYTES, versionBytes);
     }
 
     public static final void createTableFromModel(final HBaseAdmin tableAdmin, final TableModel model, Name tableName, final DefensiveCopyStrategy dcs) throws IOException {
@@ -194,7 +235,7 @@ public final class HBaseUtil {
         logMethodName
             = LOG.enter(()->"connectToTable(context=",
                         ()->context,
-                        ()->"model=",
+                        ()->",model=",
                         ()->model,
                         ()->")");
 
@@ -274,6 +315,7 @@ public final class HBaseUtil {
     
     static {
         LOG = new LogMeMaybe(HBaseUtil.class);
+        HASH_MURMUR3_32 = Hashing.murmur3_32();
     }
 
     private HBaseUtil() { }

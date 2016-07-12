@@ -62,11 +62,15 @@ public class TableRow implements RowRef, Serializable {
 
     @Override
     public TableModel getTable() {
-        return null;
+        return this.table;
     }
     @Override
     public RowKey getRowKey() {
-        return null;
+        return this.row;
+    }
+    @Override
+    public byte[] getLiteralizedRowKeyBytes() {
+        return this.table.literalize(this.row);
     }
     public String getDescription() {
         return this.description;
@@ -115,7 +119,7 @@ public class TableRow implements RowRef, Serializable {
 
     private TableRow(final Builder build) throws IllegalArgumentException {
         Util.ensureNotNull(build.table, this, "table", TableModel.class);
-        Util.ensureNotNull(build.row, this, "column", RowKey.class);
+        Util.ensureNotNull(build.row, this, "row", RowKey.class);
         this.table = build.table;
         this.row = build.row;
         this.description = build.description;

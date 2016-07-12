@@ -82,7 +82,7 @@ if (project.hasProperty('env') && project.getProperty('env') == 'mapr') {
 
 group = 'com.liaison'
 def artifact = "${rootProject.name}"
-version = '0.1.7'
+version = '0.1.8'
 def packaging = 'jar'
 def classifier = "${verHBase}"
 
@@ -103,8 +103,8 @@ dependencies {
     */
     compile "com.liaison:dm-lib-commons:${verCommons}"
     compile "co.paralleluniverse:quasar-core:${verQuasar}${classifierQuasar}"
-    provided "org.apache.hbase:hbase-client:${verHBase}"
-    provided "org.apache.hbase:hbase-common:${verHBase}"
+    compile "org.apache.hbase:hbase-client:${verHBase}"
+    compile "org.apache.hbase:hbase-common:${verHBase}"
     compile "org.apache.commons:commons-pool2:${verPool}"
     compile "org.testng:testng:${verTestNG}"
     testCompile "org.mockito:mockito-all:${verMockito}"
@@ -146,8 +146,8 @@ testIntegration {
     classpath = classpath.minus(configurations.guava);
     useTestNG()
     systemProperty "java.net.preferIPv4Stack", "true"
-    logger.info "@@@ Classpath (INTEGRATION testing): ${classpath.getFiles().collect({it.toString()}).inject('\n') {acc, next -> acc + next + '\n'}}"
-    logger.info "@@@ SysProps (INTEGRATION testing): ${System.getProperties().collect({it.toString()}).inject('\n') {acc, next -> acc + next + '\n'}}"
+    //logger.info "@@@ Classpath (INTEGRATION testing): ${classpath.getFiles().collect({it.toString()}).inject('\n') {acc, next -> acc + next + '\n'}}"
+    //logger.info "@@@ SysProps (INTEGRATION testing): ${System.getProperties().collect({it.toString()}).inject('\n') {acc, next -> acc + next + '\n'}}"
 }
 
 test.dependsOn testUnit

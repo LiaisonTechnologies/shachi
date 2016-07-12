@@ -9,12 +9,17 @@
 package com.liaison.hbase.model;
 
 import com.liaison.commons.Util;
+import com.liaison.hbase.dto.RowKey;
 import com.liaison.hbase.model.ser.CellDeserializer;
 import com.liaison.hbase.model.ser.CellSerializer;
+import com.liaison.hbase.util.HBaseUtil;
+import com.liaison.serialization.BytesUtil;
+import com.liaison.serialization.DefensiveCopyStrategy;
 
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.function.Function;
 
 public final class TableModel extends NamedEntityDefault implements TableHB {
 
@@ -25,6 +30,7 @@ public final class TableModel extends NamedEntityDefault implements TableHB {
         private LinkedHashMap<Name, FamilyModel> families;
         private CellSerializer serializer;
         private CellDeserializer deserializer;
+        private Function<RowKey, byte[]> rowKeyLiteralizer;
         
         public Builder name(final Name name) {
             this.name = name;
@@ -56,6 +62,13 @@ public final class TableModel extends NamedEntityDefault implements TableHB {
             this.deserializer = deserializer;
             return this;
         }
+        public Builder saltRows(final Function<RowKey, byte[]> rowKeyLiteralizer) {
+            this.rowKeyLiteralizer = rowKeyLiteralizer;
+            return this;
+        }
+        public Builder saltRows() {
+            return saltRows(SALTING_ROWKEY_LITERALIZER_DEFAULT);
+        }
         
         public TableModel build() {
             return new TableModel(this);
@@ -67,7 +80,14 @@ public final class TableModel extends NamedEntityDefault implements TableHB {
     }
     
     private static final String ENTITY_TITLE = "[TABLE]";
-    
+
+    private static final Function<RowKey, byte[]> SALTING_ROWKEY_LITERALIZER_DEFAULT =
+        HBaseUtil::saltRowKeyMurmur3_32;
+
+    public static byte[] literalizeRowKey(final RowKey rk) {
+        return rk.getValue(DefensiveCopyStrategy.ALWAYS);
+    }
+
     public static Builder with(final Name name) {
         return new Builder().name(name);
     }
@@ -78,6 +98,7 @@ public final class TableModel extends NamedEntityDefault implements TableHB {
     private final Map<Name, FamilyModel> families;
     private final CellSerializer serializer;
     private final CellDeserializer deserializer;
+    private final Function<RowKey, byte[]> rowKeyLiteralizer;
 
     @Override
     public CellSerializer getSerializer() {
@@ -95,7 +116,17 @@ public final class TableModel extends NamedEntityDefault implements TableHB {
     public FamilyModel getFamily(final Name famName) {
         return this.families.get(famName);
     }
-    
+
+    public byte[] literalize(final RowKey rk) {
+        byte[] literalRK;
+
+        literalRK = this.rowKeyLiteralizer.apply(rk);
+        if (literalRK == null) {
+            literalRK = BytesUtil.HBASE_EMPTY;
+        }
+        return literalRK;
+    }
+
     @Override
     protected String getEntityTitle() {
         return ENTITY_TITLE;
@@ -130,5 +161,10 @@ public final class TableModel extends NamedEntityDefault implements TableHB {
         this.families = Collections.unmodifiableMap(build.families);
         this.serializer = build.serializer;
         this.deserializer = build.deserializer;
+        if (build.rowKeyLiteralizer == null) {
+            this.rowKeyLiteralizer = TableModel::literalizeRowKey;
+        } else {
+            this.rowKeyLiteralizer = build.rowKeyLiteralizer;
+        }
     }
 }

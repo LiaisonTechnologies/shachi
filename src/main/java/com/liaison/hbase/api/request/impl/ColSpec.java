@@ -12,9 +12,7 @@ import com.liaison.commons.Util;
 import com.liaison.hbase.api.request.fluid.ColSpecFluid;
 import com.liaison.hbase.api.request.frozen.ColSpecFrozen;
 import com.liaison.hbase.model.FamilyHB;
-import com.liaison.hbase.model.FamilyModel;
 import com.liaison.hbase.model.QualHB;
-import com.liaison.hbase.model.QualModel;
 import com.liaison.hbase.util.StringRepFormat;
 
 import java.io.Serializable;

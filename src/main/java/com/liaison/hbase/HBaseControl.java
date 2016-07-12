@@ -619,14 +619,14 @@ public class HBaseControl implements HBaseStart<OpResultSet>, Closeable {
 
                     LOG.trace(logMethodName, ()->"performing ", ()->opName, ()->"...");
                     /*
-                     * It's okay to use NullableValue#getValue here without disambiguating Value vs.
-                     * Empty, as both are immutable, and the constructor for the former enforces that
-                     * getValue must return NON-NULL, and the constructor for the latter enforces that
-                     * getValue must return NULL. Thus, getValue returns what checkAndPut needs in
-                     * either case.
+                     * It's okay to use NullableValue#getValue here without disambiguating Value
+                     * vs. Empty, as both are immutable, and the constructor for the former
+                     * enforces that getValue must return NON-NULL, and the constructor for the
+                     * latter enforces that getValue must return NULL. Thus, getValue returns what
+                     * checkAndPut needs in either case.
                      */
                     writeCompleted =
-                        condMutateOp.checkAndMutate(rowKey.getValue(dcs),
+                        condMutateOp.checkAndMutate(tableRowSpec.getLiteralizedRowKeyBytes(),
                                                     fam.getName().getValue(dcs),
                                                     qual.getName().getValue(dcs),
                                                     condPossibleValue.getValue(dcs),
@@ -770,6 +770,7 @@ public class HBaseControl implements HBaseStart<OpResultSet>, Closeable {
         private Get buildGet(final RowRef rowRef, final ColumnRange colRange, final DefensiveCopyStrategy dcs) {
             final String logMethodName;
             final Get readGet;
+            final byte[] rowKeyBytes;
             final Filter combinedFilter;
             final Filter lowerFilter;
             final Filter higherFilter;
@@ -795,7 +796,8 @@ public class HBaseControl implements HBaseStart<OpResultSet>, Closeable {
                                             .getName()
                                             .getValue(dcs)));
             combinedFilter = new FilterList(lowerFilter, higherFilter);
-            readGet = new Get(rowRef.getRowKey().getValue(dcs));
+            rowKeyBytes = rowRef.getLiteralizedRowKeyBytes();
+            readGet = new Get(rowKeyBytes);
             readGet.addFamily(colRange.getFamily().getName().getValue(dcs));
             readGet.setFilter(combinedFilter);
             LOG.trace(logMethodName, ()->"get:", ()->readGet);
@@ -844,6 +846,7 @@ public class HBaseControl implements HBaseStart<OpResultSet>, Closeable {
             Get readGet;
             final List<ColSpecRead<ReadOpSpecDefault>> colReadList;
             final List<Result> resList;
+            final byte[] rowKeyBytes;
             
             Util.ensureNotNull(readSpec, this, "readSpec", ReadOpSpecDefault.class);
             
@@ -890,9 +893,10 @@ public class HBaseControl implements HBaseStart<OpResultSet>, Closeable {
             allReadGets = new LinkedList<>();
 
             if ((gcg.hasFamilies()) || (gcg.hasFQPs())) {
+                rowKeyBytes = tableRowSpec.getLiteralizedRowKeyBytes();
                 LOG.trace(logMethodName,
                           () -> "building main Get object for columns which require NO filter...");
-                readGet = new Get(tableRowSpec.getRowKey().getValue(dcs));
+                readGet = new Get(rowKeyBytes);
                 for (FamilyHB family : gcg.getFamilySet()) {
                     readGet.addFamily(family.getName().getValue(dcs));
                 }
@@ -1002,7 +1006,7 @@ public class HBaseControl implements HBaseStart<OpResultSet>, Closeable {
                     resMgr.borrow(HBaseControl.this.context, tableRowSpec.getTable())) {
                 LOG.trace(logMethodName, ()->"table obtained");
 
-                rowKeyBytes = tableRowSpec.getRowKey().getValue(dcs);
+                rowKeyBytes = tableRowSpec.getLiteralizedRowKeyBytes();
                 condition = writeSpec.getGivenCondition();
 
                 if (writeSpec.isDeleteRow()) {
