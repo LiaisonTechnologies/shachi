@@ -57,6 +57,12 @@ public enum VersioningModel {
         EnumSet.of(QUALIFIER_CHRONO,
                    QUALIFIER_LATEST);
 
+    /**
+     * TODO
+     */
+    public static EnumSet<VersioningModel> SET_INVERTING =
+        EnumSet.of(QUALIFIER_LATEST, TIMESTAMP_CHRONO);
+
     private static boolean setsOverlap(final Set<VersioningModel> set1, final Set<VersioningModel> set2) {
         return ((set1 != null) && (set2 != null) && (!Sets.intersection(set1, set2).isEmpty()));
     }
@@ -93,6 +99,15 @@ public enum VersioningModel {
      */
     public static boolean isQualifierBased(final EnumSet<VersioningModel> verModelSet) {
         return setsOverlap(SET_QUALIFIER, verModelSet);
+    }
+
+    /**
+     * TODO
+     * @param verModel
+     * @return
+     */
+    public static boolean isInverting(final VersioningModel verModel) {
+        return SET_INVERTING.contains(verModel);
     }
 
     public static <P extends CriteriaSpec<P, ?>> LongValueSpec<P> buildLongValueSpecForQualVersioning(final P parent) {

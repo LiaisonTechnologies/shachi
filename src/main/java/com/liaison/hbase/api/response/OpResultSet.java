@@ -27,6 +27,7 @@ import com.liaison.hbase.exception.HBaseTableRowException;
 import com.liaison.hbase.model.FamilyModel;
 import com.liaison.hbase.model.Name;
 import com.liaison.hbase.model.QualModel;
+import com.liaison.hbase.util.SpecUtil;
 import com.liaison.serialization.BytesUtil;
 import com.liaison.serialization.DefensiveCopyStrategy;
 import org.apache.hadoop.hbase.Cell;
@@ -157,6 +158,7 @@ public class OpResultSet implements Serializable {
                  * specified both), add this data cell to the result list for the column spec.
                  */
                 for (ColSpecReadFrozen colSpec : readSpec.getColumnAssoc(fqp)) {
+
                     addToResultBuilderIndexedToColumn(readResBuild,
                                                       colSpec,
                                                       datum,
@@ -172,6 +174,7 @@ public class OpResultSet implements Serializable {
                  * family), add this data cell to the result list for the column spec.
                  */
                 for (ColSpecReadFrozen colSpec : readSpec.getColumnAssoc(fqp.getFamily())) {
+                    colSpec.
                     addToResultBuilderIndexedToColumn(readResBuild,
                                                       colSpec,
                                                       datum,

@@ -16,6 +16,7 @@ import com.google.common.hash.Hashing;
 import com.liaison.commons.Util;
 import com.liaison.commons.log.LogMeMaybe;
 import com.liaison.hbase.context.HBaseContext;
+import com.liaison.hbase.dto.ParsedVersionQualifier;
 import com.liaison.hbase.dto.RowKey;
 import com.liaison.hbase.exception.HBaseInitializationException;
 import com.liaison.hbase.model.Name;
@@ -29,14 +30,18 @@ import org.apache.hadoop.hbase.HTableDescriptor;
 import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.client.HBaseAdmin;
 import org.apache.hadoop.hbase.client.HTable;
+import org.apache.hadoop.io.file.tfile.Utils;
+import org.apache.hadoop.yarn.webapp.hamlet.HamletSpec;
 
 import java.io.IOException;
+import java.util.Arrays;
 
 public final class HBaseUtil {
 
     public static final byte[] DELIM_BYTES = {0};
 
-    private static final int BYTES_PER_INT = 4;
+    private static final int BYTES_PER_INT;
+    private static final int BYTES_PER_LONG;
 
     private static final LogMeMaybe LOG;
     private static final HashFunction HASH_MURMUR3_32;
@@ -73,6 +78,71 @@ public final class HBaseUtil {
                                       0,
                                       Math.min(hashBytes.length, BYTES_PER_INT),
                                       rkBytes);
+    }
+
+    public static ParsedVersionQualifier parseQualifierSeparateVersion(final byte[] storedQual, final long storedTS, final VersioningModel model) throws IllegalArgumentException, ArithmeticException {
+        String logMsg;
+        final Long rawVersionIndicatorNumber;
+        final int rawVersionIndicatorNumberByteArrayIndex;
+        final int qualWithoutVersionLength;
+        final Long versionNumber;
+        final byte[] qualWithoutVersion;
+
+        Util.ensureNotNull(storedQual,
+                           "parseQualifierSeparateVersion",
+                           "storedQual",
+                           byte[].class);
+
+        // Obtain the raw "version-indicator number", i.e. the actual number written to HBase to
+        // indicate the version number. Depending on the versioning model used (as driven by HBase-
+        // specific use cases), this indicator number may or may not require transformation in
+        // order to derive the *actual* version number, as specified through the API when the cell
+        // was originally written (see following if-block after this one)
+        if (VersioningModel.isQualifierBased(model)) {
+            // If using qualifier-based versioning, the version indicator number will be appended
+            // as 8 bytes on the end of the qualifier
+            rawVersionIndicatorNumberByteArrayIndex = storedQual.length - BYTES_PER_LONG;
+            // The calculated version number must start at an index AT LEAST equal to the delimiter
+            // length, if the versioned qualifier was generated according to the rules in the
+            // #appendVersionToQual method.
+            if (rawVersionIndicatorNumberByteArrayIndex < DELIM_BYTES.length) {
+                logMsg =
+                    "Failed to extract version number from the qualifier as specified by the "
+                    + "versioning model: "
+                    + model
+                    + "; malformed stored (with-version) qualifier value";
+                throw new IllegalArgumentException(logMsg);
+            }
+            // Extract the bytes for the version-indicator number from the qualifier and convert to
+            // a long
+            rawVersionIndicatorNumber =
+                Long.valueOf(BytesUtil.toLong(storedQual,
+                                              rawVersionIndicatorNumberByteArrayIndex));
+
+        } else if (VersioningModel.isTimestampBased(model)) {
+            rawVersionIndicatorNumber = Long.valueOf(storedTS);
+            qualWithoutVersion = storedQual;
+        } else {
+            rawVersionIndicatorNumber = null;
+            qualWithoutVersion = storedQual;
+        }
+
+        // For versioning schemes where the version number is "inverted" (i.e. subtracted from
+        // Long.MAX_VALUE) in order to ensure the proper HBase-ordering semantics for the scheme,
+        // reverse the inversion by subtracting it again from Long.MAX_VALUE.
+        if ((rawVersionIndicatorNumber != null) && (VersioningModel.isInverting(model))) {
+            if (rawVersionIndicatorNumber.longValue() < 0) {
+                logMsg = "Overflow when computing version number: versioning model ("
+                         + model
+                         + ") requires subtraction from Long.MAX_VALUE for specified ordering, "
+                         + "but initial version number is negative, and Long.MAX_VALUE - version "
+                         + "> Long.MAX_VALUE for version < 0";
+                throw new ArithmeticException(logMsg);
+            }
+            versionNumber = Long.valueOf(Long.MAX_VALUE - rawVersionIndicatorNumber.longValue());
+        } else {
+            versionNumber = rawVersionIndicatorNumber;
+        }
     }
 
     public static byte[] appendVersionToQual(final byte[] original, final long version, final VersioningModel model) throws ArithmeticException {
@@ -314,8 +384,16 @@ public final class HBaseUtil {
     }
     
     static {
+        final int anyInt;
+        final long anyLong;
+
+        anyInt = 0;
+        anyLong = 0L;
+
         LOG = new LogMeMaybe(HBaseUtil.class);
         HASH_MURMUR3_32 = Hashing.murmur3_32();
+        BYTES_PER_INT = BytesUtil.toBytes(anyInt).length;
+        BYTES_PER_LONG = BytesUtil.toBytes(anyLong).length;
     }
 
     private HBaseUtil() { }
