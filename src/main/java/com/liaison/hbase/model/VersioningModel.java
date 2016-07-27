@@ -1,11 +1,9 @@
 package com.liaison.hbase.model;
 
-import com.google.common.collect.Sets;
 import com.liaison.hbase.api.request.impl.CriteriaSpec;
 import com.liaison.hbase.api.request.impl.LongValueSpec;
 
 import java.util.EnumSet;
-import java.util.Set;
 
 /**
  * Specifies how the version number will be affixed to cells in this column family.
@@ -63,10 +61,6 @@ public enum VersioningModel {
     public static EnumSet<VersioningModel> SET_INVERTING =
         EnumSet.of(QUALIFIER_LATEST, TIMESTAMP_CHRONO);
 
-    private static boolean setsOverlap(final Set<VersioningModel> set1, final Set<VersioningModel> set2) {
-        return ((set1 != null) && (set2 != null) && (!Sets.intersection(set1, set2).isEmpty()));
-    }
-
     /**
      * TODO
      * @param verModel
@@ -74,14 +68,6 @@ public enum VersioningModel {
      */
     public static boolean isTimestampBased(final VersioningModel verModel) {
         return SET_TIMESTAMP.contains(verModel);
-    }
-    /**
-     * TODO
-     * @param verModelSet
-     * @return
-     */
-    public static boolean isTimestampBased(final EnumSet<VersioningModel> verModelSet) {
-        return setsOverlap(SET_TIMESTAMP, verModelSet);
     }
 
     /**
@@ -91,14 +77,6 @@ public enum VersioningModel {
      */
     public static boolean isQualifierBased(final VersioningModel verModel) {
         return SET_QUALIFIER.contains(verModel);
-    }
-    /**
-     * TODO
-     * @param verModelSet
-     * @return
-     */
-    public static boolean isQualifierBased(final EnumSet<VersioningModel> verModelSet) {
-        return setsOverlap(SET_QUALIFIER, verModelSet);
     }
 
     /**

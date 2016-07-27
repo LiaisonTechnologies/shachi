@@ -29,13 +29,13 @@ public final class FamilyModel extends NamedEntityDefault implements FamilyHB {
         private final Map<QualHB, CellSerializer> qualSerializers;
         private final Map<QualHB, CellDeserializer> qualDeserializers;
         private boolean closedQualSet;
-        private EnumSet<VersioningModel> versioning;
+        private VersioningModel versioning;
         private CellSerializer serializer;
         private CellDeserializer deserializer;
 
         public Builder versionWith(final VersioningModel verModel) throws IllegalArgumentException {
             Util.ensureNotNull(verModel, this, "verModel", VersioningModel.class);
-            this.versioning.add(verModel);
+            this.versioning = verModel;
             return this;
         }
         public Builder name(final Name name) {
@@ -94,7 +94,7 @@ public final class FamilyModel extends NamedEntityDefault implements FamilyHB {
             this.quals = new LinkedHashMap<>();
             this.qualSerializers = new HashMap<>();
             this.qualDeserializers = new HashMap<>();
-            this.versioning = EnumSet.noneOf(VersioningModel.class);
+            this.versioning = null;
         }
     }
     
@@ -111,7 +111,7 @@ public final class FamilyModel extends NamedEntityDefault implements FamilyHB {
     private final Map<QualHB, CellSerializer> qualSerializers;
     private final Map<QualHB, CellDeserializer> qualDeserializers;
     private final boolean closedQualSet;
-    private final EnumSet<VersioningModel> versioning;
+    private final VersioningModel versioning;
     private final CellSerializer serializer;
     private final CellDeserializer deserializer;
 
@@ -151,7 +151,7 @@ public final class FamilyModel extends NamedEntityDefault implements FamilyHB {
         return closedQualSet;
     }
     @Override
-    public EnumSet<VersioningModel> getVersioning() {
+    public VersioningModel getVersioning() {
         return this.versioning;
     }
     
@@ -213,11 +213,6 @@ public final class FamilyModel extends NamedEntityDefault implements FamilyHB {
         Util.ensureNotNull(build.qualDeserializers, this, "qualDeserializers", HashMap.class);
         this.qualDeserializers = Collections.unmodifiableMap(build.qualDeserializers);
 
-        /*
-        versioning should never be null, even if no versioning scheme is enabled; in that case, the
-        versioning variable should be EnumSet.noneOf(VersioningModel.class)
-         */
-        Util.ensureNotNull(build.versioning, this, "versioning", EnumSet.class);
         this.versioning = build.versioning;
 
         this.serializer = build.serializer;

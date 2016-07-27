@@ -63,7 +63,6 @@ import org.apache.hadoop.hbase.filter.QualifierFilter;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.Collections;
-import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -116,52 +115,45 @@ public class HBaseControl implements HBaseStart<OpResultSet>, Closeable {
     public final class HBaseDelegate {
 
         /**
-         * TODO: javadoc
-         * @param fqpSet
-         * @param versioningScheme
+         * TODO
+         * @param colRangeSet
+         * @param verModel
          * @param colFam
          * @param colQual
          * @param multiVersion
          */
-        private void buildVersioningDerivedQualifiers(final Set<ColumnRange> colRangeSet, final Set<VersioningModel> versioningScheme, final FamilyHB colFam, final QualHB colQual, final LongValueSpecFrozen multiVersion) {
+        private void buildVersioningDerivedQualifiers(final Set<ColumnRange> colRangeSet, final VersioningModel verModel, final FamilyHB colFam, final QualHB colQual, final LongValueSpecFrozen multiVersion) {
             final String logMethodName;
-            String logMsg;
-            final byte[] qualValueBase;
-            ColumnRange qualForWrite;
-            byte[] qualBytes;
 
             logMethodName =
                 LOG.enter(()->"buildVersioningDerivedQualifiers(colRangeSet=",
                           ()->colRangeSet,
                           ()->",scheme=",
-                          ()->versioningScheme,
+                          ()->verModel,
                           ()->",ver=",
                           ()->multiVersion,
                           ()->")");
 
             /*
-             * For each versioning scheme specified by the model, add a qualifier to the
-             * read spec, modified to accommodate the versioning scheme, if necessary.
-             * TODO: does this work for multiple overlapping versioning schemes?
+             * For the versioning scheme specified by the model, add a qualifier to the read spec,
+             * modified to accommodate the versioning scheme, if necessary. Create a new qualifier
+             * range representing the core qualifier with version info appended per the range of
+             * version specification.
              */
-            for (VersioningModel verModel : versioningScheme) {
-                // create a new qualifier range representing the core qualifier with version info
-                // appended per the range of version specification
-                colRangeSet.add(ColumnRange.from(colFam, colQual, verModel, multiVersion));
-                LOG.trace(logMethodName, ()->"colRangeSet=", ()->colRangeSet);
-            }
+            colRangeSet.add(ColumnRange.from(colFam, colQual, verModel, multiVersion));
+            LOG.trace(logMethodName, ()->"colRangeSet=", ()->colRangeSet);
             LOG.leave(logMethodName);
         }
 
         /**
-         * TODO: javadoc
+         * TODO
          * @param fqpSet
-         * @param versioningScheme
+         * @param verModel
          * @param colFam
          * @param colQual
          * @param singleVersion
          */
-        private void buildVersioningDerivedQualifiers(final Set<FamilyQualifierPair> fqpSet, final Set<VersioningModel> versioningScheme, final FamilyHB colFam, final QualHB colQual, final Long singleVersion) {
+        private void buildVersioningDerivedQualifiers(final Set<FamilyQualifierPair> fqpSet, final VersioningModel verModel, final FamilyHB colFam, final QualHB colQual, final Long singleVersion) {
             final String logMethodName;
             final byte[] qualValueBase;
             QualModel qualForWrite;
@@ -171,7 +163,7 @@ public class HBaseControl implements HBaseStart<OpResultSet>, Closeable {
                 LOG.enter(()->"buildVersioningDerivedQualifiers(fqpSet=",
                           ()->fqpSet,
                           ()->",scheme=",
-                          ()->versioningScheme,
+                          ()->verModel,
                           ()->",ver=",
                           ()->singleVersion,
                           ()->")");
@@ -181,22 +173,20 @@ public class HBaseControl implements HBaseStart<OpResultSet>, Closeable {
             qualValueBase = colQual.getName().getValue(DefensiveCopyStrategy.NEVER);
 
             /*
-             * For each versioning scheme specified by the model, add a qualifier to the
-             * read spec, modified to accommodate the versioning scheme, if necessary.
-             * TODO: does this work for multiple overlapping versioning schemes?
+             * For the versioning scheme specified by the model, add a qualifier to the read spec,
+             * modified to accommodate the versioning scheme, if necessary.
              */
-            for (VersioningModel verModel : versioningScheme) {
-                // create a new qualifier with the version number appended
-                qualBytes =
-                    HBaseUtil.appendVersionToQual(qualValueBase,
-                                                  singleVersion.longValue(),
-                                                  verModel);
-                qualForWrite = QualModel.of(Name.of(qualBytes, DefensiveCopyStrategy.NEVER));
-                // create a new family+qualifier pair pairing the existing column family
-                // with the newly-created qualifier
-                fqpSet.add(FamilyQualifierPair.of(colFam, qualForWrite));
-                LOG.trace(logMethodName, ()->"fqpSet=", ()->fqpSet);
-            }
+            // create a new qualifier with the version number appended
+            qualBytes =
+                HBaseUtil.appendVersionToQual(qualValueBase,
+                                              singleVersion.longValue(),
+                                              verModel);
+            qualForWrite = QualModel.of(Name.of(qualBytes, DefensiveCopyStrategy.NEVER));
+            // create a new family+qualifier pair pairing the existing column family
+            // with the newly-created qualifier
+            fqpSet.add(FamilyQualifierPair.of(colFam, qualForWrite));
+            LOG.trace(logMethodName, ()->"fqpSet=", ()->fqpSet);
+
             LOG.leave(logMethodName);
         }
 
@@ -231,7 +221,7 @@ public class HBaseControl implements HBaseStart<OpResultSet>, Closeable {
             final String logMethodName;
             final Set<FamilyQualifierPair> fqpSet;
             final Long singleVersion;
-            EnumSet<VersioningModel> versioningScheme;
+            VersioningModel versioningScheme;
             final Set<FamilyQualifierPair> fqpSetComplete;
 
             logMethodName =
@@ -277,7 +267,7 @@ public class HBaseControl implements HBaseStart<OpResultSet>, Closeable {
             final Set<FamilyQualifierPair> fqpSet;
             final LongValueSpec<?> version;
             final Long singleVersion;
-            EnumSet<VersioningModel> versioningScheme;
+            VersioningModel versioningScheme;
 
             fqpSet = new HashSet<>();
             version = colSpec.getVersion();
@@ -308,7 +298,7 @@ public class HBaseControl implements HBaseStart<OpResultSet>, Closeable {
         private ApplicableVersion getQualifierBasedVersion(final ColSpecRead<ReadOpSpecDefault> colSpec, final FamilyHB colFam, final QualHB colQual) {
             LongValueSpec<ColSpecRead<ReadOpSpecDefault>> versionUnrestricted;
             LongValueSpecFrozen version;
-            EnumSet<VersioningModel> versioningScheme;
+            VersioningModel versioningScheme;
 
             versioningScheme = SpecUtil.determineVersioningScheme(colFam, colQual);
             if (VersioningModel.isQualifierBased(versioningScheme)) {
@@ -510,7 +500,7 @@ public class HBaseControl implements HBaseStart<OpResultSet>, Closeable {
          */
         private Long determineWriteTimestamp(final ColSpecWriteFrozen colSpec) {
             final Long version;
-            final EnumSet<VersioningModel> verScheme;
+            final VersioningModel verScheme;
 
             version = colSpec.getVersion();
             verScheme = SpecUtil.determineVersioningScheme(colSpec);
@@ -519,8 +509,6 @@ public class HBaseControl implements HBaseStart<OpResultSet>, Closeable {
                  * (NOTE: this list of TODOs copied from setReadTimestamp, because the issues they
                  * reference will need to addressed concurrently on both the read and write sides)
                  *
-                 * TODO: Determine how to support multiple overlapping versioning models; that
-                 *     feature is not supported here yet, at all
                  * TODO: Determine how to support TIMESTAMP_CHRONO, which would need to subtract
                  *     the version numbers from Long.MAX_VALUE and invert the range. Not
                  *     implemented yet.
@@ -590,14 +578,17 @@ public class HBaseControl implements HBaseStart<OpResultSet>, Closeable {
         /**
          * TODO
          * @param logMethodName
-         * @param writeToTable
+         * @param opName
+         * @param condMutateOp
+         * @param mutateOp
          * @param tableRowSpec
          * @param colWriteList
          * @param condition
-         * @param writePut
+         * @param writeMutation
          * @param dcs
+         * @param <M>
          * @return
-         * @throws HBaseMultiColumnException
+         * @throws HBaseTableRowException
          */
         private <M extends Mutation> boolean performMutation(final String logMethodName, final String opName, final HBaseCheckAndMutate<M> condMutateOp, final HBaseMutate<M> mutateOp, final RowSpec<WriteOpSpecDefault> tableRowSpec, final List<ColSpecWriteFrozen> colWriteList, final CondSpec<?> condition, final M writeMutation, final DefensiveCopyStrategy dcs) throws HBaseTableRowException {
             final String logMsg;
@@ -688,10 +679,10 @@ public class HBaseControl implements HBaseStart<OpResultSet>, Closeable {
          * @param tableRowSpec
          * @param colWriteList
          * @param condition
-         * @param writePut
+         * @param writeDel
          * @param dcs
          * @return
-         * @throws HBaseMultiColumnException
+         * @throws HBaseTableRowException
          */
         private boolean performDelete(final String logMethodName, final HTable writeToTable, final RowSpec<WriteOpSpecDefault> tableRowSpec, final List<ColSpecWriteFrozen> colWriteList, final CondSpec<?> condition, final Delete writeDel, final DefensiveCopyStrategy dcs) throws HBaseTableRowException {
             return performMutation(logMethodName,
@@ -716,7 +707,7 @@ public class HBaseControl implements HBaseStart<OpResultSet>, Closeable {
         private void setReadTimestamp(final String logMethodName, final Get readGet, final ReadOpSpecFrozen readSpec, final RowRef tableRowSpec) throws HBaseTableRowException {
             String logMsg;
             final LongValueSpecFrozen commonVer;
-            final EnumSet<VersioningModel> commonVerConf;
+            final VersioningModel commonVerConf;
             final LongValueSpecFrozen timestamp;
 
             commonVer = readSpec.getCommonVersion();
@@ -726,8 +717,6 @@ public class HBaseControl implements HBaseStart<OpResultSet>, Closeable {
                 && (commonVerConf != null)
                 && (VersioningModel.isTimestampBased(commonVerConf))) {
                 /*
-                 * TODO: Determine how to support multiple overlapping versioning models; that
-                 *     feature is not supported here yet, at all
                  * TODO: Determine how to support TIMESTAMP_CHRONO, which would need to subtract
                  *     the version numbers from Long.MAX_VALUE and invert the range. Not
                  *     implemented yet.
@@ -737,7 +726,7 @@ public class HBaseControl implements HBaseStart<OpResultSet>, Closeable {
                  *     the literally-specified timestamp will always be overridden by the
                  *     versioning-specified timestamp
                  */
-                if (commonVerConf.contains(VersioningModel.TIMESTAMP_CHRONO)) {
+                if (commonVerConf == VersioningModel.TIMESTAMP_CHRONO) {
                     logMsg = "Chronological versioning via the timestamp ("
                              + VersioningModel.class.getSimpleName()
                              + "."

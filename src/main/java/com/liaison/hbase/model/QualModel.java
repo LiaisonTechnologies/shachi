@@ -20,13 +20,13 @@ public final class QualModel extends NamedEntityDefault implements QualHB {
 
     public static final class Builder {
         private Name name;
-        private EnumSet<VersioningModel> versioning;
+        private VersioningModel versioning;
         private CellSerializer serializer;
         private CellDeserializer deserializer;
 
         public Builder versionWith(final VersioningModel verModel) throws IllegalArgumentException {
             Util.ensureNotNull(verModel, this, "verModel", VersioningModel.class);
-            this.versioning.add(verModel);
+            this.versioning = verModel;
             return this;
         }
 
@@ -48,7 +48,7 @@ public final class QualModel extends NamedEntityDefault implements QualHB {
         }
         private Builder() {
             this.name = null;
-            this.versioning = EnumSet.noneOf(VersioningModel.class);
+            this.versioning = null;
         }
     }
     
@@ -61,7 +61,7 @@ public final class QualModel extends NamedEntityDefault implements QualHB {
         return with(name).build();
     }
 
-    private final EnumSet<VersioningModel> versioning;
+    private final VersioningModel versioning;
     private final CellSerializer serializer;
     private final CellDeserializer deserializer;
 
@@ -79,7 +79,7 @@ public final class QualModel extends NamedEntityDefault implements QualHB {
     }
 
     @Override
-    public EnumSet<VersioningModel> getVersioning() {
+    public VersioningModel getVersioning() {
         return this.versioning;
     }
     
@@ -102,11 +102,7 @@ public final class QualModel extends NamedEntityDefault implements QualHB {
     
     private QualModel(final Builder build) throws IllegalArgumentException {
         super(build.name);
-        /*
-        versioning should never be null, even if no versioning scheme is enabled; in that case, the
-        versioning variable should be EnumSet.noneOf(VersioningModel.class)
-         */
-        Util.ensureNotNull(build.versioning, this, "versioning", EnumSet.class);
+
         this.versioning = build.versioning;
 
         this.serializer = build.serializer;

@@ -14,7 +14,6 @@ import com.liaison.hbase.model.ColumnRange;
 import com.liaison.hbase.model.FamilyHB;
 import com.liaison.hbase.model.VersioningModel;
 
-import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -30,7 +29,7 @@ public interface ReadOpSpecFrozen extends TableRowOpSpecFrozen<ReadOpSpecDefault
      * @return
      * @throws IllegalStateException
      */
-    EnumSet<VersioningModel> getCommonVersioningConfig() throws IllegalStateException;
+    VersioningModel getCommonVersioningConfig() throws IllegalStateException;
 
     /**
      * TODO: javadoc

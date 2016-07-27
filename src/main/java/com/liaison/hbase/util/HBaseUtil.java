@@ -30,8 +30,6 @@ import org.apache.hadoop.hbase.HTableDescriptor;
 import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.client.HBaseAdmin;
 import org.apache.hadoop.hbase.client.HTable;
-import org.apache.hadoop.io.file.tfile.Utils;
-import org.apache.hadoop.yarn.webapp.hamlet.HamletSpec;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -118,7 +116,13 @@ public final class HBaseUtil {
             rawVersionIndicatorNumber =
                 Long.valueOf(BytesUtil.toLong(storedQual,
                                               rawVersionIndicatorNumberByteArrayIndex));
-
+            qualWithoutVersionLength =
+                rawVersionIndicatorNumberByteArrayIndex - DELIM_BYTES.length;
+            if (qualWithoutVersionLength <= 0) {
+                qualWithoutVersion = new byte[0];
+            } else {
+                qualWithoutVersion = Arrays.copyOfRange(storedQual, 0, qualWithoutVersionLength);
+            }
         } else if (VersioningModel.isTimestampBased(model)) {
             rawVersionIndicatorNumber = Long.valueOf(storedTS);
             qualWithoutVersion = storedQual;
@@ -143,6 +147,13 @@ public final class HBaseUtil {
         } else {
             versionNumber = rawVersionIndicatorNumber;
         }
+
+        return
+            ParsedVersionQualifier
+                .with()
+                .qualWithoutVersion(qualWithoutVersion)
+                .version(versionNumber)
+                .build();
     }
 
     public static byte[] appendVersionToQual(final byte[] original, final long version, final VersioningModel model) throws ArithmeticException {
