@@ -26,7 +26,6 @@ import com.liaison.hbase.util.StringRepFormat;
 
 import java.io.Serializable;
 import java.util.Collections;
-import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -53,7 +52,7 @@ public final class ReadOpSpecDefault extends TableRowOpSpec<ReadOpSpecDefault> i
     private LongValueSpec<ReadOpSpecDefault> atTime;
     private final List<ColSpecRead<ReadOpSpecDefault>> withColumn;
 
-    private EnumSet<VersioningModel> commonVersioningConfig;
+    private VersioningModel commonVersioningConfig;
     private LongValueSpecFrozen commonVersion;
 
     /**
@@ -245,7 +244,7 @@ public final class ReadOpSpecDefault extends TableRowOpSpec<ReadOpSpecDefault> i
 
 
     @Override
-    public EnumSet<VersioningModel> getCommonVersioningConfig() throws IllegalStateException {
+    public VersioningModel getCommonVersioningConfig() throws IllegalStateException {
         /*
          * Value is only populated after the validation step calls ensureCompatibleVersioning to
          * iterate through subordinate specifications to ensure that they use a common versioning
@@ -303,9 +302,9 @@ public final class ReadOpSpecDefault extends TableRowOpSpec<ReadOpSpecDefault> i
         QualHB colQualModel;
         FamilyHB colFamilyModel;
         boolean establishedVersioningConfigIsTimestampBased;
-        EnumSet<VersioningModel> establishedVersioningConfig;
+        VersioningModel establishedVersioningConfig;
         LongValueSpec<?> establishedReadVersionSpec;
-        EnumSet<VersioningModel> currentVersioningConfig;
+        VersioningModel currentVersioningConfig;
         LongValueSpec<?> currentReadVersionSpec;
 
         subordSpecList = getSubordSpecList();

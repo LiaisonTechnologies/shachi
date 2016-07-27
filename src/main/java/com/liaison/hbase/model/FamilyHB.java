@@ -4,7 +4,6 @@ import com.liaison.hbase.model.ser.CellDeserializer;
 import com.liaison.hbase.model.ser.CellSerializable;
 import com.liaison.hbase.model.ser.CellSerializer;
 
-import java.util.EnumSet;
 import java.util.Map;
 
 /**
@@ -14,7 +13,7 @@ import java.util.Map;
 public interface FamilyHB extends NamedEntity, CellSerializable {
     Map<Name, QualModel> getQuals();
     boolean isClosedQualSet();
-    EnumSet<VersioningModel> getVersioning();
+    VersioningModel getVersioning();
     CellSerializer getSerializer(QualHB forQualInstance);
     CellDeserializer getDeserializer(QualHB forQualInstance);
 }

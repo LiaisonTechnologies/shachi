@@ -24,7 +24,6 @@ import com.liaison.hbase.model.ser.CellSerializable;
 import com.liaison.hbase.model.ser.CellSerializer;
 
 import java.util.Collection;
-import java.util.EnumSet;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
@@ -69,8 +68,8 @@ public final class SpecUtil extends Uninstantiable {
      * @param colQual
      * @return
      */
-    public static EnumSet<VersioningModel> determineVersioningScheme(final FamilyHB colFam, final QualHB colQual) {
-        EnumSet<VersioningModel> versioningScheme = null;
+    public static VersioningModel determineVersioningScheme(final FamilyHB colFam, final QualHB colQual) {
+        VersioningModel versioningScheme = null;
 
         if (colQual != null) {
             versioningScheme = colQual.getVersioning();
@@ -83,7 +82,7 @@ public final class SpecUtil extends Uninstantiable {
         return versioningScheme;
     }
 
-    public static EnumSet<VersioningModel> determineVersioningScheme(final ColSpecFrozen colSpec) {
+    public static VersioningModel determineVersioningScheme(final ColSpecFrozen colSpec) {
         return determineVersioningScheme(colSpec.getFamily(), colSpec.getColumn());
     }
 

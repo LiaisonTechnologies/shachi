@@ -21,12 +21,15 @@ import com.liaison.hbase.api.request.impl.WriteOpSpecDefault;
 import com.liaison.hbase.api.response.ReadOpResult.ReadOpResultBuilder;
 import com.liaison.hbase.dto.Datum;
 import com.liaison.hbase.dto.FamilyQualifierPair;
+import com.liaison.hbase.dto.ParsedVersionQualifier;
 import com.liaison.hbase.dto.SpecCellResultSet;
 import com.liaison.hbase.exception.HBaseNoCellException;
 import com.liaison.hbase.exception.HBaseTableRowException;
 import com.liaison.hbase.model.FamilyModel;
 import com.liaison.hbase.model.Name;
 import com.liaison.hbase.model.QualModel;
+import com.liaison.hbase.util.HBaseUtil;
+import com.liaison.hbase.util.SpecUtil;
 import com.liaison.serialization.BytesUtil;
 import com.liaison.serialization.DefensiveCopyStrategy;
 import org.apache.hadoop.hbase.Cell;
@@ -91,9 +94,28 @@ public class OpResultSet implements Serializable {
                  ()->colSpec);
     }
 
+    private ParsedVersionQualifier extractVersion(final ColSpecReadFrozen colSpec, final byte[] qualBytes, final long ts) {
+        return
+            HBaseUtil
+                .parseQualifierSeparateVersion(qualBytes,
+                                               ts,
+                                               SpecUtil.determineVersioningScheme(colSpec));
+    }
+
+    private Datum buildDatum(final byte[] content, final long contentTS, final ParsedVersionQualifier pvq) {
+        final Datum.Builder datumBuild;
+
+        datumBuild = Datum.with().value(content, DefensiveCopyStrategy.ALWAYS).ts(contentTS);
+        if (pvq.hasVersion()) {
+            datumBuild.version(pvq.getVersion().longValue());
+        }
+        return datumBuild.build();
+    }
+
     private void populateContentForCell(final ReadOpResultBuilder readResBuild, final ReadOpSpecDefault readSpec, final Cell resCell, final int cellIndex, final int cellTotalCount, final String logMethodName) {
         Datum datum = null;
         byte[] content;
+        final byte[] qualBytes;
         final int contentSize;
         Long contentTS = null;
         final FamilyQualifierPair fqp;
@@ -107,6 +129,11 @@ public class OpResultSet implements Serializable {
                   ()->"...");
         if (resCell != null) {
             fqp = generateFQP(resCell);
+            if (fqp == null) {
+                qualBytes = new byte[0];
+            } else {
+                qualBytes = fqp.getColumn().getName().getValue(DefensiveCopyStrategy.ALWAYS);
+            }
             /*
              * The HBase Javadoc API for some reason does not include a description for
              * CellUtil#cloneValue, but the implementation shows that the value is *copied*
@@ -138,25 +165,15 @@ public class OpResultSet implements Serializable {
                     ()->" size (bytes): ",
                     ()->Integer.valueOf(contentSize));
                 /*
-                 * TODO
-                 * Using DefensiveCopyStrategy.NEVER here rather than the provided copy
-                 * strategy (this.copyStrategy), because assuming that the clone operation in
-                 * CellUtil#cloneValue is sufficient (particularly since once this loop cycle
-                 * terminates, the reference to content in the array will be the *only*
-                 * reference pointing to it). Leaving a to-do marker here for the time being
-                 * just in case; may want to return and validate that assumption before
-                 * declaring this code base Production-ready.
-                 */
-                datum =
-                    Datum.of(content,
-                             contentTS.longValue(),
-                             DefensiveCopyStrategy.NEVER);
-                /*
                  * For any column specifications which are associated with this data cell based
                  * upon the *combination* of family and qualifier (i.e. column specs which
                  * specified both), add this data cell to the result list for the column spec.
                  */
                 for (ColSpecReadFrozen colSpec : readSpec.getColumnAssoc(fqp)) {
+                    datum =
+                        buildDatum(content,
+                                   contentTS,
+                                   extractVersion(colSpec, qualBytes, contentTS));
                     addToResultBuilderIndexedToColumn(readResBuild,
                                                       colSpec,
                                                       datum,
@@ -172,6 +189,10 @@ public class OpResultSet implements Serializable {
                  * family), add this data cell to the result list for the column spec.
                  */
                 for (ColSpecReadFrozen colSpec : readSpec.getColumnAssoc(fqp.getFamily())) {
+                    datum =
+                        buildDatum(content,
+                                   contentTS,
+                                   extractVersion(colSpec, qualBytes, contentTS));
                     addToResultBuilderIndexedToColumn(readResBuild,
                                                       colSpec,
                                                       datum,
@@ -190,6 +211,10 @@ public class OpResultSet implements Serializable {
                  * against the defined column ranges.)
                  */
                 for (ColSpecReadFrozen colSpec : readSpec.getColumnRangeAssoc(fqp)) {
+                    datum =
+                        buildDatum(content,
+                                   contentTS,
+                                   extractVersion(colSpec, qualBytes, contentTS));
                     addToResultBuilderIndexedToColumn(readResBuild,
                                                       colSpec,
                                                       datum,
@@ -242,11 +267,11 @@ public class OpResultSet implements Serializable {
         this.dataBySpec.put(origin, opRes);
         this.dataByHandle.put(origin.getHandle(), opRes);
     }
-    
+
     /**
      * TODO
      * @param readSpec
-     * @param res
+     * @param resList
      * @throws HBaseTableRowException
      */
     public void assimilate(final ReadOpSpecDefault readSpec, final Iterable<Result> resList) throws HBaseTableRowException {

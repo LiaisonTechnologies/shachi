@@ -46,22 +46,22 @@ public final class Datum extends Value implements Serializable {
         }
     }
     
-    public static Builder getDatumBuilder() {
+    public static Builder with() {
         return new Builder();
     }
     public static final Datum of(final byte[] value, final long timestamp, final long version, final DefensiveCopyStrategy copyStrategy) {
-        return getDatumBuilder().value(value, copyStrategy).ts(timestamp).build();
+        return with().value(value, copyStrategy).ts(timestamp).version(version).build();
     }
     @Deprecated
     public static final Datum of(final byte[] value, final long timestamp, final long version) {
-        return getDatumBuilder().value(value).ts(timestamp).build();
+        return with().value(value).ts(timestamp).version(version).build();
     }
     public static final Datum of(final byte[] value, final long timestamp, final DefensiveCopyStrategy copyStrategy) {
-        return getDatumBuilder().value(value, copyStrategy).ts(timestamp).build();
+        return with().value(value, copyStrategy).ts(timestamp).build();
     }
     @Deprecated
     public static final Datum of(final byte[] value, final long timestamp) {
-        return getDatumBuilder().value(value).ts(timestamp).build();
+        return with().value(value).ts(timestamp).build();
     }
     
     private final long ts;
@@ -114,7 +114,13 @@ public final class Datum extends Value implements Serializable {
             this.strRep =
                 buildStrRep(ENTITY_PREFIX_FOR_TOSTRING, (strGen) -> {
                     strGen.append(BytesUtil.toString(getValue(DefensiveCopyStrategy.NEVER)));
-                    strGen.append("(@");
+                    strGen.append("(");
+                    if (this.version != null) {
+                        strGen.append("ver=");
+                        strGen.append(this.version);
+                        strGen.append(",");
+                    }
+                    strGen.append("ts=");
                     strGen.append(this.ts);
                     strGen.append(")");
                 });
