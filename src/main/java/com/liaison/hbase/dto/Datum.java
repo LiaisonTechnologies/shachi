@@ -114,7 +114,13 @@ public final class Datum extends Value implements Serializable {
             this.strRep =
                 buildStrRep(ENTITY_PREFIX_FOR_TOSTRING, (strGen) -> {
                     strGen.append(BytesUtil.toString(getValue(DefensiveCopyStrategy.NEVER)));
-                    strGen.append("(@");
+                    strGen.append("(");
+                    if (this.version != null) {
+                        strGen.append("ver=");
+                        strGen.append(this.version);
+                        strGen.append(",");
+                    }
+                    strGen.append("ts=");
                     strGen.append(this.ts);
                     strGen.append(")");
                 });

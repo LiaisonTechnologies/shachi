@@ -130,9 +130,9 @@ public class OpResultSet implements Serializable {
         if (resCell != null) {
             fqp = generateFQP(resCell);
             if (fqp == null) {
-                qualBytes = fqp.getColumn().getName().getValue(DefensiveCopyStrategy.ALWAYS);
-            } else {
                 qualBytes = new byte[0];
+            } else {
+                qualBytes = fqp.getColumn().getName().getValue(DefensiveCopyStrategy.ALWAYS);
             }
             /*
              * The HBase Javadoc API for some reason does not include a description for
