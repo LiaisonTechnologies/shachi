@@ -8,7 +8,7 @@
  */
 package com.liaison.shachi.api.request.impl;
 
-import com.liaison.commons.Util;
+import com.liaison.javabasics.commons.Util;
 import com.liaison.shachi.api.request.fluid.ColSpecFluid;
 import com.liaison.shachi.api.request.frozen.ColSpecFrozen;
 import com.liaison.shachi.model.FamilyHB;

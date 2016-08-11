@@ -8,8 +8,8 @@
  */
 package com.liaison.shachi.resmgr;
 
-import com.liaison.commons.Util;
-import com.liaison.commons.log.LogMeMaybe;
+import com.liaison.javabasics.commons.Util;
+import com.liaison.javabasics.logging.JitLog;
 import com.liaison.shachi.context.HBaseContext;
 import com.liaison.shachi.exception.HBaseInitializationException;
 import com.liaison.shachi.exception.HBaseResourceAcquisitionException;
@@ -147,7 +147,7 @@ public enum PoolingHBaseResourceManager implements HBaseResourceManager {
         }       
     }
     
-    private static LogMeMaybe LOG = new LogMeMaybe(PoolingHBaseResourceManager.class);
+    private static JitLog LOG = new JitLog(PoolingHBaseResourceManager.class);
     
     private static final boolean POOLDEFAULT_BLOCK_ON_POOL_EXHAUSTED = true;
     private static final int POOLDEFAULT_MAXWAIT_MILLI = 30000; // 30 seconds

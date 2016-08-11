@@ -1,7 +1,7 @@
 package com.liaison.shachi.test.e2e;
 
-import com.liaison.commons.Util;
-import com.liaison.commons.log.LogMeMaybe;
+import com.liaison.javabasics.commons.Util;
+import com.liaison.javabasics.logging.JitLog;
 import com.liaison.shachi.HBaseControl;
 import com.liaison.shachi.context.DirectoryPrefixedTableNamingStrategy;
 import com.liaison.shachi.context.MapRHBaseContext;
@@ -22,12 +22,12 @@ import java.util.List;
  */
 public class ManualTestRunner {
 
-    private static final LogMeMaybe LOG;
+    private static final JitLog LOG;
 
     private static final String SYSPROP_PATH_MAPRTABLES = "PATH_MAPRTABLES";
 
     static {
-        LOG = new LogMeMaybe(ManualTestRunner.class);
+        LOG = new JitLog(ManualTestRunner.class);
     }
 
     private final Verify verifier;

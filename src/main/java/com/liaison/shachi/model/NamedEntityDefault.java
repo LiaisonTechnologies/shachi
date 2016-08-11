@@ -8,7 +8,7 @@
  */
 package com.liaison.shachi.model;
 
-import com.liaison.commons.Util;
+import com.liaison.javabasics.commons.Util;
 
 import java.io.Serializable;
 

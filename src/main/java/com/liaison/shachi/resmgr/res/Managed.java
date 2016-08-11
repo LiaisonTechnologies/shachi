@@ -8,7 +8,7 @@
  */
 package com.liaison.shachi.resmgr.res;
 
-import com.liaison.commons.Util;
+import com.liaison.javabasics.commons.Util;
 import com.liaison.shachi.context.HBaseContext;
 import com.liaison.shachi.resmgr.HBaseResourceManager;
 

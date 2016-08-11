@@ -1,9 +1,9 @@
 package com.liaison.shachi.test.e2e;
 
-import com.liaison.commons.Util;
-import com.liaison.commons.log.LogMeMaybe;
-import com.liaison.serialization.BytesUtil;
-import com.liaison.serialization.DefensiveCopyStrategy;
+import com.liaison.javabasics.commons.Util;
+import com.liaison.javabasics.logging.JitLog;
+import com.liaison.javabasics.serialization.BytesUtil;
+import com.liaison.javabasics.serialization.DefensiveCopyStrategy;
 import com.liaison.shachi.HBaseControl;
 import com.liaison.shachi.HBaseStart;
 import com.liaison.shachi.api.request.OperationController;
@@ -32,7 +32,7 @@ import java.util.Scanner;
  */
 public class DatasetSimulation {
 
-    private static final LogMeMaybe LOG;
+    private static final JitLog LOG;
 
     private static final String SYSPROP_PATH_MAPRTABLES = "PATH_MAPRTABLES";
 
@@ -123,7 +123,7 @@ public class DatasetSimulation {
     }
 
     static {
-        LOG = new LogMeMaybe(DatasetSimulation.class);
+        LOG = new JitLog(DatasetSimulation.class);
     }
 
     private final HBaseStart<OpResultSet> ctrl;

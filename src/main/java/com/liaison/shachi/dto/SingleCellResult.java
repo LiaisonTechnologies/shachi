@@ -8,7 +8,7 @@
  */
 package com.liaison.shachi.dto;
 
-import com.liaison.commons.Util;
+import com.liaison.javabasics.commons.Util;
 import com.liaison.shachi.api.request.frozen.ColSpecReadFrozen;
 import com.liaison.shachi.exception.HBaseException;
 

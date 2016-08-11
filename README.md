@@ -14,6 +14,11 @@
 - **Custom serialization and deserialization:** Per functional design principles, Shachi allows users of its API to (optionally) specify custom serializers and deserializers in the form of functions (or method references) which perform arbitrary `Object`-to-`byte[]` conversions (on the serialization side) or `byte[]`-to-`Object` conversions (on the deserialization side). This approach permits the user to execute write operations where fields are automatically serialized in a way consistent with a given schema, and execute read operations where the result set byte arrays are automatically converted to user-defined types.
 - **Batching of operations:** For ease of execution, Shachi allows multiple operations to be batched together in a single chain of API calls. 
 
-## Naming
+### Naming
 
 The name **"Shachi" (シャチ)** is Japanese for orca (killer whale), which is the mascot for Apache HBase: https://hbase.apache.org/book.html#orca
+
+## Building
+
+```
+gradle clean test distZip

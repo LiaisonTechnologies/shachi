@@ -9,7 +9,7 @@
 package com.liaison.shachi.util;
 
 
-import com.liaison.commons.Util;
+import com.liaison.javabasics.commons.Util;
 
 /**
  * Extension of {@link TreeNode} for cases where the node is known not to be a root node, and

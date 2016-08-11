@@ -1,7 +1,7 @@
 package com.liaison.shachi.dto;
 
-import com.liaison.commons.Util;
-import com.liaison.serialization.DefensiveCopyStrategy;
+import com.liaison.javabasics.commons.Util;
+import com.liaison.javabasics.serialization.DefensiveCopyStrategy;
 import com.liaison.shachi.exception.CellDeserializationException;
 import com.liaison.shachi.model.ser.CellDeserializer;
 

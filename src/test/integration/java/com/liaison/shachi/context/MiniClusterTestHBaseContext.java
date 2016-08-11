@@ -1,6 +1,6 @@
 package com.liaison.shachi.context;
 
-import com.liaison.commons.Util;
+import com.liaison.javabasics.commons.Util;
 import org.apache.hadoop.hbase.HBaseTestingUtility;
 import org.apache.hadoop.hbase.client.HBaseAdmin;
 

@@ -11,9 +11,9 @@ package com.liaison.shachi;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
-import com.liaison.commons.Util;
-import com.liaison.commons.log.LogMeMaybe;
-import com.liaison.serialization.DefensiveCopyStrategy;
+import com.liaison.javabasics.commons.Util;
+import com.liaison.javabasics.logging.JitLog;
+import com.liaison.javabasics.serialization.DefensiveCopyStrategy;
 import com.liaison.shachi.api.request.OperationController;
 import com.liaison.shachi.api.request.frozen.ColSpecWriteFrozen;
 import com.liaison.shachi.api.request.frozen.LongValueSpecFrozen;
@@ -1091,7 +1091,7 @@ public class HBaseControl implements HBaseStart<OpResultSet>, Closeable {
     private static final long DEFAULT_THREADPOOL_IDLEEXPIRE = 60L * 1000L; // 60s
     private static final TimeUnit DEFAULT_THREADPOOL_IDLEEXPIRE_UNIT = TimeUnit.MILLISECONDS;
     
-    private static final LogMeMaybe LOG;
+    private static final JitLog LOG;
     
     // ||----(constants)-------------------------------------------------------------------------||
     
@@ -1120,7 +1120,7 @@ public class HBaseControl implements HBaseStart<OpResultSet>, Closeable {
     // ||----------------------------------------------------------------------------------------||
     
     static {
-        LOG = new LogMeMaybe(HBaseControl.class);
+        LOG = new JitLog(HBaseControl.class);
     }
     
     // ||----(static initializer)----------------------------------------------------------------||

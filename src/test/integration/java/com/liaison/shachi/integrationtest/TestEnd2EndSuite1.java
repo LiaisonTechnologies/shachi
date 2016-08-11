@@ -1,6 +1,6 @@
 package com.liaison.shachi.integrationtest;
 
-import com.liaison.commons.log.LogMeMaybe;
+import com.liaison.javabasics.logging.JitLog;
 import com.liaison.shachi.HBaseControl;
 import com.liaison.shachi.context.MiniClusterTestHBaseContext;
 import com.liaison.shachi.resmgr.SimpleHBaseResourceManager;
@@ -14,9 +14,9 @@ import org.testng.annotations.Test;
  */
 public class TestEnd2EndSuite1 {
 
-    private static final LogMeMaybe LOG;
+    private static final JitLog LOG;
     static {
-        LOG = new LogMeMaybe(TestEnd2EndSuite1.class);
+        LOG = new JitLog(TestEnd2EndSuite1.class);
     }
 
     private HBaseTestingUtility hbTestUtil;

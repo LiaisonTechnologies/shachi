@@ -8,9 +8,9 @@
  */
 package com.liaison.shachi.api.response;
 
-import com.liaison.commons.log.LogMeMaybe;
-import com.liaison.serialization.BytesUtil;
-import com.liaison.serialization.DefensiveCopyStrategy;
+import com.liaison.javabasics.logging.JitLog;
+import com.liaison.javabasics.serialization.BytesUtil;
+import com.liaison.javabasics.serialization.DefensiveCopyStrategy;
 import com.liaison.shachi.api.request.frozen.ColSpecReadFrozen;
 import com.liaison.shachi.api.request.frozen.ReadOpSpecFrozen;
 import com.liaison.shachi.api.request.frozen.WriteOpSpecFrozen;
@@ -45,10 +45,10 @@ public class OpResultSet implements Serializable {
     
     private static final long serialVersionUID = 7900478648783128880L;
 
-    private static final LogMeMaybe LOG;
+    private static final JitLog LOG;
 
     static {
-        LOG = new LogMeMaybe(OpResultSet.class);
+        LOG = new JitLog(OpResultSet.class);
     }
     
     private final Map<OperationSpec<?>, OpResult<?>> dataBySpec;

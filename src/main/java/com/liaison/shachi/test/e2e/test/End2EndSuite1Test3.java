@@ -1,7 +1,7 @@
 package com.liaison.shachi.test.e2e.test;
 
 import com.google.common.util.concurrent.ListenableFuture;
-import com.liaison.commons.log.LogMeMaybe;
+import com.liaison.javabasics.logging.JitLog;
 import com.liaison.shachi.HBaseControl;
 import com.liaison.shachi.api.response.OpResultSet;
 import com.liaison.shachi.dto.RowKey;
@@ -27,9 +27,9 @@ import static com.liaison.shachi.test.e2e.setup.End2EndSuite1.TS_SAMPLE_1;
  */
 public class End2EndSuite1Test3 implements End2EndTest {
 
-    private static final LogMeMaybe LOG;
+    private static final JitLog LOG;
     static {
-        LOG = new LogMeMaybe(End2EndSuite1Test3.class);
+        LOG = new JitLog(End2EndSuite1Test3.class);
     }
 
     @Override

@@ -1,6 +1,6 @@
 package com.liaison.shachi.test.e2e.test;
 
-import com.liaison.commons.log.LogMeMaybe;
+import com.liaison.javabasics.logging.JitLog;
 import com.liaison.shachi.HBaseControl;
 import com.liaison.shachi.api.response.OpResultSet;
 import com.liaison.shachi.dto.CellDatum;
@@ -22,9 +22,9 @@ import java.util.UUID;
  */
 public class End2EndSuite1Test4 implements End2EndTest {
 
-    private static final LogMeMaybe LOG;
+    private static final JitLog LOG;
     static {
-        LOG = new LogMeMaybe(End2EndSuite1Test4.class);
+        LOG = new JitLog(End2EndSuite1Test4.class);
     }
 
     @Override

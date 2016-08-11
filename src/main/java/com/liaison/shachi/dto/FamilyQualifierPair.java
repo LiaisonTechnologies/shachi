@@ -8,7 +8,7 @@
  */
 package com.liaison.shachi.dto;
 
-import com.liaison.commons.Util;
+import com.liaison.javabasics.commons.Util;
 import com.liaison.shachi.model.FamilyHB;
 import com.liaison.shachi.model.FamilyModel;
 import com.liaison.shachi.model.QualHB;

@@ -8,7 +8,7 @@
  */
 package com.liaison.shachi.api.request.impl;
 
-import com.liaison.commons.Util;
+import com.liaison.javabasics.commons.Util;
 import com.liaison.shachi.api.request.fluid.fluent.LongValueSpecFluent;
 import com.liaison.shachi.api.request.frozen.LongValueSpecFrozen;
 import com.liaison.shachi.util.StringRepFormat;

@@ -1,6 +1,6 @@
 package com.liaison.shachi.test.e2e.tools;
 
-import com.liaison.commons.log.LogMeMaybe;
+import com.liaison.javabasics.logging.JitLog;
 import org.testng.Assert;
 
 import java.util.Collection;
@@ -16,11 +16,11 @@ import java.util.Set;
 public class AssertVerify implements Verify {
     public static enum FailAction {WRITELOG, THROW}
 
-    private static final LogMeMaybe LOG;
+    private static final JitLog LOG;
     public static final EnumSet<FailAction> FAIL_ACTIONS_DEFAULT = EnumSet.of(FailAction.THROW);
 
     static {
-        LOG = new LogMeMaybe(AssertVerify.class);
+        LOG = new JitLog(AssertVerify.class);
     }
 
     private final EnumSet<FailAction> failActions;

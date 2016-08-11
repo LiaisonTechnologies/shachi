@@ -8,9 +8,9 @@
  */
 package com.liaison.shachi.model;
 
-import com.liaison.commons.Util;
-import com.liaison.serialization.BytesUtil;
-import com.liaison.serialization.DefensiveCopyStrategy;
+import com.liaison.javabasics.commons.Util;
+import com.liaison.javabasics.serialization.BytesUtil;
+import com.liaison.javabasics.serialization.DefensiveCopyStrategy;
 import com.liaison.shachi.dto.RowKey;
 import com.liaison.shachi.model.ser.CellDeserializer;
 import com.liaison.shachi.model.ser.CellSerializer;

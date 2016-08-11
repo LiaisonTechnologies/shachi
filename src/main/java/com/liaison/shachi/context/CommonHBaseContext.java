@@ -8,8 +8,8 @@
  */
 package com.liaison.shachi.context;
 
-import com.liaison.commons.Util;
-import com.liaison.serialization.DefensiveCopyStrategy;
+import com.liaison.javabasics.commons.Util;
+import com.liaison.javabasics.serialization.DefensiveCopyStrategy;
 import com.liaison.shachi.context.async.AsyncConfig;
 import com.liaison.shachi.context.async.AsyncConfigDefault;
 import com.liaison.shachi.resmgr.ResourceConnectTolerance;

@@ -8,8 +8,8 @@
  */
 package com.liaison.shachi.util;
 
-import com.liaison.commons.Uninstantiable;
-import com.liaison.commons.Util;
+import com.liaison.javabasics.commons.Uninstantiable;
+import com.liaison.javabasics.commons.Util;
 import com.liaison.shachi.api.request.frozen.ColSpecFrozen;
 import com.liaison.shachi.api.request.impl.SpecState;
 import com.liaison.shachi.api.request.impl.StatefulSpec;

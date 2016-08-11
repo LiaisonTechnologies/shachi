@@ -8,8 +8,8 @@
  */
 package com.liaison.shachi.api.response;
 
-import com.liaison.commons.Util;
-import com.liaison.commons.log.LogMeMaybe;
+import com.liaison.javabasics.commons.Util;
+import com.liaison.javabasics.logging.JitLog;
 import com.liaison.shachi.api.request.frozen.ColSpecReadFrozen;
 import com.liaison.shachi.api.request.impl.ColSpecRead;
 import com.liaison.shachi.api.request.impl.ReadOpSpecDefault;
@@ -41,7 +41,7 @@ public class ReadOpResult extends OpResult<ReadOpSpecDefault> {
      */
     public static class ReadOpResultBuilder extends OpResultBuilder<ReadOpSpecDefault, ReadOpResult, ReadOpResultBuilder> {
 
-        private static final LogMeMaybe LOG;
+        private static final JitLog LOG;
 
         /**
          * TODO: javadoc
@@ -49,7 +49,7 @@ public class ReadOpResult extends OpResult<ReadOpSpecDefault> {
         private static final String CLOSURENAME_ADD = ReadOpResultBuilder.class.getSimpleName() + "#add";
 
         static {
-            LOG = new LogMeMaybe(ReadOpResultBuilder.class);
+            LOG = new JitLog(ReadOpResultBuilder.class);
         }
 
         /**

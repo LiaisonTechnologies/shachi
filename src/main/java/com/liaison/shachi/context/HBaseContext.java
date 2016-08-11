@@ -8,7 +8,7 @@
  */
 package com.liaison.shachi.context;
 
-import com.liaison.serialization.DefensiveCopyStrategy;
+import com.liaison.javabasics.serialization.DefensiveCopyStrategy;
 import com.liaison.shachi.context.async.AsyncConfig;
 import com.liaison.shachi.resmgr.ResourceConnectTolerance;
 import org.apache.hadoop.conf.Configuration;

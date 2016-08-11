@@ -1,6 +1,6 @@
 package com.liaison.shachi.dto;
 
-import com.liaison.commons.Util;
+import com.liaison.javabasics.commons.Util;
 import com.liaison.shachi.api.request.frozen.LongValueSpecFrozen;
 import com.liaison.shachi.model.VersioningModel;
 

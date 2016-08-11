@@ -8,12 +8,13 @@
  */
 package com.liaison.shachi.util;
 
+import com.liaison.javabasics.commons.Uninstantiable;
 import com.liaison.shachi.api.request.frozen.LongValueSpecFrozen;
 import org.apache.hadoop.hbase.client.Get;
 
 import java.io.IOException;
 
-public final class ReadUtils {
+public final class ReadUtils extends Uninstantiable {
 
     /*
      * TODO: extract more of what is currently in HBaseControl.HBaseDelegate into this class

@@ -1,6 +1,6 @@
 package com.liaison.shachi.api.request;
 
-import com.liaison.serialization.BytesUtil;
+import com.liaison.javabasics.serialization.BytesUtil;
 import com.liaison.shachi.api.request.impl.ColSpecWrite;
 import com.liaison.shachi.api.request.impl.SpecState;
 import com.liaison.shachi.api.request.impl.TableRowOpSpec;

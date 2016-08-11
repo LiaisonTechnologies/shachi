@@ -1,7 +1,7 @@
 buildscript {
     repositories {
         mavenLocal()
-        mavenCentral() // maven { url 'http://jcenter.bintray.com' }
+        mavenCentral()
     }
     apply from: file('gradle/buildscript.gradle'), to: buildscript
 }
@@ -12,17 +12,18 @@ plugins {
 
 allprojects {
     repositories {
+        mavenCentral()
         mavenLocal()
-        maven { url 'http://10.10.20.53:8081/nexus/repository/maven-public/' }
     }
 }
 
 apply plugin: 'java'
 apply plugin: 'eclipse'
 apply plugin: 'java-library-distribution'
+apply plugin: 'maven'
 
-ext.verJitLog = '1.0.0'
-ext.verGuava = '18.0'
+ext.verBasics = '1.0.0'
+ext.verGuava = '19.0'
 ext.verGuavaTEST = '14.0.1'
 ext.verHadoopTEST = '2.5.1'
 ext.verLog4j = '2.5'
@@ -65,8 +66,6 @@ sourceSets {
 
 apply from: file('gradle/convention.gradle')
 apply from: file('gradle/check.gradle')
-apply from: file('gradle/license.gradle')
-apply from: file('gradle/maven.gradle')
 
 if (project.hasProperty('env') && project.getProperty('env') == 'mapr') {
     repositories {
@@ -82,7 +81,7 @@ if (project.hasProperty('env') && project.getProperty('env') == 'mapr') {
 
 group = 'com.liaison'
 def artifact = "${rootProject.name}"
-version = '0.1.9'
+version = '0.2.0'
 def packaging = 'jar'
 def classifier = "${verHBase}"
 
@@ -96,12 +95,7 @@ jar {
 
 dependencies {
     guava group:'com.google.guava', name:'guava', version:"${verGuava}"
-    /*
-    compile "org.slf4j:slf4j-api:${verSlf4j}"
-    compile "org.apache.logging.log4j:log4j-slf4j-impl:${verLog4j}"
-    compile "org.apache.logging.log4j:log4j-core:${verLog4j}"
-    */
-    compile "com.liaison:jitlog:${verJitLog}"
+    compile "com.liaison:javabasics:${verBasics}"
     compile "co.paralleluniverse:quasar-core:${verQuasar}${classifierQuasar}"
     compile "org.apache.hbase:hbase-client:${verHBase}"
     compile "org.apache.hbase:hbase-common:${verHBase}"
@@ -174,8 +168,8 @@ task createPom  {
             inceptionYear '2015'
             licenses {
                 license {
-                    name 'Liaison Proprietary'
-                    url 'http://www.liaison.com'
+                    name 'The Apache Software License, Version 2.0'
+                    url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
                     distribution 'repo'
                 }
             }

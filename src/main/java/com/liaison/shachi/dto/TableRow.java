@@ -1,6 +1,6 @@
 package com.liaison.shachi.dto;
 
-import com.liaison.commons.Util;
+import com.liaison.javabasics.commons.Util;
 import com.liaison.shachi.model.TableModel;
 
 import java.io.Serializable;

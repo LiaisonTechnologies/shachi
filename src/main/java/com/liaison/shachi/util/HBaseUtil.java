@@ -13,10 +13,11 @@ import co.paralleluniverse.strands.Strand;
 import com.google.common.hash.HashCode;
 import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
-import com.liaison.commons.Util;
-import com.liaison.commons.log.LogMeMaybe;
-import com.liaison.serialization.BytesUtil;
-import com.liaison.serialization.DefensiveCopyStrategy;
+import com.liaison.javabasics.commons.Uninstantiable;
+import com.liaison.javabasics.commons.Util;
+import com.liaison.javabasics.logging.JitLog;
+import com.liaison.javabasics.serialization.BytesUtil;
+import com.liaison.javabasics.serialization.DefensiveCopyStrategy;
 import com.liaison.shachi.context.HBaseContext;
 import com.liaison.shachi.dto.ParsedVersionQualifier;
 import com.liaison.shachi.dto.RowKey;
@@ -34,14 +35,14 @@ import org.apache.hadoop.hbase.client.HTable;
 import java.io.IOException;
 import java.util.Arrays;
 
-public final class HBaseUtil {
+public final class HBaseUtil extends Uninstantiable {
 
     public static final byte[] DELIM_BYTES = {0};
 
     private static final int BYTES_PER_INT;
     private static final int BYTES_PER_LONG;
 
-    private static final LogMeMaybe LOG;
+    private static final JitLog LOG;
     private static final HashFunction HASH_MURMUR3_32;
 
     private static byte[] buildSaltedRowKeyValue(final byte[] salt, final int saltOffset, final int saltLen, final byte[] rkBytes) {
@@ -401,7 +402,7 @@ public final class HBaseUtil {
         anyInt = 0;
         anyLong = 0L;
 
-        LOG = new LogMeMaybe(HBaseUtil.class);
+        LOG = new JitLog(HBaseUtil.class);
         HASH_MURMUR3_32 = Hashing.murmur3_32();
         BYTES_PER_INT = BytesUtil.toBytes(anyInt).length;
         BYTES_PER_LONG = BytesUtil.toBytes(anyLong).length;

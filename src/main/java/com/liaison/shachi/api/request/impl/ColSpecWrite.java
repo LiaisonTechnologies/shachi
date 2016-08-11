@@ -8,8 +8,8 @@
  */
 package com.liaison.shachi.api.request.impl;
 
-import com.liaison.commons.Util;
-import com.liaison.serialization.DefensiveCopyStrategy;
+import com.liaison.javabasics.commons.Util;
+import com.liaison.javabasics.serialization.DefensiveCopyStrategy;
 import com.liaison.shachi.api.request.fluid.fluent.ColSpecWriteFluent;
 import com.liaison.shachi.api.request.frozen.ColSpecWriteFrozen;
 import com.liaison.shachi.dto.Empty;

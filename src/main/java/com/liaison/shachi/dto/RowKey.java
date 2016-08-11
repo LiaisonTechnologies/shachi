@@ -8,8 +8,8 @@
  */
 package com.liaison.shachi.dto;
 
-import com.liaison.serialization.BytesUtil;
-import com.liaison.serialization.DefensiveCopyStrategy;
+import com.liaison.javabasics.serialization.BytesUtil;
+import com.liaison.javabasics.serialization.DefensiveCopyStrategy;
 
 import java.io.Serializable;
 import java.nio.charset.Charset;

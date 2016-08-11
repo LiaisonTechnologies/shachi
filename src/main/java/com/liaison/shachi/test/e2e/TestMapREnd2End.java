@@ -9,9 +9,9 @@
 package com.liaison.shachi.test.e2e;
 
 import com.google.common.util.concurrent.ListenableFuture;
-import com.liaison.commons.Util;
-import com.liaison.serialization.BytesUtil;
-import com.liaison.serialization.DefensiveCopyStrategy;
+import com.liaison.javabasics.commons.Util;
+import com.liaison.javabasics.serialization.BytesUtil;
+import com.liaison.javabasics.serialization.DefensiveCopyStrategy;
 import com.liaison.shachi.HBaseControl;
 import com.liaison.shachi.api.response.OpResultSet;
 import com.liaison.shachi.context.DirectoryPrefixedTableNamingStrategy;

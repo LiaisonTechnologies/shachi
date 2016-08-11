@@ -8,7 +8,7 @@
  */
 package com.liaison.shachi.util;
 
-import com.liaison.commons.Uninstantiable;
+import com.liaison.javabasics.commons.Uninstantiable;
 
 import java.nio.charset.Charset;
 

@@ -8,8 +8,8 @@
  */
 package com.liaison.shachi.api.request.impl;
 
-import com.liaison.commons.Util;
-import com.liaison.commons.log.LogMeMaybe;
+import com.liaison.javabasics.commons.Util;
+import com.liaison.javabasics.logging.JitLog;
 import com.liaison.shachi.exception.SpecValidationException;
 import com.liaison.shachi.util.StringRepFormat;
 import com.liaison.shachi.util.TreeNode;
@@ -38,10 +38,10 @@ public abstract class StatefulSpec<A extends StatefulSpec<A, P>, P extends TreeN
     
     private static final long serialVersionUID = -6331552111315785761L;
 
-    private static final LogMeMaybe LOG;
+    private static final JitLog LOG;
 
     static {
-        LOG = new LogMeMaybe(StatefulSpec.class);
+        LOG = new JitLog(StatefulSpec.class);
     }
 
     // ||========================================================================================||

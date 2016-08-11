@@ -1,7 +1,7 @@
 package com.liaison.shachi.model;
 
-import com.liaison.commons.Util;
-import com.liaison.serialization.DefensiveCopyStrategy;
+import com.liaison.javabasics.commons.Util;
+import com.liaison.javabasics.serialization.DefensiveCopyStrategy;
 import com.liaison.shachi.api.request.frozen.LongValueSpecFrozen;
 import com.liaison.shachi.util.HBaseUtil;
 import org.apache.hadoop.hbase.filter.CompareFilter;

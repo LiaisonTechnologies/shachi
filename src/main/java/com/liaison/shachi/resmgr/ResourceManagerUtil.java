@@ -8,8 +8,8 @@
  */
 package com.liaison.shachi.resmgr;
 
-import com.liaison.commons.Util;
-import com.liaison.commons.log.LogMeMaybe;
+import com.liaison.javabasics.commons.Util;
+import com.liaison.javabasics.logging.JitLog;
 import com.liaison.shachi.context.HBaseContext;
 import com.liaison.shachi.exception.HBaseResourceAcquisitionException;
 import com.liaison.shachi.exception.HBaseResourceReleaseException;
@@ -30,7 +30,7 @@ import java.io.IOException;
  */
 public class ResourceManagerUtil {
 
-    private static final LogMeMaybe LOG;
+    private static final JitLog LOG;
     
     private static final String LOGNAME_BUILDTABLE = "buildTableResource";
     private static final String LOGNAME_FULL_BUILDTABLE =
@@ -177,7 +177,7 @@ public class ResourceManagerUtil {
     }
     
     static {
-        LOG = new LogMeMaybe(ResourceManagerUtil.class);
+        LOG = new JitLog(ResourceManagerUtil.class);
     }
     
     private ResourceManagerUtil() { }

@@ -9,7 +9,7 @@
 package com.liaison.shachi.api.request.impl;
 
 import com.google.common.util.concurrent.ListenableFuture;
-import com.liaison.commons.Util;
+import com.liaison.javabasics.commons.Util;
 import com.liaison.shachi.HBaseControl;
 import com.liaison.shachi.api.request.OperationController;
 import com.liaison.shachi.api.request.OperationExecutor;

@@ -8,7 +8,7 @@
  */
 package com.liaison.shachi.api.response;
 
-import com.liaison.commons.Util;
+import com.liaison.javabasics.commons.Util;
 import com.liaison.shachi.api.request.impl.TableRowOpSpec;
 import com.liaison.shachi.dto.TableRow;
 import com.liaison.shachi.exception.HBaseException;
