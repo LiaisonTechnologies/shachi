@@ -21,7 +21,7 @@ apply plugin: 'java'
 apply plugin: 'eclipse'
 apply plugin: 'java-library-distribution'
 
-ext.verCommons = '0.1.2'
+ext.verJitLog = '1.0.0'
 ext.verGuava = '18.0'
 ext.verGuavaTEST = '14.0.1'
 ext.verHadoopTEST = '2.5.1'
@@ -90,7 +90,7 @@ ext.libraryName = "${rootProject.name}"
 
 jar {
     manifest {
-        attributes 'Implementation-Title': 'HBase Client', 'Implementation-Version': version
+        attributes 'Implementation-Title': 'Shachi', 'Implementation-Version': version
     }
 }
 
@@ -101,7 +101,7 @@ dependencies {
     compile "org.apache.logging.log4j:log4j-slf4j-impl:${verLog4j}"
     compile "org.apache.logging.log4j:log4j-core:${verLog4j}"
     */
-    compile "com.liaison:dm-lib-commons:${verCommons}"
+    compile "com.liaison:jitlog:${verJitLog}"
     compile "co.paralleluniverse:quasar-core:${verQuasar}${classifierQuasar}"
     compile "org.apache.hbase:hbase-client:${verHBase}"
     compile "org.apache.hbase:hbase-common:${verHBase}"

@@ -1,0 +1,25 @@
+package com.liaison.shachi;
+
+import org.testng.annotations.Test;
+
+/**
+ * Branden Smith; Liaison Technologies, Inc.
+ * Created 2015.08.26 18:52
+ */
+public class TestHBaseControl {
+
+    @Test
+    public void testClose() throws Exception {
+
+    }
+
+    @Test
+    public void testGetContext() throws Exception {
+
+    }
+
+    @Test
+    public void testBegin() throws Exception {
+
+    }
+}
