@@ -8,6 +8,12 @@ import com.liaison.serialization.DefensiveCopyStrategy;
 import java.io.Serializable;
 
 /**
+ * Data object representing a value in HBase coupled with the {@link TableRow} (table + row) and
+ * {@link FamilyQualifierPair} (column family + column qualifier) from which it was derived.
+ * <br /><br />
+ * If the schema for the read operation which produced this entity included a custom deserializer
+ * to convert the raw bytes content of the cell to an object, then
+ *
  * Branden Smith; Liaison Technologies, Inc.
  * Created 2015.07.07 12:45
  */
@@ -84,7 +90,7 @@ public class CellDatum implements Serializable {
      * literal values for the column name, this FamilyQualifierPair represents the family and
      * qualifier as the LITERAL strings stored in the database, not as the symbolic string from
      * the original FamilyModel and QualModel used to execute the query.
-     * @return
+     * @return Source column location (family + qualifier
      */
     public FamilyQualifierPair getTableColumn() {
         return this.tableColumn;
@@ -92,9 +98,12 @@ public class CellDatum implements Serializable {
 
     /**
      * Obtain the content of the enclosed Datum, deserialized using the deserizalizer defined at
-     * the most specific level
-     * @return
-     * @throws CellDeserializationException
+     * the most specific level (i.e. qualifier level, if a deserializer is defined in the schema
+     * at qualifier level, otherwise at the family level, if a deserializer is defined there).
+     * @return Contents of the cell, deserialized to a custom object as specified by the source
+     * schema.
+     * @throws CellDeserializationException If the deserializer specified by the schema cannot
+     * decode/interpret the byte contents of the cell
      * @throws IllegalStateException if invoked on a CellDatum whose corresponding table->family->
      * qualifier model tree does not define any deserializers
      */
