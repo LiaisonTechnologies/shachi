@@ -1,3 +1,19 @@
+/*
+ * Copyright © 2016 Liaison Technologies, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not
+ * use this file except in compliance with the License. You may obtain a copy of
+ * the License at:
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations under
+ * the License.
+ */
+
 buildscript {
     repositories {
         mavenLocal()
@@ -21,8 +37,9 @@ apply plugin: 'java'
 apply plugin: 'eclipse'
 apply plugin: 'java-library-distribution'
 apply plugin: 'maven'
+apply plugin: 'signing'
 
-ext.verBasics = '1.0.0'
+ext.verBasics = '0.1.0'
 ext.verGuava = '19.0'
 ext.verGuavaTEST = '14.0.1'
 ext.verHadoopTEST = '2.5.1'
@@ -93,6 +110,20 @@ jar {
     }
 }
 
+task javadocJar(type: Jar) {
+    classifier = 'javadoc'
+    from javadoc
+}
+
+task sourcesJar(type: Jar) {
+    classifier = 'sources'
+    from sourceSets.main.allSource
+}
+
+artifacts {
+    archives javadocJar, sourcesJar
+}
+
 dependencies {
     guava group:'com.google.guava', name:'guava', version:"${verGuava}"
     compile "com.liaison:javabasics:${verBasics}"
@@ -154,9 +185,38 @@ distributions {
 
 uploadArchives {
     repositories {
-       flatDir {
-           dirs 'repos'
-       }
+        mavenDeployer {
+            beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+
+            repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
+                authentication(userName: ossrhUsername, password: ossrhPassword)
+            }
+
+            snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots/") {
+                authentication(userName: ossrhUsername, password: ossrhPassword)
+            }
+
+            pom.project {
+                name "${rootProject.name}"
+                packaging 'jar'
+                artifactId "${rootProject.name}"
+                description 'Shachi: High-Level HBase Client Abstraction Layer'
+                url 'https://github.com/LiaisonTechnologies/shachi'
+
+                scm {
+                    connection 'scm:git:https://github.com/LiaisonTechnologies/shachi.git'
+                    developerConnection 'scm:git:git@github.com:LiaisonTechnologies/shachi.git'
+                    url 'https://github.com/LiaisonTechnologies/shachi'
+                }
+
+                licenses {
+                    license {
+                        name 'The Apache License, Version 2.0'
+                        url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                    }
+                }
+            }
+        }
     }
 }
 

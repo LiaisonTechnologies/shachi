@@ -22,3 +22,22 @@ The name **"Shachi" (シャチ)** is Japanese for orca (killer whale), which is 
 
 ```
 gradle clean test distZip
+```
+
+## License and Trademarks
+
+Copyright © 2016 Liaison Technologies, Inc.
+
+Licensed under the Apache License, Version 2.0 (the "License"). You may not use the project encapsulated by this Git repository or any files contained therein, except in compliance with the License. You may obtain a copy of the License at:
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
+
+Liaison and Liaison Technologies are trademarks of Liaison Technologies, Inc. All rights reserved.
+
+Apache, Apache HBase, and HBase are trademarks of The Apache Software Foundation. No endorsement by The Apache Software Foundation is implied by the use of these marks.
+
+MapR is a trademark of MapR Technologies, Inc. No endorsement by MapR Technologies is implied by the use of these marks.
+
+All other trademarks are the property of their respective owners, and no endorsement by said entities is implied by the use of these marks.
