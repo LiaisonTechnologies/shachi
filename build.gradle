@@ -1,7 +1,23 @@
+/*
+ * Copyright © 2016 Liaison Technologies, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not
+ * use this file except in compliance with the License. You may obtain a copy of
+ * the License at:
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations under
+ * the License.
+ */
+
 buildscript {
     repositories {
         mavenLocal()
-        mavenCentral() // maven { url 'http://jcenter.bintray.com' }
+        mavenCentral()
     }
     apply from: file('gradle/buildscript.gradle'), to: buildscript
 }
@@ -12,17 +28,19 @@ plugins {
 
 allprojects {
     repositories {
+        mavenCentral()
         mavenLocal()
-        maven { url 'http://10.10.20.53:8081/nexus/repository/maven-public/' }
-    }
+    }:
 }
 
 apply plugin: 'java'
 apply plugin: 'eclipse'
 apply plugin: 'java-library-distribution'
+apply plugin: 'maven'
+apply plugin: 'signing'
 
-ext.verCommons = '0.1.2'
-ext.verGuava = '18.0'
+ext.verBasics = '0.1.3'
+ext.verGuava = '19.0'
 ext.verGuavaTEST = '14.0.1'
 ext.verHadoopTEST = '2.5.1'
 ext.verLog4j = '2.5'
@@ -65,8 +83,13 @@ sourceSets {
 
 apply from: file('gradle/convention.gradle')
 apply from: file('gradle/check.gradle')
-apply from: file('gradle/license.gradle')
-apply from: file('gradle/maven.gradle')
+
+if (!project.hasProperty('ossrhUsername')) {
+    ext.ossrhUsername = '';
+}
+if (!project.hasProperty('ossrhPassword')) {
+    ext.ossrhPassword = '';
+}
 
 if (project.hasProperty('env') && project.getProperty('env') == 'mapr') {
     repositories {
@@ -82,7 +105,7 @@ if (project.hasProperty('env') && project.getProperty('env') == 'mapr') {
 
 group = 'com.liaison'
 def artifact = "${rootProject.name}"
-version = '0.1.9'
+version = '0.2.0'
 def packaging = 'jar'
 def classifier = "${verHBase}"
 
@@ -90,18 +113,27 @@ ext.libraryName = "${rootProject.name}"
 
 jar {
     manifest {
-        attributes 'Implementation-Title': 'HBase Client', 'Implementation-Version': version
+        attributes 'Implementation-Title': 'Shachi', 'Implementation-Version': version
     }
+}
+
+task javadocJar(type: Jar) {
+    classifier = 'javadoc'
+    from javadoc
+}
+
+task sourcesJar(type: Jar) {
+    classifier = 'sources'
+    from sourceSets.main.allSource
+}
+
+artifacts {
+    archives javadocJar, sourcesJar
 }
 
 dependencies {
     guava group:'com.google.guava', name:'guava', version:"${verGuava}"
-    /*
-    compile "org.slf4j:slf4j-api:${verSlf4j}"
-    compile "org.apache.logging.log4j:log4j-slf4j-impl:${verLog4j}"
-    compile "org.apache.logging.log4j:log4j-core:${verLog4j}"
-    */
-    compile "com.liaison:dm-lib-commons:${verCommons}"
+    compile "com.liaison:javabasics:${verBasics}"
     compile "co.paralleluniverse:quasar-core:${verQuasar}${classifierQuasar}"
     compile "org.apache.hbase:hbase-client:${verHBase}"
     compile "org.apache.hbase:hbase-common:${verHBase}"
@@ -158,25 +190,47 @@ distributions {
     }
 }
 
-uploadArchives {
-    repositories {
-       flatDir {
-           dirs 'repos'
-       }
-    }
-}
-
 task createPom  {
     pom {
         project {
             artifactId artifact
             version version
             inceptionYear '2015'
+            name "${rootProject.name}"
+            description 'Shachi: High-Level HBase Client Abstraction Layer'
+            url 'https://github.com/LiaisonTechnologies/shachi'
+
+            organization {
+                name 'Liaison Technologies, Inc.'
+                url 'http://www.liaison.com'
+            }
+
+            scm {
+                connection 'scm:git:https://github.com/LiaisonTechnologies/shachi.git'
+                developerConnection 'scm:git:git@github.com:LiaisonTechnologies/shachi.git'
+                url 'https://github.com/LiaisonTechnologies/shachi'
+            }
+
             licenses {
                 license {
-                    name 'Liaison Proprietary'
-                    url 'http://www.liaison.com'
-                    distribution 'repo'
+                    name 'The Apache License, Version 2.0'
+                    url 'http://www.apache.org/licenses/LICENSE-2.0'
+                }
+            }
+
+            developers {
+                developer {
+                    name 'Liaison Technologies'
+                    email 'sales@liaison.com'
+                    organization 'Liaison Technologies, Inc.'
+                    organizationUrl 'http://www.liaison.com'
+                }
+            }
+
+            distributionManagement {
+                snapshotRepository {
+                    id 'ossrh'
+                    url 'https://oss.sonatype.org/content/repositories/snapshots'
                 }
             }
         }
@@ -198,6 +252,22 @@ task createPom  {
         versionIndex = children.indexOf(children.find {it.name().localPart == 'version'})
         children.add(versionIndex + 1, new Node(null, 'packaging', packaging))
     }.writeTo("pom.xml")
+}
+
+uploadArchives {
+    repositories {
+        mavenDeployer {
+            beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+
+            repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
+                authentication(userName: "${ossrhUsername}", password: "${ossrhPassword}")
+            }
+
+            snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots/") {
+                authentication(userName: "${ossrhUsername}", password: "${ossrhPassword}")
+            }
+        }
+    }
 }
 
 if (project.hasProperty('mainClass')) {
